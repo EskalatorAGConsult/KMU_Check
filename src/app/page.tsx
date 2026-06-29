@@ -49,7 +49,7 @@ export default function Page() {
               <span className="size-2 rounded-full bg-teal-500" />
               BAFA Modul 3 · Fördermittelcheck für die Industrie
             </span>
-            <h1 className="font-display text-5xl/12 tracking-tight text-balance text-mabe-900 sm:text-[4.5rem]/18">
+            <h1 className="font-display text-5xl/12 font-semibold tracking-tight text-balance text-mabe-900 sm:text-[4.5rem]/18">
               Erfahren Sie jetzt, ob Sie{' '}
               <span className="bg-gradient-to-r from-mabe-900 to-teal-600 bg-clip-text text-transparent">
                 Förderungen nutzen
@@ -145,7 +145,7 @@ export default function Page() {
           <div className="overflow-hidden rounded-3xl bg-mabe-900 p-8 sm:p-12">
             <div className="flex max-w-2xl flex-col gap-3">
               <Eyebrow className="text-teal-300">BAFA Modul 3 · Förderquoten</Eyebrow>
-              <h2 className="font-display text-4xl/tight text-white sm:text-5xl">Bis zu 45 % Zuschuss – je nach Unternehmensgröße.</h2>
+              <h2 className="font-display text-4xl/tight font-semibold text-white sm:text-5xl">Bis zu 45 % Zuschuss – je nach Unternehmensgröße.</h2>
               <p className="text-pretty text-olive-300">
                 Die Höhe der Förderung bezogen auf die förderfähigen Investitionskosten hängt direkt von Ihrem
                 KMU-Status ab. Genau deshalb lohnt sich die korrekte Einstufung.
@@ -244,11 +244,85 @@ export default function Page() {
         </Container>
       </section>
 
+      {/* ===================== WARUM KORREKT (Tabelle) ===================== */}
+      <section className="py-16">
+        <Container className="flex flex-col gap-10">
+          <div className="flex max-w-2xl flex-col gap-4">
+            <Eyebrow className="text-teal-700">Warum es auf Genauigkeit ankommt</Eyebrow>
+            <Subheading>Warum das KMU-Kriterium in der Förderkulisse korrekt abgebildet sein muss.</Subheading>
+            <Text className="text-pretty text-olive-700">
+              Die KMU-Einstufung ist kein Detail, sondern die Grundlage Ihrer gesamten Förderung. Schon kleine Fehler
+              entscheiden über Förderhöhe, Bewilligung – und im schlimmsten Fall über eine Rückforderung.
+            </Text>
+          </div>
+
+          <div className="overflow-hidden rounded-3xl ring-1 ring-olive-200">
+            <div className="overflow-x-auto">
+              <table className="w-full min-w-[40rem] border-collapse text-left text-sm">
+                <thead>
+                  <tr className="bg-olive-50 text-olive-500">
+                    <th className="px-5 py-4 font-semibold">Aspekt</th>
+                    <th className="px-5 py-4 font-semibold text-teal-700">Bei korrekter Einstufung</th>
+                    <th className="px-5 py-4 font-semibold">Risiko bei falscher Angabe</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-olive-100 bg-white">
+                  {[
+                    [
+                      'Förderquote',
+                      '45 / 35 / 25 % exakt bestimmt – maximal möglicher Zuschuss wird ausgeschöpft.',
+                      'Zu niedrig beantragt (Geld verschenkt) oder zu hoch – spätere Kürzung.',
+                    ],
+                    [
+                      'Verbundbetrachtung',
+                      'Partner- und verbundene Unternehmen sind vollständig berücksichtigt.',
+                      'Übersehener Verbund führt zum nachträglichen Verlust des KMU-Status.',
+                    ],
+                    [
+                      'Bewilligung',
+                      'Saubere, nachvollziehbare Nachweise beschleunigen die Zusage.',
+                      'Unstimmigkeiten lösen Rückfragen, Verzögerung oder Ablehnung aus.',
+                    ],
+                    [
+                      'Rechtssicherheit',
+                      'Korrekte Angaben schützen vor Rückforderung.',
+                      'Falschangaben können Rückzahlung und Subventionsbetrug (§ 264 StGB) bedeuten.',
+                    ],
+                    [
+                      'Mehrfachnutzung',
+                      'Ein belastbarer Nachweis ist für BAFA, KfW und Länderprogramme nutzbar.',
+                      'Ein Fehler in der Einstufung wiederholt sich über alle Anträge hinweg.',
+                    ],
+                  ].map(([aspect, ok, risk]) => (
+                    <tr key={aspect} className="align-top">
+                      <td className="px-5 py-4 font-semibold text-mabe-900">{aspect}</td>
+                      <td className="px-5 py-4 text-olive-700">
+                        <span className="flex gap-2">
+                          <svg viewBox="0 0 20 20" fill="currentColor" className="mt-0.5 size-4 shrink-0 text-teal-600">
+                            <path
+                              fillRule="evenodd"
+                              d="M16.704 4.153a.75.75 0 0 1 .143 1.052l-8 10.5a.75.75 0 0 1-1.127.075l-4.5-4.5a.75.75 0 0 1 1.06-1.06l3.894 3.893 7.48-9.817a.75.75 0 0 1 1.05-.143Z"
+                              clipRule="evenodd"
+                            />
+                          </svg>
+                          {ok}
+                        </span>
+                      </td>
+                      <td className="px-5 py-4 text-olive-500">{risk}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </Container>
+      </section>
+
       {/* ============================ TESTIMONIAL ============================ */}
       <section className="py-16">
         <Container>
           <figure className="mx-auto flex max-w-3xl flex-col items-center gap-8 text-center">
-            <blockquote className="font-display text-3xl/tight text-balance text-mabe-900 sm:text-4xl/tight">
+            <blockquote className="font-display text-3xl/tight font-medium text-balance text-mabe-900 sm:text-4xl/tight">
               „Mit dem MABE KMU-Check wussten wir innerhalb von Minuten, dass wir als kleines Unternehmen 45 % Zuschuss
               bekommen. Der PDF-Nachweis hat unseren BAFA-Antrag spürbar beschleunigt.“
             </blockquote>
@@ -324,6 +398,28 @@ export default function Page() {
           </div>
         }
       />
+
+      {/* ============================ DISCLAIMER ============================ */}
+      <section className="pb-4">
+        <Container>
+          <div className="flex gap-4 rounded-2xl bg-olive-50 p-6 ring-1 ring-olive-200">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.6} className="mt-0.5 size-6 shrink-0 text-olive-500">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v4m0 4h.01M10.3 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.7 3.86a2 2 0 0 0-3.42 0Z" />
+            </svg>
+            <div className="flex flex-col gap-1.5">
+              <h2 className="text-sm font-semibold text-mabe-900">Wichtiger Hinweis</h2>
+              <p className="text-sm/6 text-olive-600">
+                Der KMU-Check liefert eine <strong className="font-semibold text-olive-800">unverbindliche
+                Orientierung</strong> auf Grundlage der von Ihnen eingegebenen Angaben nach EU-Empfehlung 2003/361/EG. Die
+                Berechnung ersetzt keine Rechts-, Steuer- oder Förderberatung und ist nur so genau wie Ihre Eingaben. Ein
+                förderrechtlicher Statuswechsel greift zudem erst nach der Zwei-Jahres-Regel. Lassen Sie das Ergebnis im
+                Zweifel durch Ihren <strong className="font-semibold text-olive-800">Steuerberater</strong> bestätigen –
+                verbindlich ist allein die Prüfung durch die Bewilligungsbehörde.
+              </p>
+            </div>
+          </div>
+        </Container>
+      </section>
 
       {/* ===================== RECHTLICHES (Anker) ===================== */}
       <section id="datenschutz" className="scroll-mt-28 py-12">
