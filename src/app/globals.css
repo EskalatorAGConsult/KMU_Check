@@ -1,0 +1,92 @@
+@import 'tailwindcss';
+
+@theme {
+  --font-display: 'Instrument Serif', serif;
+  --font-sans: 'Inter', system-ui, sans-serif;
+
+  /* ------------------------------------------------------------------ */
+  /*  Neutral ramp (re-skin of the Oatmeal "olive" tokens)              */
+  /*  Warm olive -> cool industrial steel/slate, on-brand for MABE      */
+  /*  (Maschinen- und Behälterbau / Druckluftbehälter).                */
+  /* ------------------------------------------------------------------ */
+  --color-olive-50: oklch(98.4% 0.003 247);
+  --color-olive-100: oklch(96.8% 0.005 247);
+  --color-olive-200: oklch(92.6% 0.009 247);
+  --color-olive-300: oklch(87% 0.014 247);
+  --color-olive-400: oklch(71% 0.024 248);
+  --color-olive-500: oklch(55.5% 0.032 250);
+  --color-olive-600: oklch(45% 0.036 252);
+  --color-olive-700: oklch(37% 0.036 254);
+  --color-olive-800: oklch(27% 0.03 257);
+  --color-olive-900: oklch(20.5% 0.026 259);
+  --color-olive-950: oklch(14% 0.02 261);
+
+  /* ------------------------------------------------------------------ */
+  /*  MABE brand navy (primary – wordmark, CTAs, headlines)             */
+  /*  Matches the deep navy of the official MABE SMART CONTROL logo.    */
+  /* ------------------------------------------------------------------ */
+  --color-mabe-50: oklch(96% 0.014 245);
+  --color-mabe-100: oklch(92% 0.028 246);
+  --color-mabe-200: oklch(85% 0.05 248);
+  --color-mabe-300: oklch(75% 0.07 250);
+  --color-mabe-400: oklch(62% 0.085 252);
+  --color-mabe-500: oklch(50% 0.09 254);
+  --color-mabe-600: oklch(42% 0.085 255);
+  --color-mabe-700: oklch(34% 0.075 256);
+  --color-mabe-800: oklch(28% 0.062 257);
+  --color-mabe-900: oklch(23% 0.05 258);
+  --color-mabe-950: oklch(17% 0.04 259);
+
+  /* ------------------------------------------------------------------ */
+  /*  MABE brand teal/turquoise (signature accent – eyebrows, gauge,    */
+  /*  highlights, headline gradient). Overrides Tailwind's default teal.*/
+  /* ------------------------------------------------------------------ */
+  --color-teal-50: oklch(97% 0.02 195);
+  --color-teal-100: oklch(93% 0.04 195);
+  --color-teal-200: oklch(87% 0.07 195);
+  --color-teal-300: oklch(80% 0.095 196);
+  --color-teal-400: oklch(73% 0.108 196);
+  --color-teal-500: oklch(66% 0.105 197);
+  --color-teal-600: oklch(57% 0.098 199);
+  --color-teal-700: oklch(48% 0.085 201);
+  --color-teal-800: oklch(40% 0.07 203);
+  --color-teal-900: oklch(33% 0.055 205);
+  --color-teal-950: oklch(22% 0.04 207);
+}
+
+/*
+ * Forced white mode: the official MABE SMART CONTROL site is a light, crystal-
+ * clear theme. We neutralise every `dark:` utility in the bundled Oatmeal
+ * components by binding the dark variant to a `.dark` class that we never add,
+ * so automatic OS dark mode can never override the brand presentation.
+ */
+@custom-variant dark (&:where(.dark, .dark *));
+
+@layer base {
+  html {
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    background-color: #ffffff;
+    color-scheme: light;
+    --scroll-padding-top: 0;
+    scroll-padding-top: var(--scroll-padding-top);
+  }
+
+  /* Crystal-clear focus ring for keyboard users (WCAG 2.4.7). */
+  :focus-visible {
+    outline: 2px solid var(--color-teal-600);
+    outline-offset: 2px;
+  }
+}
+
+/* Hide number input spinners for a cleaner financial-input UX. */
+@layer utilities {
+  input[type='number']::-webkit-outer-spin-button,
+  input[type='number']::-webkit-inner-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+  }
+  input[type='number'] {
+    -moz-appearance: textfield;
+  }
+}
