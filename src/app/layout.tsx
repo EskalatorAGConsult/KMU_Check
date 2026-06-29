@@ -1,4 +1,4 @@
-import type { Metadata } from 'next'
+import type { Metadata, Viewport } from 'next'
 
 import { ButtonLink, PlainButtonLink } from '@/components/elements/button'
 import { Main } from '@/components/elements/main'
@@ -23,6 +23,15 @@ export const metadata: Metadata = {
   robots: { index: true, follow: true },
 }
 
+export const viewport: Viewport = {
+  width: 'device-width',
+  initialScale: 1,
+  viewportFit: 'cover',
+  // Pinch-Zoom bleibt erlaubt (Barrierefreiheit); Auto-Zoom beim Fokussieren
+  // verhindern wir über 16px-Schriftgrößen (siehe globals.css).
+  themeColor: '#ffffff',
+}
+
 export default function RootLayout({
   children,
 }: Readonly<{
@@ -33,9 +42,8 @@ export default function RootLayout({
       <head>
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="" />
-        <link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&display=swap" rel="stylesheet" />
         <link
-          href="https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&display=swap"
+          href="https://fonts.googleapis.com/css2?family=Mona+Sans:ital,wght@0,200..900;1,200..900&display=swap"
           rel="stylesheet"
         />
       </head>

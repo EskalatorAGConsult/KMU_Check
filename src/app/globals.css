@@ -1,8 +1,11 @@
 @import 'tailwindcss';
 
 @theme {
-  --font-display: 'Instrument Serif', serif;
-  --font-sans: 'Inter', system-ui, sans-serif;
+  --font-display: 'Mona Sans', system-ui, sans-serif;
+  --font-sans: 'Mona Sans', system-ui, sans-serif;
+
+  /* Sanfte, kompositor-freundliche Übergänge (120 Hz / ProMotion). */
+  --ease-out-smooth: cubic-bezier(0.22, 1, 0.36, 1);
 
   /* ------------------------------------------------------------------ */
   /*  Neutral ramp (re-skin of the Oatmeal "olive" tokens)              */
@@ -88,5 +91,51 @@
   }
   input[type='number'] {
     -moz-appearance: textfield;
+  }
+}
+
+/*
+ * iOS zoomt beim Fokussieren automatisch, sobald ein Formularfeld eine
+ * Schriftgröße < 16px hat. Auf Touch-Geräten erzwingen wir daher 16px für
+ * alle Eingaben – verhindert den Zoom, ohne Pinch-Zoom zu deaktivieren.
+ */
+@media (pointer: coarse) {
+  input,
+  select,
+  textarea {
+    font-size: 16px !important;
+  }
+}
+
+/* Flüssige Schritt-Übergänge im Wizard (nur transform/opacity -> GPU). */
+@keyframes step-in {
+  from {
+    opacity: 0;
+    transform: translate3d(0, 12px, 0);
+  }
+  to {
+    opacity: 1;
+    transform: translate3d(0, 0, 0);
+  }
+}
+
+@layer utilities {
+  .animate-step-in {
+    animation: step-in 0.42s var(--ease-out-smooth) both;
+    will-change: transform, opacity;
+  }
+  /* Sanfte Default-Transitions für interaktive Elemente. */
+  .transition-smooth {
+    transition-timing-function: var(--ease-out-smooth);
+    transition-duration: 240ms;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .animate-step-in {
+    animation: none;
+  }
+  * {
+    scroll-behavior: auto !important;
   }
 }

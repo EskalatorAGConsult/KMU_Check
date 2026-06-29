@@ -286,8 +286,8 @@ export function KmuCheck() {
                   </div>
                 </div>
 
-                {/* Schrittinhalt */}
-                <div className="min-h-[18rem]">
+                {/* Schrittinhalt – sanfter Übergang bei jedem Schrittwechsel */}
+                <div key={currentStep} className="min-h-[18rem] animate-step-in">
                   {currentStep === 'name' && (
                     <Step
                       kicker="Los geht's"
@@ -609,7 +609,7 @@ export function KmuCheck() {
                     type="button"
                     onClick={goNext}
                     disabled={submitting}
-                    className="inline-flex items-center gap-2 rounded-full bg-mabe-900 px-6 py-3 text-sm font-semibold text-white shadow-sm transition hover:bg-mabe-800 disabled:opacity-60"
+                    className="inline-flex items-center gap-2 rounded-full bg-mabe-900 px-6 py-3 text-sm font-semibold text-white shadow-sm transition transition-smooth hover:scale-[1.02] hover:bg-mabe-800 active:scale-95 disabled:opacity-60"
                   >
                     {submitting ? (
                       'Wird gesendet…'
@@ -664,7 +664,7 @@ function Step({
     <div className="flex flex-col gap-5">
       <div className="flex flex-col gap-2">
         <span className="text-xs font-semibold tracking-wide text-teal-700 uppercase">{kicker}</span>
-        <h3 className="font-display text-2xl/8 text-mabe-900 sm:text-3xl/9">{title}</h3>
+        <h3 className="font-display text-2xl/8 font-semibold text-mabe-900 sm:text-3xl/9">{title}</h3>
         <p className="text-sm/6 text-olive-600">{subtitle}</p>
       </div>
       <div className="flex flex-col gap-5">{children}</div>
@@ -708,7 +708,7 @@ function ChoiceCard({
       type="button"
       onClick={onClick}
       className={clsx(
-        'flex flex-col gap-1.5 rounded-2xl border-2 p-5 text-left transition',
+        'flex flex-col gap-1.5 rounded-2xl border-2 p-5 text-left transition transition-smooth hover:scale-[1.01] active:scale-[0.99]',
         active ? 'border-teal-600 bg-teal-50 ring-2 ring-teal-600/20' : 'border-olive-200 bg-white hover:border-olive-300',
       )}
     >
@@ -956,7 +956,7 @@ function SuccessPanel({
         </svg>
       </div>
       <div className="flex flex-col gap-2">
-        <h3 className="font-display text-3xl text-mabe-900">Vielen Dank!</h3>
+        <h3 className="font-display text-3xl font-semibold text-mabe-900">Vielen Dank!</h3>
         <p className="max-w-md text-sm/6 text-olive-600">
           Ihr KMU-Check für <strong>{companyName || 'Ihr Unternehmen'}</strong> ist abgeschlossen. Wir haben Ihre
           Ergebnisse erfasst und melden uns mit einer Förder-Ersteinschätzung. Ihren Nachweis können Sie sofort
@@ -968,7 +968,7 @@ function SuccessPanel({
         <div className="w-full rounded-2xl bg-olive-50 p-5">
           <div className="text-xs font-semibold tracking-wide text-olive-500 uppercase">Ihr Ergebnis</div>
           <div className="mt-1 flex items-center justify-center gap-3">
-            <span className="font-display text-2xl text-mabe-900">{result.categoryLabel}</span>
+            <span className="font-display text-2xl font-semibold text-mabe-900">{result.categoryLabel}</span>
             <span className="rounded-full bg-teal-600 px-3 py-1 text-sm font-bold text-white">
               {result.fundingRatePct} % Förderquote
             </span>
