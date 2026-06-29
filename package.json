@@ -1,0 +1,39 @@
+{
+  "name": "mabe-kmu-check",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "eslint"
+  },
+  "prettier": {
+    "semi": false,
+    "singleQuote": true,
+    "printWidth": 120,
+    "tailwindStylesheet": "./src/app/globals.css",
+    "tailwindFunctions": [
+      "clsx"
+    ]
+  },
+  "dependencies": {
+    "@fingerprintjs/fingerprintjs": "^4.6.2",
+    "@tailwindplus/elements": "0.0.0-insiders.98ea4bc",
+    "clsx": "^2.1.1",
+    "jspdf": "^3.0.1",
+    "next": "^16",
+    "react": "^19",
+    "react-dom": "^19",
+    "tailwindcss": "^4.2.0"
+  },
+  "devDependencies": {
+    "@tailwindcss/postcss": "^4.2.0",
+    "@types/node": "^20",
+    "@types/react": "^19",
+    "@types/react-dom": "^19",
+    "eslint": "^9",
+    "eslint-config-next": "^16",
+    "typescript": "^5"
+  }
+}
