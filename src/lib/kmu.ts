@@ -41,6 +41,8 @@ export interface Holding {
 
 export interface CompanyInput {
   companyName: string
+  /** Letztes abgeschlossenes/veröffentlichtes Geschäftsjahr (Bezugsjahr der Werte). */
+  fiscalYear?: number
   /** Jahresarbeitseinheiten (Vollzeitäquivalente) des eigenen Unternehmens. */
   employees: number
   turnover: number

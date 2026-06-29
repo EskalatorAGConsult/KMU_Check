@@ -53,6 +53,14 @@ export async function generateKmuPdf(input: CompanyInput, result: KmuResult, lea
   doc.setFont('helvetica', 'bold')
   doc.setFontSize(16)
   doc.text(input.companyName || 'Ihr Unternehmen', M, y)
+  if (input.fiscalYear) {
+    doc.setFont('helvetica', 'normal')
+    doc.setFontSize(9.5)
+    doc.setTextColor(...GREY)
+    doc.text(`Bezugsjahr: letztes abgeschlossenes Geschäftsjahr ${input.fiscalYear}`, M, y + 15)
+    doc.setTextColor(...NAVY)
+    y += 13
+  }
   y += 26
 
   // Ergebnis-Box

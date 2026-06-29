@@ -68,6 +68,7 @@ type StepId = 'name' | 'employees' | 'financials' | 'holdingsQuestion' | 'holdin
 export function KmuCheck() {
   // Unternehmensdaten (numerische Felder als Strings für freie Eingabe)
   const [companyName, setCompanyName] = useState('')
+  const [fiscalYear, setFiscalYear] = useState(String(new Date().getFullYear() - 1))
   const [employees, setEmployees] = useState('')
   const [turnover, setTurnover] = useState('')
   const [balanceSheet, setBalanceSheet] = useState('')
@@ -115,12 +116,13 @@ export function KmuCheck() {
   const input: CompanyInput = useMemo(
     () => ({
       companyName,
+      fiscalYear: Number(fiscalYear),
       employees: parseDe(employees),
       turnover: parseDe(turnover),
       balanceSheet: parseDe(balanceSheet),
       holdings: hasHoldings ? holdings : [],
     }),
-    [companyName, employees, turnover, balanceSheet, hasHoldings, holdings],
+    [companyName, fiscalYear, employees, turnover, balanceSheet, hasHoldings, holdings],
   )
 
   const hasAnyInput = employees !== '' || turnover !== '' || balanceSheet !== ''
@@ -174,6 +176,18 @@ export function KmuCheck() {
     scrollTop()
   }
 
+  // Enter im Formular = „Weiter“ (außer in mehrzeiligen Feldern / Sucheingaben).
+  function handleFormKeyDown(e: React.KeyboardEvent<HTMLDivElement>) {
+    if (e.key !== 'Enter' || e.shiftKey) return
+    const el = e.target as HTMLElement
+    if (el.tagName !== 'INPUT') return
+    const input = el as HTMLInputElement
+    if (input.type === 'checkbox' || input.type === 'radio') return
+    if (input.dataset.skipEnter !== undefined) return
+    e.preventDefault()
+    goNext()
+  }
+
   function scrollTop() {
     requestAnimationFrame(() => topRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }))
   }
@@ -188,6 +202,7 @@ export function KmuCheck() {
       submitted_at: new Date().toISOString(),
       company: {
         name: companyName,
+        fiscalYear: Number(fiscalYear),
         employees: parseDe(employees),
         turnover: parseDe(turnover),
         balanceSheet: parseDe(balanceSheet),
@@ -260,7 +275,7 @@ export function KmuCheck() {
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-5 lg:items-start">
         {/* ----------------------------- Formular ----------------------------- */}
         <div className="lg:col-span-3">
-          <div className="rounded-3xl border border-olive-200 bg-white p-6 shadow-sm sm:p-8">
+          <div onKeyDown={handleFormKeyDown} className="rounded-3xl border border-olive-200 bg-white p-6 shadow-sm sm:p-8">
             {done ? (
               <SuccessPanel
                 result={result}
@@ -354,6 +369,26 @@ export function KmuCheck() {
                       title="Wie sehen die Finanzkennzahlen aus?"
                       subtitle="Es genügt, wenn EINER der beiden Werte innerhalb der Grenze liegt. Geben Sie idealerweise beide an – wir rechnen mit dem für Sie günstigeren Wert."
                     >
+                      <Field
+                        label="Letztes abgeschlossenes / veröffentlichtes Geschäftsjahr"
+                        htmlFor="fiscalYear"
+                        required
+                        why="Die KMU-Einstufung erfolgt anhand der Zahlen des letzten abgeschlossenen (bzw. veröffentlichten/festgestellten) Geschäftsjahres. Mitarbeitende, Umsatz und Bilanzsumme sollten sich alle auf dieses Jahr beziehen."
+                        hint="Bei einem Rumpf- oder ersten Geschäftsjahr ohne Abschluss: das laufende Jahr nach Treu und Glauben schätzen."
+                      >
+                        <select
+                          id="fiscalYear"
+                          value={fiscalYear}
+                          onChange={(e) => setFiscalYear(e.target.value)}
+                          className={inputClass}
+                        >
+                          {Array.from({ length: 7 }, (_, i) => new Date().getFullYear() - i).map((y) => (
+                            <option key={y} value={y}>
+                              {y}
+                            </option>
+                          ))}
+                        </select>
+                      </Field>
                       <div className="grid gap-5 sm:grid-cols-2">
                         <Field
                           label="Jahresumsatz"
@@ -462,6 +497,7 @@ export function KmuCheck() {
                     >
                       <SummaryList
                         companyName={companyName}
+                        fiscalYear={fiscalYear}
                         employees={parseDe(employees)}
                         turnover={parseDe(turnover)}
                         balanceSheet={parseDe(balanceSheet)}
@@ -880,6 +916,7 @@ function HoldingCard({
 
 function SummaryList({
   companyName,
+  fiscalYear,
   employees,
   turnover,
   balanceSheet,
@@ -888,6 +925,7 @@ function SummaryList({
   onEdit,
 }: {
   companyName: string
+  fiscalYear: string
   employees: number
   turnover: number
   balanceSheet: number
@@ -912,6 +950,7 @@ function SummaryList({
     <div className="rounded-2xl border border-olive-200 bg-white p-1 sm:p-2">
       <div className="px-4">
         <Row label="Unternehmen" value={companyName || '–'} step="name" />
+        <Row label="Geschäftsjahr" value={fiscalYear} step="financials" />
         <Row label="Beschäftigte (JAE)" value={new Intl.NumberFormat('de-DE').format(employees)} step="employees" />
         <Row label="Jahresumsatz" value={turnover ? fmtE(turnover) : '–'} step="financials" />
         <Row label="Bilanzsumme" value={balanceSheet ? fmtE(balanceSheet) : '–'} step="financials" />
