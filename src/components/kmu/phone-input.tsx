@@ -148,8 +148,20 @@ export function PhoneInput({
           <div className="sticky top-0 border-b border-olive-100 bg-white p-2">
             <input
               autoFocus
+              data-skip-enter
               value={query}
               onChange={(e) => setQuery(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') {
+                  e.preventDefault()
+                  const first = filtered[0]
+                  if (first) {
+                    emit({ iso: first.iso, dial: first.dial })
+                    setOpen(false)
+                    setQuery('')
+                  }
+                }
+              }}
               placeholder="Land suchen…"
               className="w-full rounded-lg border border-olive-200 px-3 py-2 text-sm outline-none focus:border-teal-600"
             />

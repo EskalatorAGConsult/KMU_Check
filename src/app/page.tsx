@@ -439,7 +439,7 @@ export default function Page() {
               <p className="text-sm/7 text-olive-600">
                 MABE Maschinen- und Behälterbau GmbH
                 <br />
-                Anbieter im Sinne des § 5 TMG. Vollständige Anbieterkennzeichnung, Vertretungsberechtigte und
+                Anbieter im Sinne des § 5 DDG. Vollständige Anbieterkennzeichnung, Vertretungsberechtigte und
                 Registereintrag finden Sie im offiziellen Impressum auf mabe.de.
               </p>
             </div>
