@@ -30,6 +30,8 @@ const ENV_NAMEN = [
 
 export async function GET() {
   const env = Object.fromEntries(ENV_NAMEN.map((n) => [n, !!process.env[n]]))
+  // Blob-Token: Standardname ODER Store-praefixter Name (Store „MABE") zaehlt
+  env.BLOB_READ_WRITE_TOKEN = !!(process.env.BLOB_READ_WRITE_TOKEN ?? process.env.MABE_READ_WRITE_TOKEN)
 
   let datenbank = false
   let dbFehler: string | null = null
