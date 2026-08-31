@@ -35,4 +35,16 @@ describe('kmuSchema – zwei Geschäftsjahre', () => {
       expect(res.data.beteiligungen).toEqual([])
     }
   })
+
+  it('akzeptiert die Leitfrage hat_beteiligungen (Konsistenzregel serverseitig)', () => {
+    // „Nein" + versehentlich mitgeschickte Zeilen: Schema laesst es durch,
+    // der Server (schliesseJourneyAb) erzwingt dann den leeren Verbund.
+    const res = kmuSchema.safeParse({
+      jahre: [{ geschaeftsjahr: 2025, jae: 5 }, { geschaeftsjahr: 2024, jae: 4 }],
+      hat_beteiligungen: false,
+      beteiligungen: [{ name: 'Alt GmbH', richtung: 'aufwaerts', anteil_pct: 60 }],
+    })
+    expect(res.success).toBe(true)
+    if (res.success) expect(res.data.hat_beteiligungen).toBe(false)
+  })
 })

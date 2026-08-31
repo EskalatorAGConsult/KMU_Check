@@ -95,6 +95,8 @@ export async function schliesseJourneyAb(
   const ansprechpartner = validiert['ansprechpartner'] as Record<string, unknown>
   const antrag = validiert['antrag'] as Record<string, unknown>
   const kmu = validiert['kmu'] as KmuSchrittDaten
+  // Datenkonsistenz: explizites „keine Beteiligungen" erzwingt leeren Verbund
+  if (kmu.hat_beteiligungen === false) kmu.beteiligungen = []
   const deminimis = validiert['deminimis'] as DeminimisSchrittDaten
   const vollmacht = validiert['vollmacht'] as VollmachtSchrittDaten
 

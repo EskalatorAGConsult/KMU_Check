@@ -100,6 +100,12 @@ export type KmuJahrDaten = z.infer<typeof kmuJahrSchema>
  */
 export const kmuSchema = z.object({
   jahre: z.array(kmuJahrSchema).length(2, 'Bitte die Kennzahlen beider Geschäftsjahre ausfüllen.'),
+  /**
+   * Leitfrage „Steht Ihr Unternehmen in Beteiligungsverhältnissen?" –
+   * false erzwingt serverseitig einen leeren Verbund (Datenkonsistenz,
+   * auch wenn der Client veraltete Zeilen mitschickt).
+   */
+  hat_beteiligungen: z.boolean().optional(),
   beteiligungen: z.array(beteiligungSchema).default([]),
 })
 export type KmuSchrittDaten = z.infer<typeof kmuSchema>

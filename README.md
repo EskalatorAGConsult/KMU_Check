@@ -105,6 +105,14 @@ mit den Kundendaten ausgefüllt, flachgerechnet und als Dokument `vollmacht` abg
 (`src/lib/vollmacht/fuelle-vollmacht.ts`). Die Bevollmächtigten-Adresse liegt zentral in
 `src/lib/vollmacht/bevollmaechtigter.ts` (TODO: Adresse der Eskalator AG final bestätigen).
 
+**KMU-Schritt der Journey:** Der Verbund lässt sich wie im Landingpage-Tool dynamisch
+„zusammenklicken" (Leitfrage Ja/Nein, nummerierte Karten mit Live-Einstufung Partner/verbunden,
+Beteiligungsquote als Slider, Richtungs-Auswahl, optionale Kennzahlen je Zeile) – bei Bedarf
+vorbefüllt aus dem Handelsregister, jederzeit editierbar, Absenden über den Wizard. Datenkonsistenz:
+`hat_beteiligungen = false` im Schema (`kmuSchema`) erzwingt serverseitig in `schliesseJourneyAb`
+einen leeren Verbund, auch wenn der Client veraltete Zeilen mitschickt; die Live-Ampel rechnet mit
+denselben wirksamen Daten wie die finale Einreichung.
+
 **Handelsregister-Abfrage (OpenRegister):** Im KMU-Schritt kann der Kunde sein Unternehmen im
 offiziellen Handelsregister suchen (Autocomplete). Nach der Auswahl lädt das Portal Gesellschafter
 (Owners), Beteiligungen (Holdings) und die veröffentlichten Finanzkennzahlen (Beschäftigte, Umsatz,
