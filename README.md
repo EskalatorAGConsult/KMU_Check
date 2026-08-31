@@ -54,7 +54,12 @@ Für das Portal (`/admin`, `/v/[token]`) müssen in Vercel zusätzlich gesetzt s
 NEXT_PUBLIC_SUPABASE_URL      = https://<projekt>.supabase.co
 NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY = sb_publishable_…
 SUPABASE_SERVICE_ROLE_KEY     = sb_secret_…           (nur serverseitig)
-DATABASE_URL                  = postgresql://postgres.<projekt-ref>:<passwort>@aws-1-<region>.pooler.supabase.com:5432/postgres
+DATABASE_URL                  = postgresql://postgres.xuyemxqhdinvqbmznwbe:<passwort>@aws-1-eu-west-1.pooler.supabase.com:5432/postgres
+                              # WICHTIG: Auf Vercel MUSS der Pooler genutzt werden – der Direct-Host
+                              # (db.<projekt>.supabase.co) ist IPv6-only und von Vercel nicht erreichbar
+                              # (Symptom: HTTP 500 auf /admin, /v/[token], /api/auth/*).
+                              # Lokal darf der Direct-Host bleiben. Pooler-String: Supabase-Dashboard →
+                              # „Connect" → „Session Pooler" (Port 5432, User postgres.<projekt-ref>).
 BETTER_AUTH_SECRET            = <zufaelliges Secret>
 BETTER_AUTH_URL               = https://foerdercheck.mabe.de   (echte Domain, kein localhost!)
 NEXT_PUBLIC_APP_URL           = https://foerdercheck.mabe.de   (Basis fuer Links in E-Mails)
