@@ -1,18 +1,14 @@
-import { dirname } from 'path'
-import { fileURLToPath } from 'url'
-import { FlatCompat } from '@eslint/eslintrc'
+import nextVitals from 'eslint-config-next/core-web-vitals'
+import nextTs from 'eslint-config-next/typescript'
 
-const __filename = fileURLToPath(import.meta.url)
-const __dirname = dirname(__filename)
-
-const compat = new FlatCompat({
-  baseDirectory: __dirname,
-})
-
+// Flat Config (ESLint 9): eslint-config-next liefert native Flat-Configs,
+// FlatCompat ist damit ueberfluessig (und war die Ursache des zirkulaeren
+// Config-Fehlers).
 const eslintConfig = [
-  ...compat.extends('next/core-web-vitals', 'next/typescript'),
+  ...nextVitals,
+  ...nextTs,
   {
-    ignores: ['_oatmeal_template/**', '.next/**'],
+    ignores: ['_oatmeal_template/**', '.next/**', 'supabase/**', 'scripts/**'],
   },
 ]
 

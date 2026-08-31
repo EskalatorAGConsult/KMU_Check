@@ -1,0 +1,3 @@
+-- UEBERHOLT: ersetzt durch 09_auth_fk.sql (Better-Auth-IDs sind TEXT, daher
+-- zusaetzlich Spaltentyp-Umstellung). Diese Datei bleibt nur als Hinweis
+-- bestehen (.disabled wird von scripts/db-apply.mjs ignoriert).

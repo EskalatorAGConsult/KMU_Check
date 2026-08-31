@@ -1,0 +1,38 @@
+/**
+ * Journey-Engine: Die Klickstrecke der Kunden-Journey ist KONFIGURATION,
+ * nicht Code. Schritte hinzufuegen/umstellen/entfernen = Eintrag in
+ * `schritte.ts` aendern. Generische Schritte bestehen nur aus Felddefinitionen;
+ * fachlich komplexe Schritte (KMU, De-minimis, Vollmacht) registrieren eine
+ * eigene Komponente ueber `komponente`.
+ */
+
+export type FeldTyp = 'text' | 'email' | 'zahl' | 'datum' | 'auswahl' | 'checkbox' | 'plz' | 'iban'
+
+export interface FeldOption {
+  wert: string
+  label: string
+}
+
+export interface FeldDef {
+  /** Schluessel im Schritt-Payload (und Ziel-Spaltenname, wo 1:1). */
+  name: string
+  typ: FeldTyp
+  label: string
+  /** „Warum fragen wir das?"-Erklaerung unter dem Feld. */
+  hilfe?: string
+  pflicht?: boolean
+  optionen?: FeldOption[]
+  placeholder?: string
+  /** Bedingte Sichtbarkeit: Feld nur zeigen/validieren, wenn <feld> === <ist>. */
+  sichtbarWenn?: { feld: string; ist: string }
+}
+
+export type SchrittKomponente = 'generisch' | 'uebersicht' | 'kmu' | 'deminimis' | 'vollmacht'
+
+export interface SchrittDef {
+  id: string
+  titel: string
+  beschreibung?: string
+  komponente: SchrittKomponente
+  felder?: FeldDef[]
+}

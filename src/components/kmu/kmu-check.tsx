@@ -935,8 +935,10 @@ function SummaryList({
 }) {
   const fmtE = (n: number) =>
     new Intl.NumberFormat('de-DE', { style: 'currency', currency: 'EUR', maximumFractionDigits: 0 }).format(n)
-  const Row = ({ label, value, step }: { label: string; value: string; step: StepId }) => (
-    <div className="flex items-center justify-between gap-3 border-b border-olive-100 py-3 last:border-0">
+  // Render-Funktion statt verschachtelter Komponente: Komponenten nicht waehrend
+  // des Renderns erzeugen (React-Compiler-Regel).
+  const renderRow = (label: string, value: string, step: StepId) => (
+    <div key={label} className="flex items-center justify-between gap-3 border-b border-olive-100 py-3 last:border-0">
       <span className="text-sm text-olive-600">{label}</span>
       <span className="flex items-center gap-3">
         <span className="text-sm font-semibold text-olive-950">{value}</span>
@@ -949,16 +951,12 @@ function SummaryList({
   return (
     <div className="rounded-2xl border border-olive-200 bg-white p-1 sm:p-2">
       <div className="px-4">
-        <Row label="Unternehmen" value={companyName || '–'} step="name" />
-        <Row label="Geschäftsjahr" value={fiscalYear} step="financials" />
-        <Row label="Beschäftigte (JAE)" value={new Intl.NumberFormat('de-DE').format(employees)} step="employees" />
-        <Row label="Jahresumsatz" value={turnover ? fmtE(turnover) : '–'} step="financials" />
-        <Row label="Bilanzsumme" value={balanceSheet ? fmtE(balanceSheet) : '–'} step="financials" />
-        <Row
-          label="Beteiligungen"
-          value={holdings.length ? `${holdings.length} erfasst` : 'keine'}
-          step="holdingsQuestion"
-        />
+        {renderRow('Unternehmen', companyName || '–', 'name')}
+        {renderRow('Geschäftsjahr', fiscalYear, 'financials')}
+        {renderRow('Beschäftigte (JAE)', new Intl.NumberFormat('de-DE').format(employees), 'employees')}
+        {renderRow('Jahresumsatz', turnover ? fmtE(turnover) : '–', 'financials')}
+        {renderRow('Bilanzsumme', balanceSheet ? fmtE(balanceSheet) : '–', 'financials')}
+        {renderRow('Beteiligungen', holdings.length ? `${holdings.length} erfasst` : 'keine', 'holdingsQuestion')}
         {result && (
           <div className="flex items-center justify-between gap-3 py-3">
             <span className="text-sm font-semibold text-olive-950">Einstufung</span>
