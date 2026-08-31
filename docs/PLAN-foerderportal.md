@@ -614,3 +614,63 @@ Verifikation je Meilenstein: `npm run build` + (reparierter) `npm run lint`; fac
    dann Keys/Setup in `.env.local`.
 6. **Kennzahlen-Jahre:** Das n8n-Formular fragt 2024 + 2025 fest ab. Im Portal mache ich die
    Geschäftsjahre dynamisch (letzte zwei abgeschlossene Jahre) – einverstanden?
+
+---
+
+## 10. Recherche: E-Mail (Resend) & Registerdaten (openregister.de)
+
+Verifiziert am 31.08.2026 – gegen offizielle Doku und live gegen die APIs mit unserem Key.
+
+### 10.1 Resend – was die API kann (für uns relevant)
+
+| Funktion | Nutzen für das Portal |
+|---|---|
+| `emails.send` (HTML oder React-Email) | Aktuell genutzt: Einladung, Eingangsbestätigung, PW-Reset, Willkommen |
+| **Templates API** (`template: { id, variables }`) | Möglicher Ausbau: Templates zentral in Resend pflegen statt im Code (`{{{VAR}}}`-Syntax, Fallback-Werte) |
+| **Batch-Versand** (`batch.send`, bis 100 Mails/Call) | Später: mehrere Kunden gleichzeitig einladen |
+| **Webhooks** (Svix-signiert: `email.delivered`, `email.bounced`, `email.complained`, `email.opened`) | Zustellstatus in `uebergaben`/Audit spiegeln; Bounces im Admin-Dashboard markieren („E-Mail nicht zustellbar – Link per Telefon durchgeben") |
+| **Scheduling** (`scheduledAt`) + **Idempotency-Key** | Erinnerungs-Mail „Link läuft ab" nach z. B. 60 Tagen; doppelter Versand sicher verhindert |
+| **Tags** | Jede Mail mit `angebot_nr` taggen → Zustellstatistik pro Vorgang |
+| **Inbound/Receiving** | Antworten der Kunden auf Portal-Mails empfangen (z. B. an mabe@automatisieren.io) |
+
+Absender: `MABE Förderportal <mabe@automatisieren.io>` (Code-Default; Domain `automatisieren.io`
+muss in Resend verifiziert sein, sonst Zustellfehler – geloggt, nie blockierend).
+
+### 10.2 openregister.de – verifizierte Endpunkte (live getestet)
+
+Auth: `Authorization: Bearer <key>`, Basis `https://api.openregister.de`. **Geldwerte in Cents.**
+`company_id` immer aus der Suche übernehmen, niemals selbst zusammenbauen.
+
+| Endpunkt | Credits | Gelieferte Daten (live verifiziert) |
+|---|---|---|
+| `GET /v1/autocomplete/company?query=…` | 1 | Name, `company_id`, Adresse (straße/plz/ort), Rechtsform, `register_court/_number/_type`, `active`, Unternehmenszweck |
+| `GET /v1/company/{id}` | 10 | Stammdaten komplett: Historie (Namen/Adressen), Stammkapital, **`industry_codes` (WZ 2025)**, Geschäftsführung (`representation` mit Rolle + Geburtsdatum), Register-Daten, Dokumentenliste (Gesellschafterliste, Satzung als abrufbare PDFs) |
+| `GET /v1/company/{id}/financials` | ~10 | Jahreswerte: `employees`, `revenue`, `balance_sheet_total`, `equity`, `net_income` u. v. m. pro Bilanzstichtag (`date`) |
+| `GET /v1/company/{id}/owners` | ~10 | Gesellschafter mit **`percentage_share`** (direkt als Zahl!), `nominal_share`, natürliche/juristische Person, Quellen-PDF (Gesellschafterliste) |
+| `GET /v1/company/{id}/holdings` | ~10 | Beteiligungen der Firma an anderen (für Verbund „abwärts") |
+| Dokumente (im Detail-Response verlinkt) | – | Gesellschafterliste/Satzung als PDF (signierte S3-URL, 30 min gültig) |
+
+### 10.3 Prefill-Konzept (M3, „maximal assistiert")
+
+Ziel: Der Kunde tippt nur seinen Firmennamen – das Portal füllt vor und der Kunde **bestätigt** statt zu tippen.
+
+1. **Schritt „Ihr Unternehmen":** Suchfeld (Autocomplete, 1 Credit/Suche) → Auswahl trifft
+   `company_id`. Dann Details + Financials + Owners + Holdings laden (~40 Credits ≈ Cent-Beträge)
+   und als **editierbare Vorbefüllung** einsetzen:
+   - Stammdaten: Name, Straße/PLZ/Ort, Land, Rechtsform (→ `personenart`), Unternehmenszweck,
+     **WZ-Code** (Achtung: API liefert WZ **2025**, Formular fragt WZ **2008** – Mapping nötig
+     oder als Vorschlag mit Hinweis „bitte prüfen"), Registergericht/-nummer (Zusatzinfo)
+   - KMU-Schritt: `employees` → JAE-Vorschlag, `revenue` → Umsatz, `balance_sheet_total`
+     → Bilanzsumme (jeweils **Cents → EUR umrechnen!**, Stichtag als `geschaeftsjahr`)
+   - Verbund: `owners` (percentage_share ≥ 25 → „hält Anteile an uns") und `holdings`
+     (≥ 25 → „wir halten Anteile daran") direkt als Beteiligungs-Zeilen mit Quote;
+     deren Financials können bei Bedarf nachgeladen werden
+2. **Vertrauens-UX:** Jeder vorbefüllte Block bekommt Badge „aus dem Handelsregister
+   (openregister.de), Stand <Datum>" + Bleibt-editierbar-Hinweis; Roh-Response als
+   `register_snapshot` (JSONB) in `stammdaten` speichern (Nachvollziehbarkeit, Caching
+   gegen doppelte Credit-Kosten).
+3. **Kosten-/Fehlerbild:** Suche nichts gefunden / inaktive Firma / keine Financials →
+   manuelles Formular wie bisher. 401/402/429/5xx siehe Doku (Retry mit Backoff bei 429).
+4. **Später:** Dokumenten-Download (Gesellschafterliste) direkt ans Dossier hängen;
+   `signals`/Monitoring ist nur über handelsregister.ai relevant (anderer Anbieter),
+   openregister deckt unseren Bedarf voll ab.

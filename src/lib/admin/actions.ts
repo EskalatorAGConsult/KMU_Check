@@ -5,6 +5,7 @@ import { z } from 'zod'
 import { requireAdmin } from '@/lib/auth/guards'
 import { erstelleAngebot, type NeuesAngebot } from '@/lib/db/repositories/angebote'
 import { audit, erstelleJourneyToken, setzeAngebotStatus } from '@/lib/db/repositories/journey'
+import { sendeEinladung } from '@/lib/email/notify'
 
 const schema = z.object({
   kunde_firma: z.string().trim().min(2, 'Firmenname fehlt.').max(200),
@@ -49,6 +50,20 @@ export async function erstelleAngebotAction(eingabe: NeuesAngebot): Promise<Admi
       angebot_nr: res.data.angebot_nr,
       kunde_firma: res.data.kunde_firma,
     })
+
+    // Einladungs-E-Mail mit dem persoenlichen Link (best effort).
+    const invest =
+      (res.data.invest_software ?? 0) + (res.data.invest_messtechnik ?? 0) + (res.data.invest_steuerung ?? 0)
+    const mailGesendet = await sendeEinladung({
+      an: res.data.kunde_email,
+      kundeFirma: res.data.kunde_firma,
+      angebotNr: res.data.angebot_nr,
+      journeyPfad: `/v/${klartext}`,
+      ansprechpartner: res.data.kunde_ansprechpartner,
+      zuschussBisZu: invest > 0 ? invest * 0.45 : null,
+    })
+    await audit(angebotId, 'system', 'einladung_email', { gesendet: mailGesendet })
+
     return { ok: true, angebotId, link: `/v/${klartext}` }
   } catch (e) {
     return { ok: false, fehler: e instanceof Error ? e.message : 'Anlegen fehlgeschlagen.' }

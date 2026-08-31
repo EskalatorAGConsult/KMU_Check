@@ -1,5 +1,6 @@
 'use client'
 
+import { EskalatorBlock } from './eskalator-block'
 import { Checkbox, Feld, inputCls } from './ui'
 
 /**
@@ -65,14 +66,47 @@ export function SchrittVollmacht({
       {fehler.beantragungsweg && <p className="text-xs/5 font-medium text-red-700">{fehler.beantragungsweg}</p>}
 
       {weg === 'eskalator' && (
-        <div className="flex flex-col gap-4 rounded-2xl border border-olive-200 bg-olive-50/50 p-5">
-          <h3 className="text-sm font-semibold text-mabe-900">Vollmacht</h3>
-          <p className="text-sm/6 text-olive-700">
-            Ich bevollmächtige die <strong>Eskalator AG</strong>, für das in diesem Vorgang beschriebene Vorhaben
-            (BAFA EEW, Modul 3) den Förderantrag in meinem Namen zu stellen, mit der Bewilligungsstelle zu
-            kommunizieren, Unterlagen nachzureichen und Bescheide entgegenzunehmen. Die Vollmacht gilt bis zum
-            Abschluss des Verfahrens und kann jederzeit schriftlich widerrufen werden.
-          </p>
+        <div className="flex flex-col gap-4">
+          <EskalatorBlock />
+          <div className="flex flex-col gap-4 rounded-2xl border border-olive-200 bg-olive-50/50 p-5">
+            <h3 className="text-sm font-semibold text-mabe-900">
+              Vollmacht nach § 14 VwVfG
+              <span className="ml-2 text-xs font-normal text-olive-500">
+                offizieller Wortlaut · BAFA-Formular eew_vm_3
+              </span>
+            </h3>
+            <div className="flex flex-col gap-3 text-sm/6 text-olive-700">
+              <p>
+                Ich erkläre, dass die <strong>Eskalator AG</strong> als bevollmächtigte Organisation im Sinne des
+                § 14 VwVfG bestellt ist. Die Vollmacht ermächtigt zu allen das Verwaltungsverfahren betreffenden
+                Verfahrenshandlungen gegenüber dem Bundesamt für Wirtschaft und Ausfuhrkontrolle (im Folgenden:
+                BAFA); Frankfurter Straße 29 – 35; 65760 Eschborn. Dazu gehören z. B. die Abgabe von detaillierten
+                Informationen zum antragstellenden Unternehmen, Angaben zu den geplanten oder durchgeführten
+                Investitionen, die Abgabe von Stellungnahmen und Erklärungen.
+              </p>
+              <p>
+                Ich nehme zur Kenntnis und erkläre mich damit einverstanden, dass das BAFA sämtlichen
+                Schriftverkehr (z. B. Schreiben zur Aufklärung des Sachverhalts, Zuwendungs-, Ablehnungs-,
+                Rücknahme- oder Widerrufsbescheide) an die von mir bevollmächtigte Organisation versenden wird.
+                Unabhängig davon kann das BAFA sich ebenso direkt an mich wenden.
+              </p>
+              <p>
+                Mir ist bekannt, dass ich ungeachtet dieser Bevollmächtigung verfahrensbeteiligt im Sinne des
+                VwVfG bin und bleibe und dass die bevollmächtigte Organisation in meinem Namen handelt und ich
+                die Rechtsfolgen ihrer Handlungen trage.
+              </p>
+              <p>
+                <strong>Datenschutzerklärung:</strong> Ich bin damit einverstanden, dass das BAFA
+                verfahrensrelevante Daten im Rahmen des Antragsverfahrens speichert, nutzt und weiterverarbeitet,
+                soweit dies zur Überprüfung der Anspruchsvoraussetzungen erforderlich ist oder statistischen
+                Zwecken dient.
+              </p>
+              <p className="rounded-xl bg-white px-4 py-3 text-xs/5 text-olive-600 ring-1 ring-olive-200">
+                Nach dem Absenden erstellen wir automatisch das ausgefüllte BAFA-Formular
+                <strong> eew_vm_3</strong> mit Ihren Angaben – Sie finden es in Ihrem Kundenkonto unter
+                „Das reichen wir für Sie ein“.
+              </p>
+            </div>
           <Feld
             label="Online-Unterschrift (vollständiger Name)"
             hilfe="Rechtswirksam als einfache elektronische Signatur. Zeitpunkt und technische Daten werden protokolliert."
@@ -86,6 +120,7 @@ export function SchrittVollmacht({
               onChange={(e) => onChange('unterschrift_name', e.target.value)}
             />
           </Feld>
+          </div>
         </div>
       )}
 

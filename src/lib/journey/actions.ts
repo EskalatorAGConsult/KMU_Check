@@ -3,6 +3,7 @@
 import { headers } from 'next/headers'
 
 import { supabaseServer } from '@/lib/db/server'
+import { ermittleWebhookUrl } from '@/lib/db/repositories/einstellungen'
 import {
   audit,
   holeFortschritt,
@@ -12,7 +13,11 @@ import {
 } from '@/lib/db/repositories/journey'
 import { SCHRITTE, schrittNach } from '@/lib/journey/schritte'
 import { schemaFuerSchritt, type DeminimisSchrittDaten, type KmuSchrittDaten, type VollmachtSchrittDaten } from '@/lib/journey/schemas'
-import { evaluateKmu, type CompanyInput } from '@/lib/kmu'
+import { evaluateKmu } from '@/lib/kmu'
+import { sendeEingangsbestaetigung } from '@/lib/email/notify'
+import { generiereSystemkonzept } from '@/lib/systemkonzept/generate'
+import { ladeDokumentHoch } from '@/lib/storage/blob'
+import { fuelleVollmachtAus } from '@/lib/vollmacht/fuelle-vollmacht'
 
 /**
  * Server Actions der Kunden-Journey. Jede Action validiert den Token
@@ -93,23 +98,29 @@ export async function schliesseJourneyAb(
   const deminimis = validiert['deminimis'] as DeminimisSchrittDaten
   const vollmacht = validiert['vollmacht'] as VollmachtSchrittDaten
 
-  // 2 · KMU-Berechnung mit der bestehenden, geprueften Engine
-  const kmuInput: CompanyInput = {
-    companyName: String(unternehmen.unternehmensname),
-    fiscalYear: kmu.geschaeftsjahr,
-    employees: kmu.jae,
-    turnover: kmu.umsatz,
-    balanceSheet: kmu.bilanzsumme,
-    holdings: kmu.beteiligungen.map((b, i) => ({
-      id: `b${i}`,
-      name: b.name,
-      sharePct: b.anteil_pct,
-      employees: b.jae ?? 0,
-      turnover: b.umsatz ?? 0,
-      balanceSheet: b.bilanzsumme ?? 0,
-    })),
-  }
-  const kmuErgebnis = evaluateKmu(kmuInput)
+  // 2 · KMU-Berechnung mit der bestehenden, geprueften Engine –
+  // je Geschaeftsjahr; Foerderquote/Status aus dem juengsten Jahr.
+  const holdings = kmu.beteiligungen.map((b, i) => ({
+    id: `b${i}`,
+    name: b.name,
+    sharePct: b.anteil_pct,
+    employees: b.jae ?? 0,
+    turnover: b.umsatz ?? 0,
+    balanceSheet: b.bilanzsumme ?? 0,
+  }))
+  const jahreSortiert = [...kmu.jahre].sort((a, b) => b.geschaeftsjahr - a.geschaeftsjahr)
+  const bewertungen = jahreSortiert.map((j) => ({
+    jahr: j,
+    ergebnis: evaluateKmu({
+      companyName: String(unternehmen.unternehmensname),
+      fiscalYear: j.geschaeftsjahr,
+      employees: j.jae,
+      turnover: j.umsatz,
+      balanceSheet: j.bilanzsumme,
+      holdings,
+    }),
+  }))
+  const kmuErgebnis = bewertungen[0].ergebnis
 
   const hdrs = await headers()
   const ip = hdrs.get('x-forwarded-for')?.split(',')[0]?.trim() ?? null
@@ -171,22 +182,24 @@ export async function schliesseJourneyAb(
       if (e2) throw new Error(`Beteiligungen: ${e2.message}`)
     }
 
-    // 5 · KMU-Bewertung (Snapshot inkl. vollstaendiger Berechnung)
-    const { error: e3 } = await db.from('kmu_bewertungen').upsert(
-      {
-        angebot_id: angebot.id,
-        geschaeftsjahr: kmu.geschaeftsjahr,
-        abgeschlossen: kmu.abgeschlossen,
-        jae: kmu.jae,
-        umsatz: kmu.umsatz,
-        bilanzsumme: kmu.bilanzsumme,
-        kategorie: kmuErgebnis.category,
-        foerderquote_pct: kmuErgebnis.fundingRatePct,
-        berechnung: kmuErgebnis,
-      },
-      { onConflict: 'angebot_id,geschaeftsjahr' },
-    )
-    if (e3) throw new Error(`KMU-Bewertung: ${e3.message}`)
+    // 5 · KMU-Bewertungen (Snapshot je Geschaeftsjahr inkl. vollstaendiger Berechnung)
+    for (const { jahr, ergebnis } of bewertungen) {
+      const { error: e3 } = await db.from('kmu_bewertungen').upsert(
+        {
+          angebot_id: angebot.id,
+          geschaeftsjahr: jahr.geschaeftsjahr,
+          abgeschlossen: jahr.abgeschlossen,
+          jae: jahr.jae,
+          umsatz: jahr.umsatz,
+          bilanzsumme: jahr.bilanzsumme,
+          kategorie: ergebnis.category,
+          foerderquote_pct: ergebnis.fundingRatePct,
+          berechnung: ergebnis,
+        },
+        { onConflict: 'angebot_id,geschaeftsjahr' },
+      )
+      if (e3) throw new Error(`KMU-Bewertung ${jahr.geschaeftsjahr}: ${e3.message}`)
+    }
 
     // 6 · De-minimis
     await db.from('deminimis_beihilfen').delete().eq('angebot_id', angebot.id)
@@ -242,7 +255,7 @@ export async function schliesseJourneyAb(
 
   // 9 · Uebergabe an Eskalator/n8n (best effort, blockiert den Abschluss nicht)
   try {
-    const webhookUrl = process.env.WEBHOOK_URL
+    const { url: webhookUrl } = await ermittleWebhookUrl()
     const fortschritt = await holeFortschritt(angebot.id)
     const payload = {
       type: 'journey_abgeschlossen',
@@ -270,6 +283,90 @@ export async function schliesseJourneyAb(
     })
   } catch (e) {
     console.error('[journey] Webhook-Uebergabe fehlgeschlagen:', e)
+  }
+
+  // 10 · Eingangsbestaetigung per E-Mail (best effort)
+  const mailGesendet = await sendeEingangsbestaetigung({
+    an: angebot.kunde_email,
+    kundeFirma: angebot.kunde_firma,
+    angebotNr: angebot.angebot_nr,
+    beantragungsweg: vollmacht.beantragungsweg,
+    kategorieLabel: kmuErgebnis.categoryLabel,
+    foerderquotePct: kmuErgebnis.fundingRatePct,
+  })
+  await audit(angebot.id, 'system', 'bestaetigung_email', { gesendet: mailGesendet })
+
+  // 11 · Systemkonzept generieren + ablegen (best effort, blockiert den Abschluss nicht)
+  try {
+    const pdfBytes = await generiereSystemkonzept(
+      angebot,
+      {
+        unternehmensname: String(unternehmen.unternehmensname),
+        strasse: String(unternehmen.strasse),
+        plz: String(unternehmen.plz),
+        ort: String(unternehmen.ort),
+        land: String(unternehmen.land ?? 'Deutschland'),
+        wz_code: String(unternehmen.wz_code),
+        ap_rolle: String(ansprechpartner.ap_rolle),
+        ap_vorname: String(ansprechpartner.ap_vorname),
+        ap_nachname: String(ansprechpartner.ap_nachname),
+        standort_strasse: (antrag.standort_strasse as string) || null,
+        standort_plz: (antrag.standort_plz as string) || null,
+        standort_ort: (antrag.standort_ort as string) || null,
+      },
+      { kategorie: kmuErgebnis.category, foerderquotePct: kmuErgebnis.fundingRatePct },
+    )
+    const url = await ladeDokumentHoch(
+      `systemkonzept/${angebot.angebot_nr}.pdf`,
+      pdfBytes,
+    )
+    if (url) {
+      // storage_path ist unique – bei erneuter Einreichung alten Eintrag ersetzen
+      await db.from('dokumente').delete().eq('angebot_id', angebot.id).eq('typ', 'systemkonzept')
+      const { error: e7 } = await db.from('dokumente').insert({
+        angebot_id: angebot.id,
+        typ: 'systemkonzept',
+        storage_path: url,
+      })
+      if (e7) throw new Error(`Dokumente: ${e7.message}`)
+    }
+    await audit(angebot.id, 'system', 'systemkonzept_generiert', { ok: !!url })
+  } catch (e) {
+    console.error('[journey] Systemkonzept-Generierung fehlgeschlagen:', e)
+    await audit(angebot.id, 'system', 'systemkonzept_generiert', {
+      ok: false,
+      fehler: e instanceof Error ? e.message : String(e),
+    })
+  }
+
+  // 12 · Offizielle BAFA-Vollmacht ausfuellen (nur bei Beantragung durch Eskalator, best effort)
+  if (vollmacht.beantragungsweg === 'eskalator') {
+    try {
+      const vollmachtPdf = await fuelleVollmachtAus({
+        unternehmensname: String(unternehmen.unternehmensname),
+        strasse: String(unternehmen.strasse),
+        plz: String(unternehmen.plz),
+        ort: String(unternehmen.ort),
+        vorgangsnummer: angebot.angebot_nr,
+      })
+      const url = await ladeDokumentHoch(`vollmacht/${angebot.angebot_nr}.pdf`, vollmachtPdf)
+      if (url) {
+        await db.from('dokumente').delete().eq('angebot_id', angebot.id).eq('typ', 'vollmacht')
+        const { error: e8 } = await db.from('dokumente').insert({
+          angebot_id: angebot.id,
+          typ: 'vollmacht',
+          storage_path: url,
+        })
+        if (e8) throw new Error(`Dokumente: ${e8.message}`)
+      }
+      await audit(angebot.id, 'system', 'vollmacht_ausgefuellt', { ok: !!url })
+    } catch (e) {
+      console.error('[journey] Vollmacht-Ausfuellung fehlgeschlagen:', e)
+      await audit(angebot.id, 'system', 'vollmacht_ausgefuellt', {
+        ok: false,
+        fehler: e instanceof Error ? e.message : String(e),
+      })
+    }
   }
 
   return { ok: true }

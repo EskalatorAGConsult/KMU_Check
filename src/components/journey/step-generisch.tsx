@@ -36,7 +36,7 @@ export function StepGenerisch({
           }
           return (
             <div key={feld.name} className={feld.typ === 'iban' || feld.name === 'strasse' ? 'sm:col-span-2' : ''}>
-              <Feld label={feld.label} hilfe={feld.hilfe} fehler={fehler[feld.name]} pflicht={feld.pflicht}>
+              <Feld label={feld.label} hilfe={feld.hilfe} tooltip={feld.tooltip} fehler={fehler[feld.name]} pflicht={feld.pflicht}>
                 {feld.typ === 'auswahl' ? (
                   <select {...common}>
                     <option value="">Bitte auswählen …</option>

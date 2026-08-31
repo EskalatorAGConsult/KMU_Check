@@ -47,6 +47,23 @@ export function SchrittDeminimis({
 
       {fehler.beihilfen && <p className="text-xs/5 font-medium text-red-700">{fehler.beihilfen}</p>}
 
+      {beihilfen.length === 0 && (
+        <div className="flex gap-3 rounded-2xl border border-dashed border-olive-300 bg-white p-5">
+          <svg viewBox="0 0 20 20" fill="currentColor" className="mt-0.5 size-5 shrink-0 text-teal-700" aria-hidden>
+            <path
+              fillRule="evenodd"
+              d="M16.704 4.153a.75.75 0 0 1 .143 1.052l-8 10.5a.75.75 0 0 1-1.127.075l-4.5-4.5a.75.75 0 0 1 1.06-1.06l3.894 3.893 7.48-9.817a.75.75 0 0 1 1.05-.143Z"
+              clipRule="evenodd"
+            />
+          </svg>
+          <p className="text-sm/6 text-olive-700">
+            <strong className="text-mabe-900">Keine Förderungen erhalten?</strong> Dann ist hier nichts weiter zu tun –
+            lassen Sie die Liste einfach leer und bestätigen Sie unten. Die meisten Unternehmen haben keine oder nur
+            eine De-minimis-Beihilfe.
+          </p>
+        </div>
+      )}
+
       {beihilfen.map((b, i) => (
         <div key={i} className="rounded-2xl border border-olive-200 bg-white p-4">
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">

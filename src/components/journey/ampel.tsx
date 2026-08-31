@@ -1,0 +1,123 @@
+'use client'
+
+import { formatEUR, formatNumber, type Category, type KmuResult } from '@/lib/kmu'
+
+/**
+ * KMU-Ampel: zeigt Laien sofort verstaendlich die Foerderstufe.
+ *  gruen  = Kleinst-/Kleinunternehmen -> 45 %
+ *  gelb   = Mittleres Unternehmen     -> 35 %
+ *  rot    = kein KMU                  -> 25 % (Basis-Quote)
+ * Zusaetzlich die konkrete Foerdersumme aus Angebots-Investition x Quote.
+ */
+
+interface Stufe {
+  farbe: 'gruen' | 'gelb' | 'rot'
+  titel: string
+  text: string
+}
+
+const STUFEN: Record<'gruen' | 'gelb' | 'rot', Stufe & { kategorien: Category[] }> = {
+  gruen: {
+    farbe: 'gruen',
+    kategorien: ['kleinst', 'klein'],
+    titel: 'Grün – Sie erhalten die Höchstförderung!',
+    text: 'Ihr Unternehmen gilt als kleines Unternehmen. Damit steht Ihnen die höchste Förderquote von 45 % zu.',
+  },
+  gelb: {
+    farbe: 'gelb',
+    kategorien: ['mittel'],
+    titel: 'Gelb – gute Förderung mit 35 %',
+    text: 'Ihr Unternehmen gilt als mittleres Unternehmen. Die Förderquote beträgt 35 % – immer noch ein deutlicher Zuschuss.',
+  },
+  rot: {
+    farbe: 'rot',
+    kategorien: ['gross'],
+    titel: 'Rot – Basis-Förderung mit 25 %',
+    text: 'Ihr Unternehmen überschreitet die KMU-Grenzen. Die Förderung ist weiterhin mit 25 % möglich – nur die KMU-Bonus-Quoten entfallen.',
+  },
+}
+
+function stufeFuer(category: Category): Stufe & { farbe: 'gruen' | 'gelb' | 'rot' } {
+  if (STUFEN.gruen.kategorien.includes(category)) return STUFEN.gruen
+  if (STUFEN.gelb.kategorien.includes(category)) return STUFEN.gelb
+  return STUFEN.rot
+}
+
+const LICHT_FARBEN = {
+  rot: { aktiv: 'bg-red-500 shadow-[0_0_20px_4px_rgba(239,68,68,0.55)]', inaktiv: 'bg-red-950/60' },
+  gelb: { aktiv: 'bg-amber-400 shadow-[0_0_20px_4px_rgba(251,191,36,0.55)]', inaktiv: 'bg-amber-950/60' },
+  gruen: { aktiv: 'bg-emerald-400 shadow-[0_0_20px_4px_rgba(52,211,153,0.55)]', inaktiv: 'bg-emerald-950/60' },
+} as const
+
+export function KmuAmpel({ ergebnis, investSumme }: { ergebnis: KmuResult; investSumme: number | null }) {
+  const stufe = stufeFuer(ergebnis.category)
+  const zuschuss = investSumme != null && investSumme > 0 ? (investSumme * ergebnis.fundingRatePct) / 100 : null
+
+  return (
+    <section
+      aria-live="polite"
+      aria-label="Ergebnis der KMU-Prüfung"
+      className="overflow-hidden rounded-2xl bg-mabe-900 text-white shadow-lg"
+    >
+      <div className="flex flex-col gap-5 p-5 sm:flex-row sm:items-center sm:gap-7 sm:p-7">
+        {/* Ampel */}
+        <div
+          className="flex shrink-0 items-center justify-center gap-3 self-start rounded-2xl bg-black/30 px-4 py-3 sm:flex-col sm:gap-3.5 sm:px-4 sm:py-5"
+          aria-hidden
+        >
+          {(['rot', 'gelb', 'gruen'] as const).map((farbe) => {
+            const aktiv = stufe.farbe === farbe
+            return (
+              <span
+                key={farbe}
+                className={`size-7 rounded-full transition-all duration-700 sm:size-9 ${
+                  aktiv ? `${LICHT_FARBEN[farbe].aktiv} motion-safe:animate-pulse` : LICHT_FARBEN[farbe].inaktiv
+                }`}
+              />
+            )
+          })}
+        </div>
+
+        {/* Ergebnis */}
+        <div className="min-w-0 flex-1">
+          <p className="text-xs font-semibold tracking-wide text-olive-300 uppercase">
+            Live-Auswertung · {ergebnis.categoryLabel}
+          </p>
+          <h3 className="mt-1.5 text-xl leading-snug font-semibold text-balance sm:text-2xl">{stufe.titel}</h3>
+          <p className="mt-2 max-w-prose text-sm/6 text-olive-200">{stufe.text}</p>
+
+          {zuschuss != null && (
+            <div className="mt-4 flex flex-wrap items-baseline gap-x-3 gap-y-1">
+              <span
+                className="font-display font-semibold text-teal-300 tabular-nums"
+                style={{ fontSize: 'clamp(1.6rem, 4vw, 2.4rem)', lineHeight: 1.1 }}
+              >
+                bis zu {formatEUR(zuschuss)}
+              </span>
+              <span className="text-sm text-olive-300">
+                Zuschuss ({ergebnis.fundingRatePct} % von {formatEUR(investSumme!)})
+              </span>
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* Kennzahlen-Fusszeile */}
+      <div className="flex flex-wrap items-center gap-x-6 gap-y-1.5 border-t border-white/10 bg-black/20 px-5 py-3 text-xs/5 text-olive-300 sm:px-7">
+        <span>
+          Verbund-gerechnet: <strong className="text-white">{formatNumber(ergebnis.consolidated.employees, 1)}</strong>{' '}
+          Beschäftigte (JAE)
+        </span>
+        <span>
+          Umsatz <strong className="text-white">{formatEUR(ergebnis.consolidated.turnover)}</strong>
+        </span>
+        <span>
+          Bilanzsumme <strong className="text-white">{formatEUR(ergebnis.consolidated.balanceSheet)}</strong>
+        </span>
+        <span className="w-full text-olive-400 sm:ml-auto sm:w-auto">
+          Unverbindliche Orientierung (EU 2003/361/EG) – verbindlich prüft die Bewilligungsbehörde.
+        </span>
+      </div>
+    </section>
+  )
+}

@@ -21,6 +21,15 @@ export default async function AdminLayout({ children }: { children: React.ReactN
           <Link href="/admin" className="text-sm font-semibold text-olive-700 hover:text-mabe-900">
             Vorgänge
           </Link>
+          <Link href="/admin/kunden" className="text-sm font-semibold text-olive-700 hover:text-mabe-900">
+            Kunden
+          </Link>
+          <Link href="/admin/benutzer" className="text-sm font-semibold text-olive-700 hover:text-mabe-900">
+            Benutzer
+          </Link>
+          <Link href="/admin/einstellungen" className="text-sm font-semibold text-olive-700 hover:text-mabe-900">
+            Einstellungen
+          </Link>
           <Link
             href="/admin/angebote/neu"
             className="rounded-xl bg-teal-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-teal-500"

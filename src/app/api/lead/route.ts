@@ -1,12 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server'
 
+import { ermittleWebhookUrl } from '@/lib/db/repositories/einstellungen'
+
 export const runtime = 'nodejs'
 
 /**
  * Nimmt den Lead aus dem KMU-Check entgegen und leitet ihn serverseitig an den
- * konfigurierten Webhook weiter. Die Webhook-URL wird ausschließlich über die
- * Umgebungsvariable WEBHOOK_URL gelesen (in Vercel als Projekt-Variable
- * anzulegen) und niemals an den Client ausgeliefert.
+ * konfigurierten Webhook weiter. Die Webhook-URL kommt aus den Admin-
+ * Einstellungen (DB) mit ENV-Fallback WEBHOOK_URL und wird niemals an den
+ * Client ausgeliefert.
  */
 export async function POST(req: NextRequest) {
   let payload: unknown
@@ -16,7 +18,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ ok: false, error: 'invalid_json' }, { status: 400 })
   }
 
-  const webhookUrl = process.env.WEBHOOK_URL
+  const { url: webhookUrl } = await ermittleWebhookUrl()
 
   // Server-seitige Anreicherung (IP, Geo-Header, Eingangszeit).
   const enriched = {
@@ -36,7 +38,7 @@ export async function POST(req: NextRequest) {
 
   if (!webhookUrl) {
     // Ohne konfigurierte URL akzeptieren wir den Lead, loggen aber den Hinweis.
-    console.warn('[lead] WEBHOOK_URL ist nicht gesetzt – Lead wurde nicht weitergeleitet.')
+    console.warn('[lead] Keine Webhook-URL konfiguriert (DB/ENV) – Lead wurde nicht weitergeleitet.')
     return NextResponse.json({ ok: true, forwarded: false, reason: 'webhook_url_missing' })
   }
 

@@ -31,7 +31,7 @@ const ok = (name, pass, detail = '') => {
 const EXPECTED = [
   'angebote', 'journey_tokens', 'journey_fortschritt', 'stammdaten', 'beteiligungen',
   'kmu_bewertungen', 'deminimis_beihilfen', 'deminimis_erklaerungen', 'vollmachten',
-  'dokumente', 'uebergaben', 'audit_events',
+  'dokumente', 'uebergaben', 'audit_events', 'einstellungen', 'benutzer_einladungen',
 ]
 const { rows: tables } = await client.query(
   `select relname, relrowsecurity from pg_class
@@ -39,7 +39,7 @@ const { rows: tables } = await client.query(
    order by relname`,
   [EXPECTED],
 )
-ok('Alle 12 Tabellen vorhanden', tables.length === 12, `${tables.length}/12`)
+ok('Alle 14 Tabellen vorhanden', tables.length === 14, `${tables.length}/14`)
 const noRls = tables.filter((t) => !t.relrowsecurity).map((t) => t.relname)
 ok('RLS auf allen Tabellen aktiv', noRls.length === 0, noRls.join(',') || 'alle')
 
@@ -57,9 +57,24 @@ const { rows: missingIdx } = await client.query(`
 ok('Jeder FK hat einen Index', missingIdx.length === 0,
   missingIdx.map((r) => `${r.tabelle}.${r.spalte}`).join(', ') || 'alle indiziert')
 
+// 2b · UUIDv7 (RFC 9562): Funktion liefert Version 7, zeit-sortiert, Defaults gesetzt
+const { rows: [uv] } = await client.query(
+  `with a as (select uuid_v7() as u, pg_sleep(0.02)), b as (select uuid_v7() as u2 from a)
+   select (select u from a)::text as u1, ((select u from a) < (select u2 from b)) as monoton`)
+ok('uuid_v7() liefert UUID Version 7', uv.u1.charAt(14) === '7', uv.u1)
+ok('uuid_v7() ist zeit-sortiert (Monotonie ueber ms-Grenze)', uv.monoton === true)
+const { rows: [ud] } = await client.query(
+  `select count(*)::int as n from pg_attrdef where pg_get_expr(adbin, adrelid) like '%uuid_v7%'`)
+ok('uuid_v7-Default auf allen 9 ID-Spalten', ud.n === 9, `${ud.n}/9`)
+
 // 3 · Constraint-Verhalten (Transaktion + Rollback)
 await client.query('begin')
-const admin = '00000000-0000-0000-0000-000000000001' // Platzhalter bis Better-Auth-FK
+// Seit Migration 09 verweist angebote.angelegt_von auf die Better-Auth-"user"-Tabelle
+// (text-id) – der Smoke-Test legt deshalb einen Dummy-User im Rollback-Scope an.
+const admin = 'verify-smoke-admin'
+await client.query(
+  `insert into "user" ("id", "name", "email", "emailVerified", "role") values ($1, 'Verify Smoke', 'verify-smoke@example.invalid', true, 'admin')`,
+  [admin])
 const ins = (sql, params) => client.query(sql, params)
 let spCounter = 0
 const expectError = async (name, fn, mustMatch) => {
@@ -161,6 +176,10 @@ for (const role of ['anon', 'authenticated']) {
   await expectError(
     `Rechte: Rolle '${role}' kann angebote nicht lesen`,
     () => client.query('select * from angebote limit 1'),
+    /permission denied/i)
+  await expectError(
+    `Rechte: Rolle '${role}' kann einstellungen nicht lesen`,
+    () => client.query('select * from einstellungen limit 1'),
     /permission denied/i)
   await client.query('rollback')
 }

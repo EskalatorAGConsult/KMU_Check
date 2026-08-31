@@ -45,6 +45,88 @@ In **Vercel**: Project → Settings → Environment Variables → `WEBHOOK_URL` 
 Preview). Ohne gesetzte Variable nimmt die Seite den Lead an, protokolliert aber, dass keine
 Weiterleitung erfolgte (kein Datenverlust für den Nutzer).
 
+## Konfiguration: Förderportal (Supabase / Better Auth)
+
+Für das Portal (`/admin`, `/v/[token]`) müssen in Vercel zusätzlich gesetzt sein
+(Production + Preview, danach **Redeploy**):
+
+```
+NEXT_PUBLIC_SUPABASE_URL      = https://<projekt>.supabase.co
+NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY = sb_publishable_…
+SUPABASE_SERVICE_ROLE_KEY     = sb_secret_…           (nur serverseitig)
+DATABASE_URL                  = postgresql://postgres.<projekt-ref>:<passwort>@aws-1-<region>.pooler.supabase.com:5432/postgres
+BETTER_AUTH_SECRET            = <zufaelliges Secret>
+BETTER_AUTH_URL               = https://foerdercheck.mabe.de   (echte Domain, kein localhost!)
+NEXT_PUBLIC_APP_URL           = https://foerdercheck.mabe.de   (Basis fuer Links in E-Mails)
+GEMINI_API_KEY                = …
+OPENREGISTER_API_KEY          = sk_live_…
+RESEND_API_KEY                = re_…                         (E-Mail-Versand, best effort)
+EMAIL_FROM                    = MABE Förderportal <mabe@automatisieren.io>
+BLOB_READ_WRITE_TOKEN         = vercel_blob_rw_…               (Vercel Blob, Dokumenten-Storage)
+```
+
+**E-Mail (Resend):** Ohne `RESEND_API_KEY` werden E-Mails still übersprungen (nur geloggt) –
+Einladung, Eingangsbestätigung, Passwort-Reset und Willkommens-Mail blockieren nie den Fachprozess.
+Die Absender-Domain (`EMAIL_FROM`) muss in Resend verifiziert sein. Notification-Funktionen liegen in
+`src/lib/email/notify.ts` (Einladung, Eingangsbestätigung, Passwort-Reset, Willkommen, Status-Update).
+
+**Systemkonzept (Vercel Blob):** Nach der Einreichung generiert `src/lib/systemkonzept/generate.ts`
+(pdf-lib) automatisch das MABE-Standard-Systemkonzept für BAFA Modul 3 aus Angebot + Stammdaten +
+KMU-Ergebnis (Datenerfassungsplan nach DIN EN ISO 50015, Wirkplan-Abschnitt bei Steuerungstechnik,
+PDCA/3-Jahre-Speicherung nach DIN EN ISO 50001). Das PDF wird in Vercel Blob abgelegt
+(`src/lib/storage/blob.ts`) und in `dokumente` (Typ `systemkonzept`) referenziert; der Kunde sieht es
+auf der Vorgangsseite unter „Das reichen wir für Sie ein" mit Download-Link. Ohne
+`BLOB_READ_WRITE_TOKEN` wird der Upload still übersprungen (Warnung im Log, Audit-Eintrag
+`systemkonzept_generiert { ok: false }`) – Token anlegen unter Vercel → Storage → Blob.
+
+**Kundenkonto (`/konto`):** Kunden können sich öffentlich registrieren (Better-Auth-Rolle `kunde`).
+Öffnet ein eingeloggter Kunde seinen Journey-Link, wird der Vorgang automatisch seinem Konto
+zugeordnet (Tabelle `angebot_zugriffe`). Das Dashboard zeigt Status, Bearbeitungsstand und – nach
+Einreichung – alle eingereichten Angaben plus vollständige Datenübersicht als PDF-Download
+(`/konto/vorgang/[id]/dossier`, generiert on demand, nur eigene Vorgänge). Vertriebsrollen
+(`admin`/`vertrieb`) werden weiterhin nur serverseitig vergeben.
+
+**Admin (`/admin`):** Neben Vorgängen und Angebot-Anlage gibt es die **Kundenverwaltung**
+(`/admin/kunden`, gruppiert nach E-Mail, mit Registrierungsstatus, KMU-Ergebnis, Dokumenten und den
+Aktionen „Einladung erneut senden" und „Vorgang widerrufen"), die **Benutzerverwaltung**
+(`/admin/benutzer`, Einladungslinks für Teamkonten – Rollen `admin`/`eskalator`/`vertrieb`, 14 Tage
+gültig, einmalig einlösbar, Annahme unter `/einladung/[token]` mit Name + Passwort; Rollenänderung und
+Deaktivierung bestehender Konten, eigene Rolle ist gesperrt) sowie die **Einstellungen**
+(`/admin/einstellungen`): Dort kann die Webhook-URL individuell gesetzt werden (Tabelle
+`einstellungen`, DB-Wert hat Vorrang vor dem ENV-Fallback `WEBHOOK_URL`, Test-Ping inklusive).
+Auflösung in `src/lib/webhook.ts`, genutzt von `api/lead` und der Journey-Übergabe.
+Rollenkonzept: `admin` (MABE) und `eskalator` (Eskalator AG) haben gleiche Admin-Rechte,
+`vertrieb` ebenfalls Admin-Zugang, `kunde` nur `/konto`, `deaktiviert` gar keinen Zugang.
+
+**Vollmacht (BAFA eew_vm_3):** Im Vollmacht-Schritt wird der offizielle Wortlaut des BAFA-Formulars
+eew_vm_3 (§ 14 VwVfG, inkl. Datenschutzerklärung) angezeigt. Bei Beantragung durch die Eskalator AG
+wird das offizielle AcroForm-PDF (`docs/vorlagen/eew_formular_eew_vm_3.pdf`) beim Abschluss automatisch
+mit den Kundendaten ausgefüllt, flachgerechnet und als Dokument `vollmacht` abgelegt
+(`src/lib/vollmacht/fuelle-vollmacht.ts`). Die Bevollmächtigten-Adresse liegt zentral in
+`src/lib/vollmacht/bevollmaechtigter.ts` (TODO: Adresse der Eskalator AG final bestätigen).
+
+**KMU-Geschäftsjahre:** Der KMU-Schritt fragt dynamisch die letzten **zwei** abgeschlossenen
+Geschäftsjahre ab (nicht fest 2024/2025 wie das n8n-Formular); bewertet und gespeichert wird je Jahr,
+die Förderquote ergibt sich aus dem jüngsten Jahr.
+
+**IDs (UUIDv7, RFC 9562):** Alle eigenen ID-Spalten erzeugen seit Migration 14 **UUIDv7**
+(`uuid_v7()` in `supabase/schemas/14_uuid_v7.sql` – Postgres 17 hat noch kein natives `uuidv7()`,
+ab PG18 austauschbar): zeit-sortiert, B-Tree-freundlich, gleiches 16-Byte-`uuid`-Format wie bisher.
+Bestehende Zeilen behalten ihre v4-IDs (gemischt ist gültig). `audit_events.id` bleibt bewusst
+`bigint identity` (append-only, bereits streng monoton). Better-Auth-IDs (`user.id`, nanoid) und die
+Journey-/Einladungs-Token (base64url-Geheimnisse, keine IDs) bleiben unverändert; in URLs auftauchende
+UUIDs (z. B. `/konto/vorgang/[id]`) sind Format-kompatibel.
+
+**Tests:** `npm test` (Vitest) prüft die KMU-Engine gegen die EU-Schwellenwerte, die
+Webhook-Auflösung und beide PDF-Generatoren. `scripts/db-verify.mjs` verifiziert das Schema
+(Tabellen, RLS, FK-Indizes, Constraints, Rechte) – nach Schema-Änderungen beides laufen lassen.
+
+**Wichtig (IPv4/IPv6-Falle):** Der Supabase-Direkt-Host `db.<projekt>.supabase.co` hat nur
+einen **IPv6**-Eintrag. Vercel-Functions können IPv6-only-Hosts nicht erreichen → Login/API
+liefern HTTP 500. Auf Vercel daher **immer den Pooler-Host** (`aws-1-<region>.pooler.supabase.com`,
+Session-Mode Port 5432, User `postgres.<projekt-ref>`) verwenden. Lokal (Mac mit IPv6) funktioniert
+auch der Direkt-Host.
+
 ### Webhook-Payload (Auszug)
 
 ```jsonc

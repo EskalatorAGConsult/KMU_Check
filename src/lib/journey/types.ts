@@ -20,6 +20,8 @@ export interface FeldDef {
   label: string
   /** „Warum fragen wir das?"-Erklaerung unter dem Feld. */
   hilfe?: string
+  /** Kurze Laien-Erklaerung hinter einem ⓘ-Symbol am Label (aufklappbar). */
+  tooltip?: string
   pflicht?: boolean
   optionen?: FeldOption[]
   placeholder?: string
@@ -32,7 +34,11 @@ export type SchrittKomponente = 'generisch' | 'uebersicht' | 'kmu' | 'deminimis'
 export interface SchrittDef {
   id: string
   titel: string
+  /** Kurzlabel fuer die Fortschrittsanzeige (Standard: titel). */
+  kurz?: string
   beschreibung?: string
+  /** Laienverstaendliche Einordnung, warum dieser Schritt wichtig ist (Info-Box). */
+  erklaerung?: string
   komponente: SchrittKomponente
   felder?: FeldDef[]
 }

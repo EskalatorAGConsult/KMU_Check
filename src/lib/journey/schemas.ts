@@ -78,12 +78,23 @@ export const beteiligungSchema = z.object({
   bilanzsumme: z.coerce.number().min(0).optional(),
 })
 
-export const kmuSchema = z.object({
+export const kmuJahrSchema = z.object({
   geschaeftsjahr: z.coerce.number().int().min(2000).max(2100),
-  abgeschlossen: z.boolean(),
+  abgeschlossen: z.boolean().default(true),
   jae: z.coerce.number('Jahresarbeitseinheiten fehlen.').min(0),
   umsatz: z.coerce.number().min(0).default(0),
   bilanzsumme: z.coerce.number().min(0).default(0),
+})
+export type KmuJahrDaten = z.infer<typeof kmuJahrSchema>
+
+/**
+ * KMU-Schritt: Kennzahlen der letzten ZWEI abgeschlossenen Geschaeftsjahre
+ * (dynamisch, nicht fest verdrahtet wie im n8n-Formular) + Verbund.
+ * Die Bewertung/Foerderquote ergibt sich aus dem juengsten Jahr; das zweite
+ * Jahr dokumentiert die Entwicklung (BAFA fragt beide Jahre ab).
+ */
+export const kmuSchema = z.object({
+  jahre: z.array(kmuJahrSchema).length(2, 'Bitte die Kennzahlen beider Geschäftsjahre ausfüllen.'),
   beteiligungen: z.array(beteiligungSchema).default([]),
 })
 export type KmuSchrittDaten = z.infer<typeof kmuSchema>
