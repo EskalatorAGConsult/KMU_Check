@@ -105,6 +105,28 @@ mit den Kundendaten ausgefüllt, flachgerechnet und als Dokument `vollmacht` abg
 (`src/lib/vollmacht/fuelle-vollmacht.ts`). Die Bevollmächtigten-Adresse liegt zentral in
 `src/lib/vollmacht/bevollmaechtigter.ts` (TODO: Adresse der Eskalator AG final bestätigen).
 
+**Handelsregister-Abfrage (OpenRegister):** Im KMU-Schritt kann der Kunde sein Unternehmen im
+offiziellen Handelsregister suchen (Autocomplete). Nach der Auswahl lädt das Portal Gesellschafter
+(Owners), Beteiligungen (Holdings) und die veröffentlichten Finanzkennzahlen (Beschäftigte, Umsatz,
+Bilanzsumme aus dem Bundesanzeiger) und befüllt auf Knopfdruck Geschäftsjahre und Verbund vor –
+inkl. EU-Klassifizierung jeder Beteiligung (< 25 % irrelevant, 25–50 % Partner, > 50 % verbunden)
+und Markierung der Zeilen mit `quelle = 'openregister'`. Die Verbundabfrage durchsucht die
+**Beteiligungskette rekursiv über beliebig viele Stufen** (BFS, zyklenfest): Verbundene
+Unternehmen (> 50 %) wirken transitiv, Partner (25–50 %) nur direkt – aber mit einem Partner
+verbundene Unternehmen zählen wieder zu 100 %. Jede Folgestufe wird in der UI mit Stufen-Badge
+und Kettenerläuterung („X hält 80 % an Y GmbH") gezeigt. Sicherheitslimits: max. 20 Unternehmen /
+8 Stufen (`KETTEN_LIMITS` in `mapping.ts`), bei Abbruch erscheint ein Hinweis. Alles bleibt
+editierbar; der Kunde prüft und bestätigt. Aufbau: `src/lib/openregister/client.ts` (server-only
+REST-Client, best effort → `null` bei Fehlern), `mapping.ts` (reine Funktionen: Cent→Euro,
+`analysiereVerbundKette` als zyklenfester BFS, getestet in `mapping.test.ts`), `actions.ts`
+(token-validierte Server Actions, Audit `openregister_abfrage`). Weil jeder Abruf API-Credits
+kostet (Suche 1, Rohdaten je Firma ~30), werden die Rohdaten jeder Firma 30 Tage in
+`openregister_cache` (Migration 15) gecacht – Folgeabfragen und Ketten-Überschneidungen zwischen
+Vorgängen kosten dann nichts. Ohne `OPENREGISTER_API_KEY` läuft die Journey mit manueller
+Eingabe unverändert weiter. Der Live-Integrationstest
+(`src/lib/openregister/actions.integration.test.ts`) läuft nur mit `RUN_LIVE_TESTS=1`
+(kostet echte Credits).
+
 **KMU-Geschäftsjahre:** Der KMU-Schritt fragt dynamisch die letzten **zwei** abgeschlossenen
 Geschäftsjahre ab (nicht fest 2024/2025 wie das n8n-Formular); bewertet und gespeichert wird je Jahr,
 die Förderquote ergibt sich aus dem jüngsten Jahr.

@@ -4,9 +4,11 @@ import { useMemo } from 'react'
 
 import type { KmuJahrDaten, KmuSchrittDaten } from '@/lib/journey/schemas'
 import { evaluateKmu, type Holding } from '@/lib/kmu'
+import type { VerbundErgebnis } from '@/lib/openregister/mapping'
 import { KmuAmpel } from './ampel'
 import { Tooltip } from './tooltip'
 import { Checkbox, Feld, inputCls } from './ui'
+import { VerbundSuche } from './verbund-suche'
 
 type Beteiligung = KmuSchrittDaten['beteiligungen'][number]
 type KmuJahrEingabe = Partial<KmuJahrDaten> & { geschaeftsjahr: number }
@@ -33,11 +35,13 @@ export function SchrittKmu({
   daten,
   fehler,
   investSumme,
+  token,
   onChange,
 }: {
   daten: Record<string, unknown>
   fehler: Record<string, string>
   investSumme: number | null
+  token: string
   onChange: (name: string, wert: unknown) => void
 }) {
   const beteiligungen = (daten.beteiligungen as Beteiligung[] | undefined) ?? KEINE_BETEILIGUNGEN
@@ -78,8 +82,42 @@ export function SchrittKmu({
     onChange('beteiligungen', naechste)
   }
 
+  /**
+   * Handelsregister-Vorbefuellung uebernehmen: eigene Kennzahlen in die
+   * Geschaeftsjahre schreiben, Register-Verbund ersetzt fruehere
+   * Register-Eintraege (manuell erfasste Zeilen bleiben unangetastet).
+   */
+  const uebernehmeVerbund = (e: VerbundErgebnis) => {
+    if (e.jahre.length > 0) {
+      onChange(
+        'jahre',
+        jahre.map((j, i) => {
+          const gef = e.jahre[i]
+          return gef
+            ? { ...j, geschaeftsjahr: gef.geschaeftsjahr, abgeschlossen: true, jae: gef.jae, umsatz: gef.umsatz, bilanzsumme: gef.bilanzsumme }
+            : j
+        }),
+      )
+    }
+    const manuell = beteiligungen.filter((b) => b?.quelle !== 'openregister' && b?.name)
+    const ausRegister = e.beteiligungen.map((b) => ({
+      name: b.name,
+      richtung: b.richtung,
+      anteil_pct: b.anteil_pct,
+      jae: b.jae,
+      umsatz: b.umsatz,
+      bilanzsumme: b.bilanzsumme,
+      quelle: 'openregister' as const,
+      stufe: b.stufe,
+      pfad: b.pfad,
+    }))
+    onChange('beteiligungen', [...manuell, ...ausRegister])
+  }
+
   return (
     <div className="flex flex-col gap-8">
+      {/* Schnellstart: Handelsregister-Vorbefuellung (best effort, optional) */}
+      <VerbundSuche token={token} onUebernehmen={uebernehmeVerbund} />
       {/* Eigene Kennzahlen: letzte zwei abgeschlossene Geschaeftsjahre (dynamisch) */}
       <div className="flex flex-col gap-5">
         <div className="rounded-2xl border border-olive-200 bg-olive-50/60 p-5">
@@ -182,6 +220,23 @@ export function SchrittKmu({
         {fehler.beteiligungen && <p className="text-xs/5 font-medium text-red-700">{fehler.beteiligungen}</p>}
         {beteiligungen.map((b, i) => (
           <div key={i} className="rounded-2xl border border-olive-200 bg-olive-50/50 p-4">
+            {b.quelle === 'openregister' && (
+              <p className="mb-3 inline-flex items-center gap-1.5 rounded-full bg-teal-50 px-2.5 py-1 text-[11px] font-semibold text-teal-800 ring-1 ring-teal-600/20">
+                <svg viewBox="0 0 20 20" fill="currentColor" className="size-3.5" aria-hidden>
+                  <path
+                    fillRule="evenodd"
+                    d="M16.704 4.153a.75.75 0 0 1 .143 1.052l-8 10.5a.75.75 0 0 1-1.127.075l-4.5-4.5a.75.75 0 0 1 1.06-1.06l3.894 3.893 7.48-9.817a.75.75 0 0 1 1.05-.143Z"
+                    clipRule="evenodd"
+                  />
+                </svg>
+                Aus dem Handelsregister übernommen – bitte prüfen
+              </p>
+            )}
+            {b.pfad && (b.stufe ?? 1) > 1 && (
+              <p className="mb-3 text-xs/5 break-words text-olive-500">
+                Stufe {b.stufe} der Beteiligungskette · {b.pfad}
+              </p>
+            )}
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
               <input
                 className={inputCls}

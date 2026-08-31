@@ -76,6 +76,11 @@ export const beteiligungSchema = z.object({
   jae: z.coerce.number().min(0).optional(),
   umsatz: z.coerce.number().min(0).optional(),
   bilanzsumme: z.coerce.number().min(0).optional(),
+  quelle: z.enum(['manuell', 'openregister']).default('manuell'),
+  /** Kettentiefe (1 = direkt); nur bei OpenRegister-Vorbefuellung gesetzt. */
+  stufe: z.coerce.number().int().min(1).optional(),
+  /** Letzte Kante der Beteiligungskette, z. B. „X hält 80 % an Y GmbH". */
+  pfad: z.string().optional(),
 })
 
 export const kmuJahrSchema = z.object({

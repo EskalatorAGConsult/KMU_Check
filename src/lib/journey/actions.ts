@@ -176,7 +176,7 @@ export async function schliesseJourneyAb(
           jae: b.jae ?? null,
           umsatz: b.umsatz ?? null,
           bilanzsumme: b.bilanzsumme ?? null,
-          quelle: 'manuell',
+          quelle: b.quelle,
         })),
       )
       if (e2) throw new Error(`Beteiligungen: ${e2.message}`)

@@ -168,7 +168,7 @@ export function Wizard({
           <StepGenerisch schritt={schritt} daten={schrittDaten} fehler={fehler} onChange={setze} />
         )}
         {schritt.komponente === 'kmu' && (
-          <SchrittKmu daten={schrittDaten} fehler={fehler} investSumme={investSumme} onChange={setze} />
+          <SchrittKmu daten={schrittDaten} fehler={fehler} investSumme={investSumme} token={token} onChange={setze} />
         )}
         {schritt.komponente === 'deminimis' && (
           <SchrittDeminimis daten={schrittDaten} fehler={fehler} onChange={setze} />
