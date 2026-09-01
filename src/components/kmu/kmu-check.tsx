@@ -3,13 +3,16 @@
 import { clsx } from 'clsx/lite'
 import { useEffect, useMemo, useRef, useState } from 'react'
 
-import type { CompanyInput, Holding, KmuResult } from '@/lib/kmu'
-import { evaluateKmu } from '@/lib/kmu'
+import type { CompanyInput, Holding, KmuResult, VerbundZeile } from '@/lib/kmu'
+import { analysiereVerbund, evaluateKmu } from '@/lib/kmu'
+import type { VerbundErgebnis } from '@/lib/openregister/mapping'
 import { generateKmuPdf, downloadBlob, type LeadInfo } from '@/lib/pdf'
 import { collectTracking, enrichWithFingerprint, type TrackingData } from '@/lib/tracking'
 import { Field, NumberField, inputClass } from './field'
 import { LiveEvaluation } from './live-evaluation'
 import { DEFAULT_PHONE, PhoneInput, type PhoneValue } from './phone-input'
+import { RegisterSuche } from './register-suche'
+import { VerbundBaum } from './verbund-baum'
 
 /* --------------------------------------------------------------------- */
 /*  Hilfsfunktionen                                                       */
@@ -41,6 +44,12 @@ type Direction = 'we_hold' | 'holds_us'
 
 interface UIHolding extends Holding {
   direction: Direction
+  /** Kettentiefe bei OpenRegister-Vorbefuellung (1 = direkt). */
+  stufe?: number
+  /** Letzte Kante der Beteiligungskette (OpenRegister). */
+  pfad?: string
+  /** Herkunft der Zeile (manuell oder Handelsregister). */
+  quelle?: 'manuell' | 'openregister'
 }
 
 function newHolding(): UIHolding {
@@ -128,6 +137,47 @@ export function KmuCheck() {
   const hasAnyInput = employees !== '' || turnover !== '' || balanceSheet !== ''
   const result: KmuResult | null = useMemo(() => (hasAnyInput ? evaluateKmu(input) : null), [input, hasAnyInput])
 
+  // Kettenanalyse fuer Live-Badges, Bezugs-Dropdowns und die Visualisierung
+  const zeilen = useMemo(
+    () => analysiereVerbund(companyName, hasHoldings ? holdings : []),
+    [companyName, hasHoldings, holdings],
+  )
+  const zeileZu = (name: string) => zeilen.find((z) => z.name === name.trim())
+
+  /**
+   * Handelsregister-Uebernahme: eigene Kennzahlen + Verbund vorbefuellen.
+   * Manuell erfasste Beteiligungen bleiben erhalten, Register-Zeilen werden
+   * ersetzt (gleiche Regel wie in der Kunden-Journey).
+   */
+  function uebernehmeRegister(e: VerbundErgebnis) {
+    setCompanyName(e.unternehmen.name || companyName)
+    const jahr = e.jahre[0]
+    if (jahr) {
+      setFiscalYear(String(jahr.geschaeftsjahr))
+      if (jahr.jae !== undefined) setEmployees(String(jahr.jae))
+      if (jahr.umsatz !== undefined) setTurnover(String(jahr.umsatz))
+      if (jahr.bilanzsumme !== undefined) setBalanceSheet(String(jahr.bilanzsumme))
+    }
+    const manuell = holdings.filter((h) => h.quelle !== 'openregister' && h.name.trim() !== '')
+    const ausRegister: UIHolding[] = e.beteiligungen.map((b) => ({
+      id: `or-${b.registerId}`,
+      name: b.name,
+      direction: b.richtung === 'aufwaerts' ? 'holds_us' : 'we_hold',
+      sharePct: b.anteil_pct,
+      employees: b.jae ?? 0,
+      turnover: b.umsatz ?? 0,
+      balanceSheet: b.bilanzsumme ?? 0,
+      stufe: b.stufe,
+      pfad: b.pfad,
+      quelle: 'openregister',
+      // Stufe 1 haengt per Definition am Antragsteller; erst Folgestufen
+      // verweisen auf ein Zwischenunternehmen der Kette.
+      bezug: b.stufe > 1 ? b.bezug : undefined,
+    }))
+    setHoldings([...manuell, ...ausRegister])
+    if (ausRegister.length > 0) setHasHoldings(true)
+  }
+
   /* ---- Validierung pro Schritt ---- */
   function stepValid(step: StepId): boolean {
     switch (step) {
@@ -207,15 +257,23 @@ export function KmuCheck() {
         turnover: parseDe(turnover),
         balanceSheet: parseDe(balanceSheet),
       },
-      holdings: holdings.map((h) => ({
-        name: h.name,
-        direction: h.direction,
-        sharePct: h.sharePct,
-        relationship: h.sharePct > 50 ? 'linked' : 'partner',
-        employees: h.employees,
-        turnover: h.turnover,
-        balanceSheet: h.balanceSheet,
-      })),
+      holdings: holdings.map((h) => {
+        const zeile = zeileZu(h.name)
+        return {
+          name: h.name,
+          direction: h.direction,
+          sharePct: h.sharePct,
+          bezug: h.bezug ?? null,
+          stufe: h.stufe ?? null,
+          pfad: h.pfad ?? null,
+          quelle: h.quelle ?? 'manuell',
+          relationship: zeile ? zeile.art : h.sharePct > 50 ? 'linked' : 'partner',
+          effektivPct: zeile?.effektivPct ?? (h.sharePct > 50 ? 100 : h.sharePct),
+          employees: h.employees,
+          turnover: h.turnover,
+          balanceSheet: h.balanceSheet,
+        }
+      }),
       result: {
         category: result.category,
         categoryLabel: result.categoryLabel,
@@ -309,6 +367,7 @@ export function KmuCheck() {
                       title="Für welches Unternehmen prüfen wir?"
                       subtitle="In rund 3 Minuten wissen Sie, ob Sie als KMU gelten – und welche Förderquote möglich ist. Keine Anmeldung nötig."
                     >
+                      <RegisterSuche onUebernehmen={uebernehmeRegister} />
                       <Field
                         label="Name des Unternehmens"
                         htmlFor="companyName"
@@ -469,6 +528,11 @@ export function KmuCheck() {
                             holding={h}
                             index={idx}
                             showErrors={showErrors}
+                            zeile={zeileZu(h.name)}
+                            wurzelName={companyName.trim() || 'Ihr Unternehmen'}
+                            bezugsOptionen={holdings
+                              .filter((x) => x.id !== h.id && x.name.trim() !== '')
+                              .map((x) => x.name.trim())}
                             onChange={(patch) =>
                               setHoldings((arr) => arr.map((x) => (x.id === h.id ? { ...x, ...patch } : x)))
                             }
@@ -485,6 +549,10 @@ export function KmuCheck() {
                           </svg>
                           Weitere Beteiligung hinzufügen
                         </button>
+                        {/* Visualisierung der Kette inkl. Folgestufen und Verrechnungsquoten */}
+                        {holdings.some((h) => h.name.trim() !== '') && (
+                          <VerbundBaum firmenname={companyName} holdings={holdings} />
+                        )}
                       </div>
                     </Step>
                   )}
@@ -791,16 +859,30 @@ function HoldingCard({
   holding,
   index,
   showErrors,
+  zeile,
+  wurzelName,
+  bezugsOptionen,
   onChange,
   onRemove,
 }: {
   holding: UIHolding
   index: number
   showErrors: boolean
+  /** Live-Einstufung aus der EU-Kettenanalyse (undefined bei leerem Namen). */
+  zeile?: VerbundZeile
+  wurzelName: string
+  /** Namen der anderen Zeilen (Auswahl als Zwischenunternehmen der Kette). */
+  bezugsOptionen: string[]
   onChange: (patch: Partial<UIHolding>) => void
   onRemove: () => void
 }) {
-  const relationship = holding.sharePct > 50 ? 'Verbunden · 100 %' : `Partner · anteilig ${Math.round(holding.sharePct)} %`
+  const ignoriert = zeile?.art === 'ignoriert'
+  const verbunden = zeile ? zeile.art === 'verbunden' : holding.sharePct > 50
+  const relationship = ignoriert
+    ? 'Nicht verrechnungspflichtig'
+    : verbunden
+      ? 'Verbunden · zählt zu 100 %'
+      : `Partner · zählt zu ${Math.round(zeile?.effektivPct ?? holding.sharePct)} %`
   return (
     <div className="rounded-2xl border border-olive-200 bg-olive-50/60 p-5">
       <div className="mb-4 flex items-center justify-between">
@@ -812,7 +894,11 @@ function HoldingCard({
           <span
             className={clsx(
               'rounded-full px-2 py-0.5 text-xs font-medium',
-              holding.sharePct > 50 ? 'bg-mabe-100 text-mabe-800' : 'bg-teal-100 text-teal-800',
+              ignoriert
+                ? 'bg-olive-100 text-olive-500'
+                : verbunden
+                  ? 'bg-mabe-100 text-mabe-800'
+                  : 'bg-teal-100 text-teal-800',
             )}
           >
             {relationship}
@@ -834,6 +920,24 @@ function HoldingCard({
         </button>
       </div>
 
+      {holding.quelle === 'openregister' && (
+        <p className="mb-3 inline-flex items-center gap-1.5 rounded-full bg-teal-50 px-2.5 py-1 text-[11px] font-semibold text-teal-800 ring-1 ring-teal-600/20">
+          <svg viewBox="0 0 20 20" fill="currentColor" className="size-3.5" aria-hidden>
+            <path
+              fillRule="evenodd"
+              d="M16.704 4.153a.75.75 0 0 1 .143 1.052l-8 10.5a.75.75 0 0 1-1.127.075l-4.5-4.5a.75.75 0 0 1 1.06-1.06l3.894 3.893 7.48-9.817a.75.75 0 0 1 1.05-.143Z"
+              clipRule="evenodd"
+            />
+          </svg>
+          Aus dem Handelsregister übernommen – bitte prüfen
+        </p>
+      )}
+      {holding.pfad && (holding.stufe ?? 1) > 1 && (
+        <p className="mb-3 text-xs/5 break-words text-olive-500">
+          Stufe {holding.stufe} der Beteiligungskette · {holding.pfad}
+        </p>
+      )}
+
       <div className="grid gap-4 sm:grid-cols-2">
         <Field label="Name der Beteiligung" htmlFor={`h-name-${holding.id}`} required>
           <input
@@ -853,6 +957,25 @@ function HoldingCard({
           >
             <option value="we_hold">Wir halten Anteile an dieser Firma</option>
             <option value="holds_us">Diese Firma/Person hält Anteile an uns</option>
+          </select>
+        </Field>
+        <Field
+          label="Die Beteiligung besteht an …"
+          htmlFor={`h-bezug-${holding.id}`}
+          why="Standard: an Ihrem Unternehmen (1. Stufe). Hält z. B. eine Holding Anteile an Ihrer Muttergesellschaft, wählen Sie hier das Zwischenunternehmen – so werden auch Folgeketten EU-korrekt verrechnet."
+        >
+          <select
+            id={`h-bezug-${holding.id}`}
+            className={inputClass}
+            value={holding.bezug ?? ''}
+            onChange={(e) => onChange({ bezug: e.target.value || undefined })}
+          >
+            <option value="">{wurzelName} (Ihr Unternehmen)</option>
+            {bezugsOptionen.map((o) => (
+              <option key={o} value={o}>
+                {o}
+              </option>
+            ))}
           </select>
         </Field>
       </div>

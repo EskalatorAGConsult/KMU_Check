@@ -19,7 +19,7 @@ export function LogoutButton() {
           router.refresh()
         })
       }
-      className="text-xs font-semibold text-olive-500 hover:text-red-700 disabled:opacity-40"
+      className="inline-flex min-h-10 items-center rounded-lg px-3 text-sm font-semibold text-olive-500 hover:bg-red-50 hover:text-red-700 disabled:opacity-40"
     >
       Abmelden
     </button>

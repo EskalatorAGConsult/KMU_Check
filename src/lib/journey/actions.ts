@@ -109,6 +109,7 @@ export async function schliesseJourneyAb(
     employees: b.jae ?? 0,
     turnover: b.umsatz ?? 0,
     balanceSheet: b.bilanzsumme ?? 0,
+    bezug: b.bezug || undefined,
   }))
   const jahreSortiert = [...kmu.jahre].sort((a, b) => b.geschaeftsjahr - a.geschaeftsjahr)
   const bewertungen = jahreSortiert.map((j) => ({
@@ -180,6 +181,9 @@ export async function schliesseJourneyAb(
           umsatz: b.umsatz ?? null,
           bilanzsumme: b.bilanzsumme ?? null,
           quelle: b.quelle,
+          stufe: b.stufe ?? null,
+          pfad: b.pfad ?? null,
+          bezug: b.bezug || null,
         })),
       )
       if (e2) throw new Error(`Beteiligungen: ${e2.message}`)

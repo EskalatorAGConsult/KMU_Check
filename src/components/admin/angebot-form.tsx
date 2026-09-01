@@ -128,8 +128,8 @@ export function AngebotForm() {
           Senden Sie diesen Link an Ihren Kunden. Er ist <strong>90 Tage</strong> gültig und führt direkt in die
           persönliche Förder-Journey:
         </p>
-        <div className="flex items-center gap-2">
-          <code className="flex-1 overflow-x-auto rounded-xl bg-white px-4 py-3 text-sm text-mabe-900 ring-1 ring-olive-200">
+        <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+          <code className="min-w-0 flex-1 overflow-x-auto rounded-xl bg-white px-4 py-3 text-sm break-all text-mabe-900 ring-1 ring-olive-200">
             {link}
           </code>
           <button

@@ -81,6 +81,8 @@ export const beteiligungSchema = z.object({
   stufe: z.coerce.number().int().min(1).optional(),
   /** Letzte Kante der Beteiligungskette, z. B. „X hält 80 % an Y GmbH". */
   pfad: z.string().optional(),
+  /** Bezugsunternehmen der Kante (leer/undefined = Antragsteller, Stufe 1). */
+  bezug: z.string().trim().optional(),
 })
 
 export const kmuJahrSchema = z.object({

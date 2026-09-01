@@ -3,8 +3,9 @@
 import { useMemo } from 'react'
 
 import type { KmuJahrDaten, KmuSchrittDaten } from '@/lib/journey/schemas'
-import { evaluateKmu, type Holding } from '@/lib/kmu'
+import { analysiereVerbund, evaluateKmu, type Holding } from '@/lib/kmu'
 import type { VerbundErgebnis } from '@/lib/openregister/mapping'
+import { VerbundBaum } from '@/components/kmu/verbund-baum'
 import { KmuAmpel } from './ampel'
 import { Tooltip } from './tooltip'
 import { Checkbox, Feld, inputCls } from './ui'
@@ -37,6 +38,7 @@ export function SchrittKmu({
   investSumme,
   token,
   registerId,
+  firmenname,
   onChange,
 }: {
   daten: Record<string, unknown>
@@ -45,8 +47,11 @@ export function SchrittKmu({
   token: string
   /** Firmenwahl aus dem Schritt „Ihr Unternehmen" (OpenRegister company_id). */
   registerId?: string
+  /** Firmenname aus dem Schritt „Ihr Unternehmen" (Wurzel der Verbund-Anzeige). */
+  firmenname?: string
   onChange: (name: string, wert: unknown) => void
 }) {
+  const wurzelName = firmenname?.trim() || 'Ihr Unternehmen'
   const beteiligungen = (daten.beteiligungen as Beteiligung[] | undefined) ?? KEINE_BETEILIGUNGEN
   /**
    * Leitfrage „Beteiligungsverhältnisse vorhanden?" – explizite Antwort hat
@@ -70,7 +75,7 @@ export function SchrittKmu({
     if (!v) onChange('beteiligungen', [])
   }
 
-  const ergebnis = useMemo(() => {
+  const { ergebnis, zeilen, holdings } = useMemo(() => {
     // Datenkonsistenz: „keine Beteiligungen" -> Ampel rechnet mit leerem Verbund
     const wirksam = hatBeteiligungen === false ? KEINE_BETEILIGUNGEN : beteiligungen
     const holdings: Holding[] = wirksam
@@ -82,17 +87,25 @@ export function SchrittKmu({
         employees: num(b.jae),
         turnover: num(b.umsatz),
         balanceSheet: num(b.bilanzsumme),
+        bezug: b.bezug || undefined,
       }))
     // Live-Ampel bewertet das juengste Geschaeftsjahr (jahre[0], absteigend sortiert)
     const juengstes = jahre[0] ?? standardJahre()[0]
-    return evaluateKmu({
-      companyName: 'Antragsteller',
-      employees: num(juengstes.jae),
-      turnover: num(juengstes.umsatz),
-      balanceSheet: num(juengstes.bilanzsumme),
+    return {
+      ergebnis: evaluateKmu({
+        companyName: wurzelName,
+        employees: num(juengstes.jae),
+        turnover: num(juengstes.umsatz),
+        balanceSheet: num(juengstes.bilanzsumme),
+        holdings,
+      }),
+      zeilen: analysiereVerbund(wurzelName, holdings),
       holdings,
-    })
-  }, [jahre, beteiligungen, hatBeteiligungen])
+    }
+  }, [jahre, beteiligungen, hatBeteiligungen, wurzelName])
+
+  /** Live-Einstufung einer Zeile aus der Kettenanalyse (Name ist eindeutig). */
+  const zeileZu = (name: string | undefined) => zeilen.find((z) => z.name === (name ?? '').trim())
 
   const setBeteiligung = (i: number, patch: Partial<Beteiligung>) => {
     const naechste = beteiligungen.map((b, j) => (j === i ? { ...b, ...patch } : b))
@@ -127,6 +140,9 @@ export function SchrittKmu({
       quelle: 'openregister' as const,
       stufe: b.stufe,
       pfad: b.pfad,
+      // Stufe 1 haengt per Definition am Antragsteller (kein Bezug noetig);
+      // erst Folgestufen verweisen auf ein Zwischenunternehmen der Kette.
+      bezug: b.stufe > 1 ? b.bezug : undefined,
     }))
     onChange('beteiligungen', [...manuell, ...ausRegister])
     // Register-Befund beantwortet die Leitfrage automatisch (editierbar)
@@ -275,7 +291,10 @@ export function SchrittKmu({
         {hatBeteiligungen !== false &&
           beteiligungen.map((b, i) => {
             const pct = num(b.anteil_pct)
-            const verbunden = pct > 50
+            // Live-Einstufung aus der EU-Kettenanalyse (beruecksichtigt Folgestufen)
+            const zeile = zeileZu(b.name)
+            const verbunden = zeile ? zeile.art === 'verbunden' : pct > 50
+            const nichtRelevant = zeile?.art === 'ignoriert'
             return (
               <div key={i} className="rounded-2xl border border-olive-200 bg-olive-50/50 p-4 sm:p-5">
                 {/* Kopf: Nummer + Live-Einstufung + Entfernen (Muster Landingpage-Tool) */}
@@ -288,10 +307,18 @@ export function SchrittKmu({
                     {pct >= 25 && (
                       <span
                         className={`rounded-full px-2 py-0.5 text-xs font-medium ${
-                          verbunden ? 'bg-mabe-100 text-mabe-800' : 'bg-teal-100 text-teal-800'
+                          nichtRelevant
+                            ? 'bg-olive-100 text-olive-500'
+                            : verbunden
+                              ? 'bg-mabe-100 text-mabe-800'
+                              : 'bg-teal-100 text-teal-800'
                         }`}
                       >
-                        {verbunden ? 'Verbunden · zählt zu 100 %' : `Partner · zählt anteilig (${Math.round(pct)} %)`}
+                        {nichtRelevant
+                          ? 'Nicht verrechnungspflichtig'
+                          : verbunden
+                            ? 'Verbunden · zählt zu 100 %'
+                            : `Partner · zählt zu ${Math.round(zeile?.effektivPct ?? pct)} %`}
                       </span>
                     )}
                   </span>
@@ -349,6 +376,32 @@ export function SchrittKmu({
                       <option value="aufwaerts">Diese Firma hält Anteile an uns</option>
                       <option value="abwaerts">Wir halten Anteile an dieser Firma</option>
                     </select>
+                  </label>
+                  <label className="block sm:col-span-2">
+                    <span className="mb-1 flex items-center gap-1 text-xs font-semibold text-olive-600">
+                      Die Beteiligung besteht an …
+                      <Tooltip text="Standard: an Ihrem Unternehmen (1. Stufe). Liegt die Beteiligung eine Stufe darüber oder darunter – z. B. hält eine Holding Anteile an Ihrer Muttergesellschaft – wählen Sie hier das Zwischenunternehmen. So werden auch Folgeketten EU-korrekt verrechnet." />
+                    </span>
+                    <select
+                      className={inputCls}
+                      value={b.bezug ?? ''}
+                      onChange={(e) => setBeteiligung(i, { bezug: e.target.value || undefined })}
+                    >
+                      <option value="">{wurzelName} (Ihr Unternehmen)</option>
+                      {beteiligungen
+                        .map((andere, j) => ({ name: (andere?.name ?? '').trim(), j }))
+                        .filter((andere) => andere.j !== i && andere.name !== '')
+                        .map((andere) => (
+                          <option key={andere.j} value={andere.name}>
+                            {andere.name}
+                          </option>
+                        ))}
+                    </select>
+                    {b.bezug && (
+                      <span className="mt-1 block text-[11px]/4 text-olive-500">
+                        Die Quote bezieht sich dann auf „{b.bezug}“ (Folgestufe der Beteiligungskette).
+                      </span>
+                    )}
                   </label>
                 </div>
 
@@ -417,6 +470,11 @@ export function SchrittKmu({
           >
             + Beteiligung hinzufügen
           </button>
+        )}
+
+        {/* Visualisierung der Kette (inkl. Folgestufen und Verrechnungsquoten) */}
+        {hatBeteiligungen !== false && holdings.length > 0 && (
+          <VerbundBaum firmenname={wurzelName} holdings={holdings} />
         )}
       </div>
 

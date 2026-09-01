@@ -182,6 +182,7 @@ export function Wizard({
             investSumme={investSumme}
             token={token}
             registerId={(daten['unternehmen']?.register_id as string | undefined) ?? undefined}
+            firmenname={(daten['unternehmen']?.unternehmensname as string | undefined) ?? undefined}
             onChange={setze}
           />
         )}

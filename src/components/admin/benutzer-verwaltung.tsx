@@ -138,8 +138,8 @@ export function BenutzerVerwaltung({
       )}
 
       {/* Benutzerliste */}
-      <section className="overflow-hidden rounded-2xl ring-1 ring-olive-200">
-        <table className="w-full border-collapse text-left text-sm">
+      <section className="overflow-x-auto rounded-2xl ring-1 ring-olive-200">
+        <table className="w-full min-w-[34rem] border-collapse text-left text-sm">
           <thead>
             <tr className="bg-olive-50 text-olive-500">
               <th className="px-5 py-3.5 font-semibold">Benutzer</th>
@@ -168,7 +168,7 @@ export function BenutzerVerwaltung({
                       disabled={pending}
                       onChange={(e) => aktion(() => aendereRolleAction(b.id, e.target.value))}
                       aria-label={`Rolle von ${b.email}`}
-                      className="rounded-lg border border-olive-300 bg-white px-2.5 py-1.5 text-xs font-semibold text-mabe-900 focus:border-teal-600 focus:outline-none disabled:opacity-50"
+                      className="min-h-10 rounded-lg border border-olive-300 bg-white px-2.5 py-1.5 text-xs font-semibold text-mabe-900 focus:border-teal-600 focus:outline-none disabled:opacity-50"
                     >
                       {SETZBARE_ROLLEN.map((r) => (
                         <option key={r} value={r}>

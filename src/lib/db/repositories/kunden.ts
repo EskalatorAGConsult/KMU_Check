@@ -1,7 +1,19 @@
 import 'server-only'
 
 import { supabaseServer } from '@/lib/db/server'
-import type { Angebot, AngebotStatus } from '@/lib/db/types'
+import type {
+  Angebot,
+  AngebotStatus,
+  AuditEventRow,
+  BeteiligungRow,
+  DeminimisBeihilfeRow,
+  DeminimisErklaerungRow,
+  DokumentRow,
+  KmuBewertungRow,
+  StammdatenRow,
+  UebergabeRow,
+  VollmachtRow,
+} from '@/lib/db/types'
 
 /**
  * Kunden-Repository (Admin): aggregiert Vorgänge pro Kunden-E-Mail und
@@ -67,11 +79,26 @@ export async function listeKunden(): Promise<KundeUebersicht[]> {
   return [...nachMail.values()].sort((a, b) => b.letzterVorgang.localeCompare(a.letzterVorgang))
 }
 
+export interface JourneyEntwurf {
+  aktueller_schritt: string
+  schritte: Record<string, Record<string, unknown>>
+  updated_at: string
+}
+
+/** Vollstaendiger fachlicher Auszug eines Vorgangs (BAFA-Arbeitsplatz). */
 export interface KundeVorgang {
   angebot: Angebot
-  kmu: { kategorie: string; foerderquote_pct: number } | null
-  hatStammdaten: boolean
-  dokumente: { typ: string; storage_path: string }[]
+  stammdaten: StammdatenRow | null
+  beteiligungen: BeteiligungRow[]
+  kmuBewertungen: KmuBewertungRow[]
+  deminimis: DeminimisErklaerungRow | null
+  beihilfen: DeminimisBeihilfeRow[]
+  vollmacht: VollmachtRow | null
+  dokumente: DokumentRow[]
+  /** Entwurfsdaten (Speichern & Fortsetzen) – bleibt auch nach Einreichung erhalten. */
+  entwurf: JourneyEntwurf | null
+  uebergaben: UebergabeRow[]
+  audit: AuditEventRow[]
 }
 
 export interface KundeDetail {
@@ -81,6 +108,10 @@ export interface KundeDetail {
   kontoName: string | null
   vorgaenge: KundeVorgang[]
 }
+
+/** Max. Eintraege pro Vorgang in den Log-Listen (Seite bleibt kompakt). */
+const MAX_UEBERGABEN = 5
+const MAX_AUDIT = 10
 
 export async function holeKunde(email: string): Promise<KundeDetail | null> {
   const db = supabaseServer()
@@ -93,26 +124,70 @@ export async function holeKunde(email: string): Promise<KundeDetail | null> {
   if (!angebote || angebote.length === 0) return null
 
   const ids = angebote.map((a) => a.id as string)
-  const [kmuRes, stammRes, dokRes, userRes] = await Promise.all([
-    db.from('kmu_bewertungen').select('angebot_id, kategorie, foerderquote_pct, created_at').in('angebot_id', ids).order('geschaeftsjahr', { ascending: false }),
-    db.from('stammdaten').select('angebot_id').in('angebot_id', ids),
-    db.from('dokumente').select('angebot_id, typ, storage_path').in('angebot_id', ids),
-    db.from('user').select('name, email').ilike('email', email).eq('role', 'kunde').maybeSingle(),
-  ])
+  const [stammRes, betRes, kmuRes, demRes, behRes, vollRes, dokRes, fortRes, uebRes, audRes, userRes] =
+    await Promise.all([
+      db.from('stammdaten').select('*').in('angebot_id', ids),
+      db.from('beteiligungen').select('*').in('angebot_id', ids).order('created_at', { ascending: true }),
+      db
+        .from('kmu_bewertungen')
+        .select('*')
+        .in('angebot_id', ids)
+        .order('geschaeftsjahr', { ascending: false }),
+      db.from('deminimis_erklaerungen').select('*').in('angebot_id', ids),
+      db
+        .from('deminimis_beihilfen')
+        .select('*')
+        .in('angebot_id', ids)
+        .order('bewilligt_am', { ascending: false }),
+      db.from('vollmachten').select('*').in('angebot_id', ids),
+      db.from('dokumente').select('*').in('angebot_id', ids).order('created_at', { ascending: false }),
+      db.from('journey_fortschritt').select('angebot_id, aktueller_schritt, schritte, updated_at').in('angebot_id', ids),
+      db
+        .from('uebergaben')
+        .select('id, angebot_id, http_status, erfolg, versucht_at')
+        .in('angebot_id', ids)
+        .order('versucht_at', { ascending: false }),
+      db
+        .from('audit_events')
+        .select('id, angebot_id, actor, aktion, details, created_at')
+        .in('angebot_id', ids)
+        .order('created_at', { ascending: false })
+        .limit(ids.length * MAX_AUDIT * 2),
+      db.from('user').select('name, email').ilike('email', email).eq('role', 'kunde').maybeSingle(),
+    ])
 
-  const kmuNachAngebot = new Map<string, KundeVorgang['kmu']>()
-  for (const k of kmuRes.data ?? []) {
-    // juengste Bewertung gewinnt (created_at absteigend nicht garantiert -> vergleichen)
-    const bestehende = kmuNachAngebot.get(k.angebot_id as string)
-    if (!bestehende) kmuNachAngebot.set(k.angebot_id as string, { kategorie: k.kategorie, foerderquote_pct: k.foerderquote_pct })
+  const stammNachAngebot = new Map((stammRes.data ?? []).map((s) => [s.angebot_id as string, s as StammdatenRow]))
+  const demNachAngebot = new Map(
+    (demRes.data ?? []).map((d) => [d.angebot_id as string, d as DeminimisErklaerungRow]),
+  )
+  const vollNachAngebot = new Map((vollRes.data ?? []).map((v) => [v.angebot_id as string, v as VollmachtRow]))
+  const entwurfNachAngebot = new Map(
+    (fortRes.data ?? []).map((f) => [
+      f.angebot_id as string,
+      {
+        aktueller_schritt: f.aktueller_schritt as string,
+        schritte: (f.schritte ?? {}) as Record<string, Record<string, unknown>>,
+        updated_at: f.updated_at as string,
+      } satisfies JourneyEntwurf,
+    ]),
+  )
+
+  const gruppiere = <T extends { angebot_id: string | null }>(zeilen: T[] | null, limit?: number) => {
+    const map = new Map<string, T[]>()
+    for (const z of zeilen ?? []) {
+      if (!z.angebot_id) continue
+      const liste = map.get(z.angebot_id) ?? []
+      if (limit === undefined || liste.length < limit) liste.push(z)
+      map.set(z.angebot_id, liste)
+    }
+    return map
   }
-  const stammdatenVorhanden = new Set((stammRes.data ?? []).map((s) => s.angebot_id as string))
-  const dokNachAngebot = new Map<string, { typ: string; storage_path: string }[]>()
-  for (const d of dokRes.data ?? []) {
-    const liste = dokNachAngebot.get(d.angebot_id as string) ?? []
-    liste.push({ typ: d.typ, storage_path: d.storage_path })
-    dokNachAngebot.set(d.angebot_id as string, liste)
-  }
+  const betNachAngebot = gruppiere((betRes.data ?? []) as BeteiligungRow[])
+  const kmuNachAngebot = gruppiere((kmuRes.data ?? []) as KmuBewertungRow[])
+  const behNachAngebot = gruppiere((behRes.data ?? []) as DeminimisBeihilfeRow[])
+  const dokNachAngebot = gruppiere((dokRes.data ?? []) as DokumentRow[])
+  const uebNachAngebot = gruppiere((uebRes.data ?? []) as UebergabeRow[], MAX_UEBERGABEN)
+  const audNachAngebot = gruppiere((audRes.data ?? []) as AuditEventRow[], MAX_AUDIT)
 
   const juengster = angebote[0] as Angebot
   return {
@@ -122,9 +197,16 @@ export async function holeKunde(email: string): Promise<KundeDetail | null> {
     kontoName: (userRes.data?.name as string | undefined) ?? null,
     vorgaenge: (angebote as Angebot[]).map((a) => ({
       angebot: a,
-      kmu: kmuNachAngebot.get(a.id) ?? null,
-      hatStammdaten: stammdatenVorhanden.has(a.id),
+      stammdaten: stammNachAngebot.get(a.id) ?? null,
+      beteiligungen: betNachAngebot.get(a.id) ?? [],
+      kmuBewertungen: kmuNachAngebot.get(a.id) ?? [],
+      deminimis: demNachAngebot.get(a.id) ?? null,
+      beihilfen: behNachAngebot.get(a.id) ?? [],
+      vollmacht: vollNachAngebot.get(a.id) ?? null,
       dokumente: dokNachAngebot.get(a.id) ?? [],
+      entwurf: entwurfNachAngebot.get(a.id) ?? null,
+      uebergaben: uebNachAngebot.get(a.id) ?? [],
+      audit: audNachAngebot.get(a.id) ?? [],
     })),
   }
 }

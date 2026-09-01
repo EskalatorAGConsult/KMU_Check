@@ -45,8 +45,47 @@ export default async function AdminDashboard() {
           </Link>
         </div>
       ) : (
-        <div className="overflow-x-auto rounded-2xl ring-1 ring-olive-200">
-          <table className="w-full min-w-[40rem] border-collapse text-left text-sm">
+        <>
+          {/* Mobile: Kartenliste (daumenfreundlich, ohne horizontales Scrollen) */}
+          <ul className="flex flex-col gap-3 sm:hidden">
+            {angebote.map((a) => {
+              const href = `/admin/kunden/${encodeURIComponent(a.kunde_email)}`
+              return (
+                <li key={a.id}>
+                  <Link
+                    href={href}
+                    className="flex min-h-12 flex-col gap-2.5 rounded-2xl border border-olive-200 bg-white p-4 transition-colors focus-visible:bg-teal-50 active:bg-olive-50"
+                    aria-label={`Vorgang ${a.angebot_nr} von ${a.kunde_firma} öffnen`}
+                  >
+                    <div className="flex flex-wrap items-center justify-between gap-2">
+                      <span className={`rounded-full px-2.5 py-1 text-xs font-semibold ${STATUS_CLS[a.status]}`}>
+                        {STATUS_LABEL[a.status]}
+                      </span>
+                      <span className="text-xs text-olive-500 tabular-nums">
+                        {new Date(a.created_at).toLocaleDateString('de-DE')}
+                      </span>
+                    </div>
+                    <div className="min-w-0">
+                      <p className="truncate font-medium text-mabe-900">{a.kunde_firma}</p>
+                      <p className="truncate text-xs text-olive-500">{a.kunde_email}</p>
+                    </div>
+                    <p className="text-sm text-olive-700">
+                      {a.angebot_nr}
+                      <span className="text-olive-400">
+                        {' '}
+                        · {new Date(a.angebot_datum).toLocaleDateString('de-DE')}
+                      </span>
+                      <span className="ml-2 font-semibold text-teal-700">Details →</span>
+                    </p>
+                  </Link>
+                </li>
+              )
+            })}
+          </ul>
+
+          {/* Ab sm: kompakte Tabelle */}
+          <div className="hidden overflow-x-auto rounded-2xl ring-1 ring-olive-200 sm:block">
+            <table className="w-full min-w-[40rem] border-collapse text-left text-sm">
             <thead>
               <tr className="bg-olive-50 text-olive-500">
                 <th className="px-5 py-3.5 font-semibold">Status</th>
@@ -107,7 +146,8 @@ export default async function AdminDashboard() {
               })}
             </tbody>
           </table>
-        </div>
+          </div>
+        </>
       )}
     </div>
   )

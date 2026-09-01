@@ -171,13 +171,27 @@ describe('analysiereVerbundKette – Stufe 1 (direkt)', () => {
     expect(ergebnis.beteiligungen).toHaveLength(3)
 
     const mutter = ergebnis.beteiligungen.find((b) => b.registerId === 'X')
-    expect(mutter).toMatchObject({ klasse: 'verbunden', anteil_pct: 100, richtung: 'aufwaerts', stufe: 1, jae: 120, umsatz: 10_000_000 })
+    expect(mutter).toMatchObject({
+      klasse: 'verbunden',
+      anteil_pct: 100,
+      bezug: 'Antragsteller GmbH',
+      richtung: 'aufwaerts',
+      stufe: 1,
+      jae: 120,
+      umsatz: 10_000_000,
+    })
 
     const kompagnon = ergebnis.beteiligungen.find((b) => b.registerId === 'P')
-    expect(kompagnon).toMatchObject({ klasse: 'partner', anteil_pct: 30, stufe: 1 })
+    expect(kompagnon).toMatchObject({ klasse: 'partner', anteil_pct: 30, bezug: 'Antragsteller GmbH', stufe: 1 })
 
     const tochter = ergebnis.beteiligungen.find((b) => b.registerId === 'T')
-    expect(tochter).toMatchObject({ klasse: 'verbunden', anteil_pct: 100, richtung: 'abwaerts', stufe: 1 })
+    expect(tochter).toMatchObject({
+      klasse: 'verbunden',
+      anteil_pct: 60,
+      bezug: 'Antragsteller GmbH',
+      richtung: 'abwaerts',
+      stufe: 1,
+    })
 
     // Eigene Kennzahlen + Stammdaten
     expect(ergebnis.jahre[0]).toMatchObject({ geschaeftsjahr: 2024, jae: 44 })
@@ -212,8 +226,8 @@ describe('analysiereVerbundKette – Folgestufen (Folgeketten)', () => {
     const holdingGmbh = ergebnis.beteiligungen.find((b) => b.registerId === 'Y')
     expect(holdingGmbh).toMatchObject({
       klasse: 'verbunden',
-      anteil_pct: 100,
-      anteil_direkt_pct: 80,
+      anteil_pct: 80,
+      bezug: 'Mutter GmbH',
       stufe: 2,
       richtung: 'aufwaerts',
       pfad: 'Holding GmbH hält 80 % an Mutter GmbH',
@@ -230,7 +244,7 @@ describe('analysiereVerbundKette – Folgestufen (Folgeketten)', () => {
     }
     const { ergebnis } = analysiereVerbundKette(graph, START)
     const t = ergebnis.beteiligungen.find((b) => b.registerId === 'T')
-    expect(t).toMatchObject({ klasse: 'verbunden', stufe: 2, richtung: 'abwaerts', anteil_pct: 100 })
+    expect(t).toMatchObject({ klasse: 'verbunden', stufe: 2, richtung: 'abwaerts', anteil_pct: 100, bezug: 'Stufe1 GmbH' })
   })
 
   it('Partner (25–50 %) nur direkt; mit Partner verbundene Firmen zählen voll', () => {
@@ -242,7 +256,7 @@ describe('analysiereVerbundKette – Folgestufen (Folgeketten)', () => {
     }
     const { ergebnis } = analysiereVerbundKette(graph, START)
     const q = ergebnis.beteiligungen.find((b) => b.registerId === 'Q')
-    expect(q).toMatchObject({ klasse: 'verbunden', anteil_pct: 100, stufe: 2 })
+    expect(q).toMatchObject({ klasse: 'verbunden', anteil_pct: 90, bezug: 'Partner GmbH', stufe: 2 })
   })
 
   it('Partner von Partnern werden NICHT verrechnet', () => {

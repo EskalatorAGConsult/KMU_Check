@@ -53,7 +53,7 @@ export default async function EinstellungenPage() {
         </div>
         <p className="mb-4 text-sm text-olive-600">
           Wirksame Empfänger:{' '}
-          <code className="rounded bg-olive-100 px-1.5 py-0.5 text-xs">{leadEmpfaenger.empfaenger.join(', ')}</code>
+          <code className="rounded bg-olive-100 px-1.5 py-0.5 text-xs break-all">{leadEmpfaenger.empfaenger.join(', ')}</code>
         </p>
         <LeadEmpfaengerForm initialWert={dbEmpfaenger} />
       </section>
@@ -72,7 +72,7 @@ export default async function EinstellungenPage() {
 
         {aufloesung.url ? (
           <p className="mb-4 text-sm text-olive-600">
-            Wirksame URL: <code className="rounded bg-olive-100 px-1.5 py-0.5 text-xs">{maskiere(aufloesung.url)}</code>
+            Wirksame URL: <code className="rounded bg-olive-100 px-1.5 py-0.5 text-xs break-all">{maskiere(aufloesung.url)}</code>
           </p>
         ) : (
           <p className="mb-4 rounded-xl bg-amber-50 px-4 py-3 text-sm text-amber-800">

@@ -40,10 +40,11 @@ export interface VerbundBeteiligung {
   /** Kettentiefe: 1 = direkter Gesellschafter/Beteiligung, 2+ = Folgestufen. */
   stufe: number
   klasse: 'partner' | 'verbunden'
-  /** Verrechnungs-Prozentsatz fuer die KMU-Engine (Partner: Anteil, verbunden: 100). */
+  /** DIREKTE Quote der letzten Kante in der Kette (die Verrechnung ueber die
+   *  Kette berechnet src/lib/kmu.ts anhand von `bezug` selbst). */
   anteil_pct: number
-  /** Anteil der letzten Kante in der Kette (Anzeige). */
-  anteil_direkt_pct: number
+  /** Bezugsunternehmen der Kante (Name des Ketten-Vorgaengers; Stufe 1 = Antragsteller). */
+  bezug: string
   /** Menschenlesbare letzte Kante, z. B. „Henrich Holding hält 80 % an Walter Henrich GmbH". */
   pfad: string
   jae?: number
@@ -243,6 +244,8 @@ interface KnotenZustand {
   name: string
   richtung: 'abwaerts' | 'aufwaerts'
   anteilDirekt: number
+  /** Name des Ketten-Vorgaengers (Bezugsunternehmen der Kante). */
+  bezug: string
   pfad: string
 }
 
@@ -289,7 +292,7 @@ export function analysiereVerbundKette(graph: Record<string, Rohdaten>, startId:
   const start = graph[startId]
   const startName = start?.details?.name?.name ?? 'Antragsteller'
   const zustaende = new Map<string, KnotenZustand>([
-    [startId, { klasse: 'start', stufe: 0, name: startName, richtung: 'aufwaerts', anteilDirekt: 100, pfad: '' }],
+    [startId, { klasse: 'start', stufe: 0, name: startName, richtung: 'aufwaerts', anteilDirekt: 100, bezug: '', pfad: '' }],
   ])
   const ignoriert: IgnorierteBeteiligung[] = []
   const fehlendeIds = new Set<string>()
@@ -354,6 +357,7 @@ export function analysiereVerbundKette(graph: Record<string, Rohdaten>, startId:
         name: kante.zielName,
         richtung: zustand.klasse === 'start' ? kante.richtung : zustand.richtung,
         anteilDirekt: pct,
+        bezug: knotenName,
         pfad,
       })
       queue.push(kante.zielId)
@@ -375,8 +379,8 @@ export function analysiereVerbundKette(graph: Record<string, Rohdaten>, startId:
       richtung: z.richtung,
       stufe: z.stufe,
       klasse: z.klasse,
-      anteil_pct: z.klasse === 'verbunden' ? 100 : z.anteilDirekt,
-      anteil_direkt_pct: z.anteilDirekt,
+      anteil_pct: z.anteilDirekt,
+      bezug: z.bezug,
       pfad: z.pfad,
       jae: kennzahlen.jae,
       umsatz: kennzahlen.umsatz,

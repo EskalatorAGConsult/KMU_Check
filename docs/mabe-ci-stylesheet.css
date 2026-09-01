@@ -1,0 +1,91 @@
+/* ==================================================================
+   MABE-CI-Stylesheet (extrahiert aus www.mabe.de, Stand 2026-09-01)
+   Basis: Bootstrap 5.3 (re-theme) + eigene CSS-Module.
+   Referenz für die Landingpage – nicht 1:1 in den Build einbinden,
+   sondern Tokens in src/app/globals.css überführen.
+   ================================================================== */
+
+:root {
+  /* ---------------- Kernfarben (CI) ---------------- */
+  --mabe-navy:        #003366; /* Primärfarbe, Überschriften, Links (#036) */
+  --mabe-navy-body:   #00264b; /* Fließtext / Body-Color                   */
+  --mabe-navy-deep:   #082753; /* Buttons auf Teal-Sektionen               */
+  --mabe-navy-hover:  #06418f; /* Button-Hover (orig. #06418fc1, ~76 %)    */
+  --mabe-navy-ink:    #001429; /* primary-text-emphasis                    */
+  --mabe-navy-soft:   #ccd6e0; /* primary-bg-subtle                        */
+  --mabe-navy-border: #99adc2; /* primary-border-subtle                    */
+
+  --mabe-teal:        #23a1a3; /* Akzent Türkis (Sektionen, Kicker)        */
+  --mabe-teal-alt:    #1aa2a7; /* Bootstrap-secondary-Variante             */
+  --mabe-teal-hover:  #1ca2a7; /* Link-Hover                               */
+  --mabe-teal-grad:   #24a1a5; /* Headline-Gradient-Endpunkt               */
+  --mabe-teal-soft:   #d1eced; /* secondary-bg-subtle                      */
+
+  --mabe-magenta:     #e6007e; /* „PLUS“-Badge / Eyebrow-Akzent            */
+
+  /* ---------------- Neutrale Flächen ---------------- */
+  --mabe-bg-section:  #f4f4f4; /* graue Sektion                            */
+  --mabe-bg-light:    #f8f9fa; /* Bootstrap light                          */
+  --mabe-bg-soft:     #f5fbfd; /* Karten-/Hero-Fläche hellblau             */
+  --mabe-border-soft: #d5e7ef; /* weiche Border auf Hellblau               */
+  --mabe-text-muted:  #31465c; /* Sekundärtext                             */
+  --mabe-text:        #036;    /* p/em/links laufen auf navy               */
+
+  /* ---------------- Formulare / Fokus ---------------- */
+  --mabe-form-accent: #34495e; /* Checkbox checked, Fokus-Border           */
+  --mabe-focus-ring:  #26598c; /* Fokus-Ring (10 % Deckkraft im Original)  */
+
+  /* ---------------- Gradienten ---------------- */
+  --mabe-hero-gradient:  linear-gradient(#f7fbff 0%, #eef7fb 58%, #fff 100%);
+  --mabe-card-gradient:  linear-gradient(135deg, #fff 0%, #eef7f8 100%);
+  --mabe-title-gradient: linear-gradient(135deg, #036 30%, #24a1a5 100%);
+
+  /* ---------------- Schatten / Radius ---------------- */
+  --mabe-shadow-navbar: 0 2px 10px -2px rgba(0, 0, 0, 0.1);
+  --mabe-shadow-card:   0 2px 4px rgba(0, 0, 0, 0.1);
+  --mabe-shadow-card-hover: 0 6px 12px rgba(0, 0, 0, 0.15);
+  --mabe-shadow-featured: 0 14px 34px rgba(0, 51, 102, 0.09);
+  --mabe-radius:    8px;    /* Cards, Buttons (modern) */
+  --mabe-radius-bs: .375rem; /* Bootstrap-Default       */
+}
+
+/* ---------------- Typografie ----------------
+   Keine Webfonts eingebunden – System-Stacks:
+   Headlines & Body:  "Open Sans", -apple-system, "Segoe UI", Roboto,
+                      "Helvetica Neue", Arial, sans-serif
+   Absätze (p/em):    "Helvetica Neue", Arial, sans-serif
+   Basis: 1 rem (18 px bei p, line-height 1.6; Retina: 1.25 rem)
+   H1/H2 Slider: clamp(1rem, .9rem + 1.5vw, 2.7rem)
+   Gewichte: h1 700–900, h2 300, Kicker 800–900 uppercase ls .06–.1em
+------------------------------------------------- */
+
+/* ---------------- Buttons (Muster) ---------------- */
+.btn-mabe-primary {
+  color: #fff;
+  background: #036;
+  border: 2px solid transparent;
+  border-radius: 8px;
+  padding: .8rem 2rem;
+  font-weight: 600;
+  transition: all .3s;
+}
+.btn-mabe-primary:hover { background: #024; transform: translateY(-2px); }
+
+.btn-mabe-outline {          /* auf Teal-Sektionen */
+  color: #fff;
+  background-color: #082753;
+  border: 2px solid #fff;
+  padding: 10px 30px;
+}
+.btn-mabe-outline:hover { background-color: #06418fc1; }
+
+/* ---------------- Badges / Kicker ---------------- */
+.badge-mabe-plus {
+  color: #fff; background: #e6007e; border-radius: 999px;
+  padding: .24em .5em; font-size: .62em; font-weight: 900;
+  letter-spacing: .08em; text-transform: uppercase; line-height: 1;
+}
+.kicker-mabe {
+  color: #23a1a3; letter-spacing: .1em; text-transform: uppercase;
+  font-size: .82rem; font-weight: 800;
+}
