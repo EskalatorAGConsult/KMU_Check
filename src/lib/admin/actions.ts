@@ -114,19 +114,19 @@ export async function analysiereAngebotPdf(formData: FormData): Promise<AnalyseE
   const geprueft = await validierePdf(formData)
   if ('fehler' in geprueft) return { ok: false, fehler: geprueft.fehler }
 
-  const analyse = await analysiereAngebot(geprueft.bytes)
+  const ergebnis = await analysiereAngebot(geprueft.bytes)
   await audit(null, `admin:${session.user.id}`, 'angebot_pdf_analyse', {
     datei: geprueft.name,
-    erfolg: !!analyse,
+    erfolg: ergebnis.ok,
+    ...(ergebnis.ok ? {} : { grund: ergebnis.fehler }),
   })
-  if (!analyse) {
+  if (!ergebnis.ok) {
     return {
       ok: false,
-      fehler:
-        'Das Angebot konnte nicht automatisch gelesen werden (KI nicht erreichbar oder nichts erkannt). Bitte die Felder manuell ausfüllen – das PDF wird beim Anlegen trotzdem archiviert.',
+      fehler: `${ergebnis.fehler} Bitte die Felder manuell ausfüllen – das PDF wird beim Anlegen trotzdem archiviert.`,
     }
   }
-  return { ok: true, analyse }
+  return { ok: true, analyse: ergebnis.analyse }
 }
 
 /**

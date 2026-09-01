@@ -41,13 +41,16 @@ Antworte NUR als JSON-Objekt mit exakt diesen Schlüsseln (null, wenn nicht im D
 Regeln: Beträge netto ohne Währungszeichen als Zahl. Keine Ratenwerte erfinden –
 wenn eine Angabe nicht eindeutig im Dokument steht: null. Keine Erläuterungen, nur JSON.`
 
-/** Analysiert ein Angebots-PDF. Fehler (Key, Netz, 4xx/5xx, Parse) -> null. */
-export async function analysiereAngebot(pdf: Uint8Array): Promise<AngebotAnalyse | null> {
+export type GeminiErgebnis =
+  | { ok: true; analyse: AngebotAnalyse }
+  | { ok: false; fehler: string }
+
+/** Analysiert ein Angebots-PDF. Liefert im Fehlerfall den konkreten Grund. */
+export async function analysiereAngebot(pdf: Uint8Array): Promise<GeminiErgebnis> {
   const key = process.env.GEMINI_API_KEY
-  if (!key) return null
+  if (!key) return { ok: false, fehler: 'GEMINI_API_KEY ist nicht gesetzt (lokal in .env.local bzw. in Vercel).' }
   if (pdf.length > MAX_PDF_BYTES) {
-    console.error(`[gemini] PDF zu gross (${pdf.length} Bytes)`)
-    return null
+    return { ok: false, fehler: `PDF zu groß (${Math.round(pdf.length / 1024 / 1024)} MB, max. 15 MB).` }
   }
   try {
     const res = await fetch(ENDPUNKT, {
@@ -67,16 +70,24 @@ export async function analysiereAngebot(pdf: Uint8Array): Promise<AngebotAnalyse
       signal: AbortSignal.timeout(60_000),
     })
     if (!res.ok) {
-      console.error(`[gemini] generateContent -> HTTP ${res.status}`)
-      return null
+      const detail = (await res.text().catch(() => '')).slice(0, 300)
+      console.error(`[gemini] generateContent -> HTTP ${res.status}: ${detail}`)
+      return { ok: false, fehler: `Gemini-API meldet HTTP ${res.status}${detail ? `: ${detail}` : ''}` }
     }
     const json = (await res.json()) as {
       candidates?: { content?: { parts?: { text?: string }[] } }[]
     }
     const roh = json.candidates?.[0]?.content?.parts?.map((p) => p.text ?? '').join('') ?? ''
-    return parseAngebotAnalyse(roh)
+    const analyse = parseAngebotAnalyse(roh)
+    if (!analyse) {
+      return { ok: false, fehler: 'Im PDF wurden keine Angebotsdaten erkannt (leere KI-Antwort).' }
+    }
+    return { ok: true, analyse }
   } catch (e) {
     console.error('[gemini] Analyse fehlgeschlagen:', e)
-    return null
+    return {
+      ok: false,
+      fehler: `Netzwerk-/Timeout-Fehler bei der Gemini-API (${e instanceof Error ? e.message : String(e)}).`,
+    }
   }
 }
