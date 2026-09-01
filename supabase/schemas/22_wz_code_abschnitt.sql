@@ -1,4 +1,4 @@
--- Migration 21 · WZ-Code: einbuchstabige Abschnitte (A-U) erlauben
+-- Migration 22 · WZ-Code: einbuchstabige Abschnitte (A-U) erlauben
 -- Die Klassifikation der Wirtschaftszweige 2008 (Destatis) kennt Abschnitts-
 -- buchstaben ("C" = Verarbeitendes Gewerbe) – die App-Validierung
 -- (src/lib/validierung.ts, pruefeWzCode) akzeptiert sie folgerichtig.
