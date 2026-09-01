@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 
-import { schemaFuerSchritt } from './schemas'
+import { schemaFuerSchritt, vollmachtSchema } from './schemas'
 import { schrittNach } from './schritte'
 import { steuerIdPruefziffer } from '@/lib/validierung'
 
@@ -64,6 +64,51 @@ describe('Schritt „antrag" – IBAN-Validierung', () => {
       const issue = res.error.issues.find((i) => i.path[0] === 'iban')
       expect(issue?.message).toMatch(/22 Stellen/)
     }
+  })
+})
+
+describe('vollmachtSchema – Signatur-Modi (canvas | upload)', () => {
+  const basis = {
+    vorhaben_nicht_begonnen: true,
+    wahrheitsgemaess: true,
+    dsgvo: true,
+  }
+  const UPLOAD = 'https://store55y.private.blob.vercel-storage.com/vollmacht-upload/ANG-1.pdf'
+
+  it('Upload-Modus: hochgeladene Vollmacht ersetzt die Online-Signatur', () => {
+    const res = vollmachtSchema.safeParse({ ...basis, beantragungsweg: 'eskalator', vollmacht_upload_pfad: UPLOAD })
+    expect(res.success).toBe(true)
+  })
+
+  it('Canvas-Modus: weiterhin Name + gezeichnete Signatur erforderlich', () => {
+    const ohne = vollmachtSchema.safeParse({ ...basis, beantragungsweg: 'eskalator' })
+    expect(ohne.success).toBe(false)
+    if (!ohne.success) {
+      expect(ohne.error.issues.some((i) => i.path[0] === 'signatur_png')).toBe(true)
+      expect(ohne.error.issues.some((i) => i.path[0] === 'unterschrift_name')).toBe(true)
+    }
+    const mit = vollmachtSchema.safeParse({
+      ...basis,
+      beantragungsweg: 'eskalator',
+      unterschrift_name: 'Max Mustermann',
+      signatur_png: 'data:image/png;base64,iVBORw0KGgo=',
+    })
+    expect(mit.success).toBe(true)
+  })
+
+  it('Upload-Referenz muss ein Blob-Pfad sein (Mass-Assignment-Schutz)', () => {
+    const res = vollmachtSchema.safeParse({
+      ...basis,
+      beantragungsweg: 'eskalator',
+      vollmacht_upload_pfad: 'https://boese.example.org/x.pdf',
+    })
+    expect(res.success).toBe(false)
+    if (!res.success) expect(res.error.issues.some((i) => i.path[0] === 'vollmacht_upload_pfad')).toBe(true)
+  })
+
+  it('Beantragung selbst: keine Signatur-Anforderungen', () => {
+    const res = vollmachtSchema.safeParse({ ...basis, beantragungsweg: 'selbst' })
+    expect(res.success).toBe(true)
   })
 })
 

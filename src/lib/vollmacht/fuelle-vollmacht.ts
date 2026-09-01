@@ -37,6 +37,12 @@ export interface VollmachtgeberDaten {
   unterschriftName?: string | null
   /** Gezeichnete Unterschrift als PNG (transparent) – wird an der Signaturzeile eingezeichnet. */
   signaturPng?: Uint8Array | null
+  /**
+   * Vordruck fuer die HAENDISCHE Unterschrift (Download-Print-Sign-Scan):
+   * laesst Datum und Signaturzeile komplett frei – der Kunde fuellt sie
+   * auf Papier aus. Stammdaten sind bereits vorbefuellt.
+   */
+  vordruck?: boolean
 }
 
 /**
@@ -90,9 +96,12 @@ export async function fuelleVollmachtAus(geber: VollmachtgeberDaten): Promise<Ui
   setze('Ort2', BEVOLLMAECHTIGTER.ort)
 
   // 3 · Erklaerungszeile: „Ort, Datum" als kombiniertes Feld – das
-  // Unterschriftsdatum (Zeitpunkt der Online-Signatur = Generierungszeitpunkt)
-  const datum = formatiereUnterschriftsdatum(new Date())
-  setze('Datum', geber.ort ? `${geber.ort}, den ${datum}` : datum)
+  // Unterschriftsdatum (Zeitpunkt der Online-Signatur = Generierungszeitpunkt).
+  // Im Vordruck-Modus (haendische Signatur) bleibt die Zeile frei.
+  if (!geber.vordruck) {
+    const datum = formatiereUnterschriftsdatum(new Date())
+    setze('Datum', geber.ort ? `${geber.ort}, den ${datum}` : datum)
+  }
 
   // Erscheinungsbild mit eingebetteter Schrift neu rendern (Umlaute!), dann flachrechnen
   const schrift = await doc.embedFont(StandardFonts.Helvetica)
@@ -103,9 +112,10 @@ export async function fuelleVollmachtAus(geber: VollmachtgeberDaten): Promise<Ui
   // damit sie Teil des Archiv-Inhalts wird). Bevorzugt die GEZEICHNETE
   // Signatur (PNG, aspect-fit in die Signaturzeile); der getippte Name dient
   // als Fallback und zusaetzlich als kleine Bildunterschrift.
-  const name = geber.unterschriftName?.trim()
+  // Vordruck-Modus: Signaturzeile bleibt fuer die Handunterschrift frei.
+  const name = geber.vordruck ? undefined : geber.unterschriftName?.trim()
   const seite = doc.getPage(SIGNATUR.seite)
-  if (geber.signaturPng && geber.signaturPng.length > 0) {
+  if (!geber.vordruck && geber.signaturPng && geber.signaturPng.length > 0) {
     try {
       const bild = await doc.embedPng(geber.signaturPng)
       const skalierung = Math.min(SIGNATUR.maxBreite / bild.width, SIGNATUR.maxHoehe / bild.height)

@@ -32,6 +32,7 @@ export function EskalatorBlock() {
           <p className="text-sm font-semibold text-mabe-900">Eskalator AG</p>
           <p className="text-xs/5 text-olive-500">Ihre Fördermittelspezialisten</p>
           <p className="text-xs/5 text-olive-500">Churerstrasse 135 · 8808 Freienbach · Schweiz</p>
+          <p className="text-xs/5 text-olive-500">Ihre Ansprechpartnerin: Antonja Brücker</p>
         </div>
       </div>
 

@@ -295,7 +295,7 @@ export function Wizard({
               investSumme={investSumme}
               firmenname={(daten['unternehmen']?.unternehmensname as string | undefined) ?? undefined}
             />
-            <SchrittVollmacht daten={schrittDaten} fehler={fehler} onChange={setze} />
+            <SchrittVollmacht daten={schrittDaten} fehler={fehler} onChange={setze} token={token} />
           </>
         )}
         </div>

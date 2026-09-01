@@ -14,6 +14,47 @@ export const HELL = rgb(0.925, 0.929, 0.945) // olive-200
 
 export const SEITE = { breite: 595.28, hoehe: 841.89, rand: 56 } // A4
 
+/**
+ * WinAnsi-Sanitizer (pdf-lib StandardFonts): CP1252 deckt 0x00–0xFF weitgehend
+ * ab (Umlaute, „–", „·", „„…"", „€"), aber KEINE technischen Zeichen wie
+ * „≤", „→" oder Emojis. Diese Funktion ersetzt bekannte Zeichen durch ASCII-
+ * Aequi­valente und alles Uebrige Nicht-Kodierbare durch „?" – garantiert,
+ * dass KEIN generiertes PDF mehr an Zeichensaetzen scheitert (datengetriebener
+ * Produktionsfehler 01.09.2026: „≤" aus den KMU-Begruendungen).
+ */
+const WINANSI_MAP: Record<string, string> = {
+  '≤': '<=',
+  '≥': '>=',
+  '→': '->',
+  '←': '<-',
+  '↔': '<->',
+  '⇒': '=>',
+  '−': '-', // echtes Minuszeichen U+2212
+  '×': 'x',
+  '✓': '[OK]',
+  '✔': '[OK]',
+  '⭐': '*',
+  '⚠': '!',
+  '💪': '',
+  '📄': '',
+  '🔗': '',
+  '🗑': '',
+  '⬇': '',
+}
+
+/** CP1252-Reservierungen (in pdf-lib nicht kodierbar). */
+const UNGUELTIG = new Set([0x81, 0x8d, 0x8f, 0x90, 0x9d])
+
+export function winAnsi(text: string): string {
+  let out = ''
+  for (const zeichen of text) {
+    const code = zeichen.codePointAt(0)!
+    if (code <= 0xff && !UNGUELTIG.has(code)) out += zeichen
+    else out += WINANSI_MAP[zeichen] ?? '?'
+  }
+  return out
+}
+
 /** Betrag deutsch formatiert ohne Euro-Zeichen (WinAnsi-kompatibel). */
 export function eur(betrag: number | null | undefined): string {
   if (betrag == null) return '–'
@@ -50,6 +91,11 @@ export class Writer {
     this.y = SEITE.hoehe - SEITE.rand
   }
 
+  /** WinAnsi-sicherer Text (alle drawText-Aufrufe laufen hierdurch). */
+  private t(text: string): string {
+    return winAnsi(text)
+  }
+
   private breiteVon(text: string, size: number, font: PDFFont): number {
     return font.widthOfTextAtSize(text, size)
   }
@@ -69,7 +115,7 @@ export class Writer {
     // 56pt Bedarf, damit eine Ueberschrift nie verwaist am Seitenende steht
     this.neueSeiteWennNoetig(56)
     this.y -= 6
-    this.seite.drawText(text, { x: SEITE.rand, y: this.y, size: 12, font: this.fett, color: NAVY })
+    this.seite.drawText(this.t(text), { x: SEITE.rand, y: this.y, size: 12, font: this.fett, color: NAVY })
     this.y -= 8
     this.seite.drawLine({
       start: { x: SEITE.rand, y: this.y },
@@ -83,7 +129,7 @@ export class Writer {
   absatz(text: string, size = 10) {
     const maxBreite = SEITE.breite - 2 * SEITE.rand
     const zeilen: string[] = []
-    let rest = text
+    let rest = this.t(text)
     while (rest.length > 0) {
       if (this.breiteVon(rest, size, this.normal) <= maxBreite) {
         zeilen.push(rest)
@@ -106,8 +152,8 @@ export class Writer {
 
   zeile(label: string, wert: string) {
     this.neueSeiteWennNoetig(16)
-    this.seite.drawText(label, { x: SEITE.rand, y: this.y, size: 9.5, font: this.normal, color: GRAU })
-    this.seite.drawText(wert, {
+    this.seite.drawText(this.t(label), { x: SEITE.rand, y: this.y, size: 9.5, font: this.normal, color: GRAU })
+    this.seite.drawText(this.t(wert), {
       x: SEITE.rand + 200,
       y: this.y,
       size: 9.5,
@@ -121,7 +167,7 @@ export class Writer {
     const seiten = this.doc.getPages()
     seiten.forEach((s, i) => {
       s.drawRectangle({ x: 0, y: 0, width: SEITE.breite, height: 34, color: HELL })
-      s.drawText(`${text} · Seite ${i + 1} von ${seiten.length}`, {
+      s.drawText(this.t(`${text} · Seite ${i + 1} von ${seiten.length}`), {
         x: SEITE.rand,
         y: 13,
         size: 8,

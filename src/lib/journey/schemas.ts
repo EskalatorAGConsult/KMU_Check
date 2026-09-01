@@ -193,6 +193,18 @@ export const vollmachtSchema = z
       .startsWith('data:image/png;base64,', 'Unterschrift konnte nicht gelesen werden.')
       .max(400_000, 'Unterschrift ist zu groß – bitte erneut zeichnen.')
       .optional(),
+    /**
+     * Alternative zur Online-Signatur: haendisch unterschriebene Vollmacht
+     * als Datei hochgeladen (Blob-Pfad aus ladeVollmachtUploadHoch). Wenn
+     * gesetzt, entfallen die Anforderungen an die Canvas-Signatur
+     * (signatur_modus = 'upload').
+     */
+    vollmacht_upload_pfad: z
+      .string()
+      .url('Upload-Referenz ungültig.')
+      .max(600)
+      .refine((v) => v.includes('.blob.vercel-storage.com/'), 'Upload-Referenz ungültig.')
+      .optional(),
     vorhaben_nicht_begonnen: z
       .boolean()
       .refine((v) => v === true, 'Ohne diese Bestätigung ist eine Förderung nicht möglich.'),
@@ -203,6 +215,9 @@ export const vollmachtSchema = z
   })
   .superRefine((daten, ctx) => {
     if (daten.beantragungsweg !== 'eskalator') return
+    // Modus „haendisch unterschreiben": das hochgeladene, signierte Dokument
+    // ist der Nachweis – Canvas-Signatur und getippter Name entfallen dann.
+    if (daten.vollmacht_upload_pfad) return
     if (!daten.unterschrift_name || daten.unterschrift_name.length < 5) {
       ctx.addIssue({
         code: 'custom',
@@ -214,7 +229,7 @@ export const vollmachtSchema = z
       ctx.addIssue({
         code: 'custom',
         path: ['signatur_png'],
-        message: 'Bitte zeichnen Sie Ihre Unterschrift in das Unterschriftsfeld.',
+        message: 'Bitte zeichnen Sie Ihre Unterschrift – oder laden Sie eine händisch unterschriebene Vollmacht hoch.',
       })
     }
   })

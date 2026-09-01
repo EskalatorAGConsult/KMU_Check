@@ -102,6 +102,19 @@ describe('pruefeVollstaendigkeit', () => {
     expect(selbst.bausteine.find((b) => b.id === 'vollmacht')!.ok).toBe(true)
   })
 
+  it('Upload-Modus: pdf_path allein ist ein vollstaendiger Nachweis (haendische Signatur)', () => {
+    const r = pruefeVollstaendigkeit({
+      ...komplett,
+      vollmacht: {
+        beantragungsweg: 'eskalator',
+        unterzeichnet_von: null,
+        pdf_path: 'https://store.private.blob.vercel-storage.com/vollmacht-upload/ANG-1.pdf',
+        signatur_bild_path: null,
+      },
+    })
+    expect(r.bausteine.find((b) => b.id === 'vollmacht')!.ok).toBe(true)
+  })
+
   it('Systemkonzept ist Pflichtanlage', () => {
     const r = pruefeVollstaendigkeit({ ...komplett, dokumente: [{ typ: 'angebot_pdf' }] })
     expect(r.bausteine.find((b) => b.id === 'systemkonzept')!.ok).toBe(false)

@@ -1,26 +1,61 @@
 'use client'
 
+import { useState, useTransition } from 'react'
+
+import { ladeVollmachtUploadHoch } from '@/lib/journey/actions'
 import { EskalatorBlock } from './eskalator-block'
 import { SignaturPad } from './signatur-pad'
 import { Checkbox, Feld, inputCls } from './ui'
 
 /**
  * Vollmacht & Beantragungsweg. Eskalator-Concierge ist die empfohlene
- * (visuell hervorgehobene) Option; die Online-Unterschrift erfolgt als
- * gezeichnete Signatur (Canvas, eIDAS einfache elektronische Signatur)
- * zusaetzlich zum getippten Namen als Unterzeichner-Nachweis – Zeitpunkt,
- * IP und User-Agent werden serverseitig protokolliert.
+ * (visuell hervorgehobene) Option. Zwei Signatur-Wege (signatur_modus):
+ * - 'canvas': online zeichnen (eIDAS einfache elektronische Signatur)
+ * - 'upload': Vordruck laden -> haendisch unterschreiben -> scannen ->
+ *   hochladen (das Dokument ist dann selbst die Vollmacht)
+ * Zeitpunkt, IP und User-Agent werden serverseitig protokolliert.
  */
 export function SchrittVollmacht({
   daten,
   fehler,
   onChange,
+  token,
 }: {
   daten: Record<string, unknown>
   fehler: Record<string, string>
   onChange: (name: string, wert: unknown) => void
+  /** Journey-Token (fuer den Vordruck-Download und den Upload). */
+  token: string
 }) {
   const weg = (daten.beantragungsweg as string | undefined) ?? 'eskalator'
+  const uploadPfad = (daten.vollmacht_upload_pfad as string | undefined) ?? null
+  const [modus, setModus] = useState<'canvas' | 'upload'>(uploadPfad ? 'upload' : 'canvas')
+  const [uploadMeldung, setUploadMeldung] = useState<{ art: 'ok' | 'fehler'; text: string } | null>(null)
+  const [pending, startTransition] = useTransition()
+
+  const waehleModus = (m: 'canvas' | 'upload') => {
+    setModus(m)
+    setUploadMeldung(null)
+    // Datenkonsistenz: pro Vorgang nur EIN Signatur-Nachweis – beim Wechsel
+    // wird der jeweils andere verworfen (kein versteckter Restwert).
+    if (m === 'canvas') onChange('vollmacht_upload_pfad', undefined)
+    else onChange('signatur_png', undefined)
+  }
+
+  const hochladen = (datei: File) => {
+    setUploadMeldung(null)
+    const fd = new FormData()
+    fd.set('datei', datei)
+    startTransition(async () => {
+      const res = await ladeVollmachtUploadHoch(token, fd)
+      if (res.ok) {
+        onChange('vollmacht_upload_pfad', res.pfad)
+        setUploadMeldung({ art: 'ok', text: `„${datei.name}“ wurde hochgeladen und Ihrem Vorgang zugeordnet.` })
+      } else {
+        setUploadMeldung({ art: 'fehler', text: res.fehler })
+      }
+    })
+  }
 
   const karte = (
     wert: 'eskalator' | 'selbst',
@@ -109,6 +144,33 @@ export function SchrittVollmacht({
       {weg === 'eskalator' && (
         <div className="flex flex-col gap-4">
           <EskalatorBlock />
+
+          {/* Signatur-Modus waehlen: online zeichnen ODER haendisch */}
+          <div className="grid grid-cols-2 gap-2 rounded-2xl border border-olive-200 bg-olive-50/50 p-1.5" role="tablist" aria-label="Wie möchten Sie unterschreiben?">
+            <button
+              type="button"
+              role="tab"
+              aria-selected={modus === 'canvas'}
+              onClick={() => waehleModus('canvas')}
+              className={`min-h-11 rounded-xl px-3 py-2.5 text-sm font-semibold transition-colors ${
+                modus === 'canvas' ? 'bg-white text-mabe-900 shadow-sm ring-1 ring-olive-200' : 'text-olive-500 hover:text-mabe-900'
+              }`}
+            >
+              💻 Online unterschreiben
+            </button>
+            <button
+              type="button"
+              role="tab"
+              aria-selected={modus === 'upload'}
+              onClick={() => waehleModus('upload')}
+              className={`min-h-11 rounded-xl px-3 py-2.5 text-sm font-semibold transition-colors ${
+                modus === 'upload' ? 'bg-white text-mabe-900 shadow-sm ring-1 ring-olive-200' : 'text-olive-500 hover:text-mabe-900'
+              }`}
+            >
+              🖊 Händisch unterschreiben
+            </button>
+          </div>
+
           <div className="flex flex-col gap-4 rounded-2xl border border-olive-200 bg-olive-50/50 p-5">
             <h3 className="text-sm font-semibold text-mabe-900">
               Vollmacht nach § 14 VwVfG
@@ -139,42 +201,161 @@ export function SchrittVollmacht({
               Vollmacht-Formular öffnen (PDF, 2 Seiten) ↗
             </a>
 
-            <p className="rounded-xl bg-white px-4 py-3 text-xs/5 text-olive-600 ring-1 ring-olive-200">
-              Nach dem Absenden erstellen wir automatisch das <strong>ausgefüllte</strong> BAFA-Formular
-              eew_vm_3 mit Ihren Stammdaten und Ihrer Unterschrift – Sie finden es in Ihrem Kundenkonto unter
-              „Das reichen wir für Sie ein“.
-            </p>
+            {modus === 'canvas' ? (
+              <>
+                <p className="rounded-xl bg-white px-4 py-3 text-xs/5 text-olive-600 ring-1 ring-olive-200">
+                  Nach dem Absenden erstellen wir automatisch das <strong>ausgefüllte</strong> BAFA-Formular
+                  eew_vm_3 mit Ihren Stammdaten und Ihrer Unterschrift – Sie finden es in Ihrem Kundenkonto unter
+                  „Das reichen wir für Sie ein“.
+                </p>
 
-          <div className="flex flex-col gap-2">
-            <span className="text-sm font-semibold text-mabe-900">
-              Unterschrift zeichnen <span className="text-teal-700">*</span>
-            </span>
-            <p className="text-xs/5 text-olive-600">
-              Unterschreiben Sie mit dem Finger oder der Maus – so wie auf Ihrem Ausweis. Ihre Unterschrift wird
-              zusammen mit Name und Datum an der vorgesehenen Stelle des BAFA-Formulars eingefügt (Vorschau im
-              Dokument oben).
-            </p>
-            <SignaturPad
-              wert={(daten.signatur_png as string | null) ?? null}
-              fehler={fehler.signatur_png}
-              onChange={(dataUrl) => onChange('signatur_png', dataUrl ?? undefined)}
-            />
-          </div>
+                <div className="flex flex-col gap-2">
+                  <span className="text-sm font-semibold text-mabe-900">
+                    Unterschrift zeichnen <span className="text-teal-700">*</span>
+                  </span>
+                  <p className="text-xs/5 text-olive-600">
+                    Unterschreiben Sie mit dem Finger oder der Maus – so wie auf Ihrem Ausweis. Ihre Unterschrift wird
+                    zusammen mit Name und Datum an der vorgesehenen Stelle des BAFA-Formulars eingefügt (Vorschau im
+                    Dokument oben).
+                  </p>
+                  <SignaturPad
+                    wert={(daten.signatur_png as string | null) ?? null}
+                    fehler={fehler.signatur_png}
+                    onChange={(dataUrl) => onChange('signatur_png', dataUrl ?? undefined)}
+                  />
+                </div>
 
-          <Feld
-            label="Unterzeichner/in (vollständiger Name)"
-            hilfe="Name der zeichnungsberechtigten Person – ergänzt die gezeichnete Unterschrift als Nachweis. Zeitpunkt und technische Daten werden protokolliert."
-            fehler={fehler.unterschrift_name}
-            pflicht
-          >
-            <input
-              className={inputCls}
-              placeholder="Vorname Nachname"
-              autoComplete="name"
-              value={(daten.unterschrift_name as string) ?? ''}
-              onChange={(e) => onChange('unterschrift_name', e.target.value)}
-            />
-          </Feld>
+                <Feld
+                  label="Unterzeichner/in (vollständiger Name)"
+                  hilfe="Name der zeichnungsberechtigten Person – ergänzt die gezeichnete Unterschrift als Nachweis. Zeitpunkt und technische Daten werden protokolliert."
+                  fehler={fehler.unterschrift_name}
+                  pflicht
+                >
+                  <input
+                    className={inputCls}
+                    placeholder="Vorname Nachname"
+                    autoComplete="name"
+                    value={(daten.unterschrift_name as string) ?? ''}
+                    onChange={(e) => onChange('unterschrift_name', e.target.value)}
+                  />
+                </Feld>
+              </>
+            ) : (
+              <div className="flex flex-col gap-4">
+                {/* 4-Schritte-Anleitung fuer die haendische Signatur */}
+                <ol className="flex flex-col gap-2.5">
+                  {(
+                    [
+                      ['Vordruck herunterladen', 'Das BAFA-Formular ist bereits mit Ihren Daten vorbefüllt – nur Datum und Unterschrift sind frei.'],
+                      ['Ausdrucken & unterschreiben', 'Bitte wie auf Ihrem Ausweis – mit Ort und Datum.'],
+                      ['Einscannen oder abfotografieren', 'PDF, PNG oder JPG genügt – gut lesbar.'],
+                      ['Hier hochladen', 'Wir ordnen die signierte Vollmacht Ihrem Vorgang zu und reichen sie ein.'],
+                    ] as const
+                  ).map(([titel, text], i) => (
+                    <li key={titel} className="flex gap-3 rounded-xl bg-white px-4 py-3 ring-1 ring-olive-200">
+                      <span className="flex size-7 shrink-0 items-center justify-center rounded-full bg-mabe-900 text-xs font-bold text-white">
+                        {i + 1}
+                      </span>
+                      <div className="min-w-0">
+                        <p className="text-sm font-semibold text-mabe-900">{titel}</p>
+                        <p className="mt-0.5 text-xs/5 text-olive-600">{text}</p>
+                      </div>
+                    </li>
+                  ))}
+                </ol>
+
+                <a
+                  href={`/v/${token}/vollmacht-vordruck.pdf`}
+                  className="flex min-h-12 items-center justify-center gap-2 rounded-xl bg-mabe-900 px-5 py-3 text-sm font-semibold text-white hover:bg-mabe-800"
+                >
+                  ⬇ Vordruck herunterladen (vorbefüllt, ohne Unterschrift)
+                </a>
+
+                {/* Upload der signierten Datei */}
+                {uploadPfad ? (
+                  <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-teal-600/30 bg-teal-50 px-4 py-3">
+                    <div className="flex min-w-0 items-center gap-2.5">
+                      <span className="animate-check-pop flex size-6 shrink-0 items-center justify-center rounded-full bg-teal-600 text-white">
+                        <svg viewBox="0 0 20 20" fill="currentColor" className="size-3.5" aria-hidden>
+                          <path
+                            fillRule="evenodd"
+                            d="M16.704 4.153a.75.75 0 0 1 .143 1.052l-8 10.5a.75.75 0 0 1-1.127.075l-4.5-4.5a.75.75 0 0 1 1.06-1.06l3.894 3.893 7.48-9.817a.75.75 0 0 1 1.05-.143Z"
+                            clipRule="evenodd"
+                          />
+                        </svg>
+                      </span>
+                      <div className="min-w-0">
+                        <p className="text-sm font-semibold text-teal-900">Signierte Vollmacht hochgeladen</p>
+                        <p className="truncate font-mono text-[11px] text-teal-700">{uploadPfad.split('/').pop()}</p>
+                      </div>
+                    </div>
+                    <div className="flex shrink-0 gap-2">
+                      <label className="cursor-pointer rounded-lg border border-teal-600 bg-white px-3 py-2 text-xs font-semibold text-teal-700 hover:bg-teal-50">
+                        Ersetzen
+                        <input
+                          type="file"
+                          accept=".pdf,.png,.jpg,.jpeg"
+                          className="sr-only"
+                          disabled={pending}
+                          onChange={(e) => {
+                            const f = e.target.files?.[0]
+                            if (f) hochladen(f)
+                            e.target.value = ''
+                          }}
+                        />
+                      </label>
+                      <button
+                        type="button"
+                        disabled={pending}
+                        onClick={() => onChange('vollmacht_upload_pfad', undefined)}
+                        className="rounded-lg border border-red-200 bg-white px-3 py-2 text-xs font-semibold text-red-700 hover:bg-red-50 disabled:opacity-50"
+                      >
+                        Entfernen
+                      </button>
+                    </div>
+                  </div>
+                ) : (
+                  <label
+                    className={`flex min-h-12 cursor-pointer items-center justify-center gap-2 rounded-xl border-2 border-dashed border-teal-600/50 bg-white px-5 py-3 text-sm font-semibold text-teal-700 hover:bg-teal-50 ${
+                      pending ? 'pointer-events-none opacity-60' : ''
+                    }`}
+                  >
+                    {pending ? 'Lädt hoch …' : '⬆ Signierte Vollmacht hochladen (PDF, PNG oder JPG · max. 15 MB)'}
+                    <input
+                      type="file"
+                      accept=".pdf,.png,.jpg,.jpeg"
+                      className="sr-only"
+                      disabled={pending}
+                      onChange={(e) => {
+                        const f = e.target.files?.[0]
+                        if (f) hochladen(f)
+                        e.target.value = ''
+                      }}
+                    />
+                  </label>
+                )}
+                {uploadMeldung && (
+                  <p
+                    role="status"
+                    className={`rounded-lg px-3 py-2 text-xs font-medium ${
+                      uploadMeldung.art === 'ok' ? 'bg-teal-50 text-teal-800' : 'bg-red-50 text-red-700'
+                    }`}
+                  >
+                    {uploadMeldung.text}
+                  </p>
+                )}
+                {fehler.vollmacht_upload_pfad && (
+                  <p className="text-xs/5 font-medium text-red-700" role="alert">
+                    {fehler.vollmacht_upload_pfad}
+                  </p>
+                )}
+                {fehler.signatur_png && modus === 'upload' && (
+                  <p className="text-xs/5 font-medium text-red-700" role="alert">
+                    {fehler.signatur_png}
+                  </p>
+                )}
+              </div>
+            )}
           </div>
         </div>
       )}

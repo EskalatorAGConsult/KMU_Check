@@ -3,6 +3,8 @@
 import { headers } from 'next/headers'
 
 import { supabaseServer } from '@/lib/db/server'
+import { list } from '@vercel/blob'
+import { validiereUploadDatei } from '@/lib/admin/datei-upload'
 import { ermittleWebhookUrl } from '@/lib/db/repositories/einstellungen'
 import {
   audit,
@@ -15,9 +17,10 @@ import { SCHRITTE, schrittNach } from '@/lib/journey/schritte'
 import { schemaFuerSchritt, type DeminimisSchrittDaten, type KmuSchrittDaten, type VollmachtSchrittDaten } from '@/lib/journey/schemas'
 import { evaluateKmu } from '@/lib/kmu'
 import { sendeEingangsbestaetigung, sendeVollmachtAnAdmins } from '@/lib/email/notify'
+import { loggeFehler } from '@/lib/fehler'
 import { TECHNOLOGIE_LABELS } from '@/lib/labels'
 import { generiereSystemkonzept } from '@/lib/systemkonzept/generate'
-import { ladeDokumentHoch } from '@/lib/storage/blob'
+import { blobToken, ladeDokumentBuffer, ladeDokumentHoch, type BlobInhalt } from '@/lib/storage/blob'
 import { normalisiereIban, normalisiereSteuerId } from '@/lib/validierung'
 import { fuelleVollmachtAus } from '@/lib/vollmacht/fuelle-vollmacht'
 
@@ -53,6 +56,54 @@ export async function speichereSchritt(
     return { ok: true }
   } catch (e) {
     return { ok: false, fehler: e instanceof Error ? e.message : 'Speichern fehlgeschlagen.' }
+  }
+}
+
+/**
+ * Haendisch unterschriebene Vollmacht hochladen (Alternative zur Online-
+ * Signatur, signatur_modus = 'upload'). Token-autorisiert; die Datei wird
+ * validiert (Magic-Bytes: PDF/PNG/JPG, max. 15 MB) und im privaten Blob
+ * archiviert. Der Client speichert den zurueckgegebenen Pfad als
+ * vollmacht_upload_pfad im Journey-Entwurf.
+ */
+export async function ladeVollmachtUploadHoch(
+  klartextToken: string,
+  formData: FormData,
+): Promise<{ ok: true; pfad: string } | { ok: false; fehler: string }> {
+  const kontext = await validiereToken(klartextToken)
+  if (!kontext) return { ok: false, fehler: 'Der Link ist ungültig oder abgelaufen.' }
+  const { angebot, token } = kontext
+  if (angebot.status === 'eingereicht' || angebot.status === 'abgeschlossen') {
+    return { ok: false, fehler: 'Dieser Vorgang wurde bereits eingereicht.' }
+  }
+
+  const datei = await validiereUploadDatei(formData)
+  if ('fehler' in datei) return { ok: false, fehler: datei.fehler }
+
+  // Deckel gegen Blob-Missbrauch: jeder Upload legt einen neuen Blob an
+  // (Ueberschreiben ist technisch nicht vorgesehen) – mehr als 10 Uploads
+  // pro Vorgang sind kein Kundenverhalten mehr.
+  const blobTok = blobToken()
+  if (blobTok) {
+    const { blobs } = await list({
+      prefix: `vollmacht-upload/${angebot.angebot_nr}`,
+      token: blobTok,
+      limit: 100,
+    })
+    if (blobs.length >= 10) {
+      return { ok: false, fehler: 'Zu viele Upload-Versuche – bitte dem MABE-Ansprechpartner melden.' }
+    }
+  }
+
+  try {
+    const endung = datei.contentType === 'application/pdf' ? 'pdf' : datei.contentType === 'image/png' ? 'png' : 'jpg'
+    const url = await ladeDokumentHoch(`vollmacht-upload/${angebot.angebot_nr}.${endung}`, datei.bytes, datei.contentType)
+    if (!url) return { ok: false, fehler: 'Storage nicht konfiguriert – bitte dem MABE-Ansprechpartner melden.' }
+    await audit(angebot.id, `kunde:${token.id}`, 'vollmacht_upload', { datei: datei.name })
+    return { ok: true, pfad: url }
+  } catch (e) {
+    loggeFehler('journey', e, { route: 'vollmacht_upload', angebotNr: angebot.angebot_nr })
+    return { ok: false, fehler: 'Der Upload ist fehlgeschlagen. Bitte erneut versuchen.' }
   }
 }
 
@@ -130,10 +181,43 @@ export async function schliesseJourneyAb(
 
   // Gezeichnete Signatur: Dekodierung + Blob-Archiv ausserhalb des try,
   // damit die Bytes spaeter auch der PDF-Generierung (Schritt 12) zur
-  // Verfuegung stehen.
+  // Verfuegung stehen. Nur im Canvas-Modus; im Upload-Modus ist das
+  // hochgeladene Dokument selbst die signierte Vollmacht.
+  const uploadPfad = vollmacht.vollmacht_upload_pfad ?? null
+  // Trust-Boundary: Der Pfad stammt aus dem Client-Payload und wird NICHT
+  // blind geglaubt – sonst ließe sich die Signatur-Pflicht mit einer
+  // Phantom- oder fremden Blob-Referenz umgehen. Er muss aus der Upload-
+  // Action DIESES Vorgangs stammen (Pfad-Präfix mit der eigenen
+  // Angebotsnummer) und real existieren. Prüfung VOR allen DB-Writes.
+  let uploadInhalt: BlobInhalt | null = null
+  if (vollmacht.beantragungsweg === 'eskalator' && uploadPfad) {
+    let pfadSegment: string | null = null
+    try {
+      pfadSegment = new URL(uploadPfad).pathname
+    } catch {
+      pfadSegment = null
+    }
+    const ungueltig = (grund: string) => ({
+      ok: false as const,
+      fehler: 'Bitte prüfen Sie den Schritt „Vollmacht & Beantragung“.',
+      schrittFehler: { vollmacht: grund },
+    })
+    if (!pfadSegment?.startsWith(`/vollmacht-upload/${angebot.angebot_nr}`)) {
+      return ungueltig('Die Upload-Referenz ist ungültig – bitte die unterschriebene Vollmacht erneut hochladen.')
+    }
+    try {
+      uploadInhalt = await ladeDokumentBuffer(uploadPfad)
+    } catch (e) {
+      loggeFehler('journey', e, { route: 'abschluss', schritt: 'vollmacht_upload_laden' })
+      uploadInhalt = null
+    }
+    if (!uploadInhalt) {
+      return ungueltig('Die hochgeladene Vollmacht konnte nicht gefunden werden – bitte erneut hochladen.')
+    }
+  }
   let signaturBytes: Uint8Array | null = null
   let signaturPfad: string | null = null
-  if (vollmacht.beantragungsweg === 'eskalator' && vollmacht.signatur_png) {
+  if (vollmacht.beantragungsweg === 'eskalator' && !uploadPfad && vollmacht.signatur_png) {
     try {
       const base64 = vollmacht.signatur_png.split(',')[1] ?? ''
       signaturBytes = Uint8Array.from(Buffer.from(base64, 'base64'))
@@ -258,8 +342,9 @@ export async function schliesseJourneyAb(
       {
         angebot_id: angebot.id,
         beantragungsweg: vollmacht.beantragungsweg,
-        signatur_modus: vollmacht.beantragungsweg === 'eskalator' ? 'canvas' : null,
-        signatur_bild_path: vollmacht.beantragungsweg === 'eskalator' ? signaturPfad : null,
+        signatur_modus:
+          vollmacht.beantragungsweg !== 'eskalator' ? null : uploadPfad ? ('upload' as const) : ('canvas' as const),
+        signatur_bild_path: vollmacht.beantragungsweg === 'eskalator' && !uploadPfad ? signaturPfad : null,
         unterzeichnet_at: vollmacht.beantragungsweg === 'eskalator' ? new Date().toISOString() : null,
         unterzeichnet_von: vollmacht.unterschrift_name ?? null,
         unterschrift_ip: ip,
@@ -399,48 +484,77 @@ export async function schliesseJourneyAb(
     })
   }
 
-  // 12 · Offizielle BAFA-Vollmacht ausfuellen (nur bei Beantragung durch Eskalator, best effort)
+  // 12 · Offizielle BAFA-Vollmacht (nur bei Beantragung durch Eskalator, best effort)
   if (vollmacht.beantragungsweg === 'eskalator') {
     try {
-      const vollmachtPdf = await fuelleVollmachtAus({
-        unternehmensname: String(unternehmen.unternehmensname),
-        strasse: String(unternehmen.strasse),
-        plz: String(unternehmen.plz),
-        ort: String(unternehmen.ort),
-        vorgangsnummer: angebot.angebot_nr,
-        unterschriftName: vollmacht.unterschrift_name ?? null,
-        signaturPng: signaturBytes,
-      })
-      const url = await ladeDokumentHoch(`vollmacht/${angebot.angebot_nr}.pdf`, vollmachtPdf)
-      if (url) {
+      if (uploadPfad) {
+        // Upload-Modus: Das haendisch signierte Dokument des Kunden IST die
+        // Vollmacht – es wird der Akte zugeordnet (dokumente + pdf_path),
+        // keine Online-Ausfuellung noetig.
         await db.from('dokumente').delete().eq('angebot_id', angebot.id).eq('typ', 'vollmacht')
-        const { error: e8 } = await db.from('dokumente').insert({
+        const { error: e9 } = await db.from('dokumente').insert({
           angebot_id: angebot.id,
           typ: 'vollmacht',
-          storage_path: url,
+          storage_path: uploadPfad,
         })
-        if (e8) throw new Error(`Dokumente: ${e8.message}`)
+        if (e9) throw new Error(`Dokumente: ${e9.message}`)
+        const { error: e9b } = await db.from('vollmachten').update({ pdf_path: uploadPfad }).eq('angebot_id', angebot.id)
+        if (e9b) throw new Error(`Vollmacht pdf_path: ${e9b.message}`)
 
-        // Persistenz-Vertrag: die ausgefuellte Vollmacht gehoert auch in die
-        // vollmachten-Zeile (pdf_path) – Grundlage des Vollstaendigkeits-
-        // Checks und der Akten-Zuordnung.
-        const { error: e8b } = await db
-          .from('vollmachten')
-          .update({ pdf_path: url })
-          .eq('angebot_id', angebot.id)
-        if (e8b) throw new Error(`Vollmacht pdf_path: ${e8b.message}`)
-
-        // Unterschriebenes PDF an die Admins senden (Empfaenger im Admin-Menue
-        // konfigurierbar); best effort – die Datei bleibt im Blob/Download.
-        const vollmachtGesendet = await sendeVollmachtAnAdmins({
-          kundeFirma: angebot.kunde_firma,
-          angebotNr: angebot.angebot_nr,
-          unterzeichnetVon: vollmacht.unterschrift_name ?? null,
-          pdfBytes: vollmachtPdf,
+        // Admin-Mail mit dem hochgeladenen Dokument (best effort, nur PDFs als
+        // Anhang) – Buffer wurde oben serverseitig verifiziert (uploadInhalt).
+        const inhalt = uploadInhalt
+        if (inhalt && inhalt.contentType === 'application/pdf') {
+          const gesendet = await sendeVollmachtAnAdmins({
+            kundeFirma: angebot.kunde_firma,
+            angebotNr: angebot.angebot_nr,
+            unterzeichnetVon: vollmacht.unterschrift_name ?? null,
+            pdfBytes: inhalt.bytes,
+          })
+          await audit(angebot.id, 'system', 'vollmacht_email_admins', { gesendet, modus: 'upload' })
+        }
+        await audit(angebot.id, 'system', 'vollmacht_ausgefuellt', { ok: true, modus: 'upload' })
+      } else {
+        const vollmachtPdf = await fuelleVollmachtAus({
+          unternehmensname: String(unternehmen.unternehmensname),
+          strasse: String(unternehmen.strasse),
+          plz: String(unternehmen.plz),
+          ort: String(unternehmen.ort),
+          vorgangsnummer: angebot.angebot_nr,
+          unterschriftName: vollmacht.unterschrift_name ?? null,
+          signaturPng: signaturBytes,
         })
-        await audit(angebot.id, 'system', 'vollmacht_email_admins', { gesendet: vollmachtGesendet })
+        const url = await ladeDokumentHoch(`vollmacht/${angebot.angebot_nr}.pdf`, vollmachtPdf)
+        if (url) {
+          await db.from('dokumente').delete().eq('angebot_id', angebot.id).eq('typ', 'vollmacht')
+          const { error: e8 } = await db.from('dokumente').insert({
+            angebot_id: angebot.id,
+            typ: 'vollmacht',
+            storage_path: url,
+          })
+          if (e8) throw new Error(`Dokumente: ${e8.message}`)
+
+          // Persistenz-Vertrag: die ausgefuellte Vollmacht gehoert auch in die
+          // vollmachten-Zeile (pdf_path) – Grundlage des Vollstaendigkeits-
+          // Checks und der Akten-Zuordnung.
+          const { error: e8b } = await db
+            .from('vollmachten')
+            .update({ pdf_path: url })
+            .eq('angebot_id', angebot.id)
+          if (e8b) throw new Error(`Vollmacht pdf_path: ${e8b.message}`)
+
+          // Unterschriebenes PDF an die Admins senden (Empfaenger im Admin-Menue
+          // konfigurierbar); best effort – die Datei bleibt im Blob/Download.
+          const vollmachtGesendet = await sendeVollmachtAnAdmins({
+            kundeFirma: angebot.kunde_firma,
+            angebotNr: angebot.angebot_nr,
+            unterzeichnetVon: vollmacht.unterschrift_name ?? null,
+            pdfBytes: vollmachtPdf,
+          })
+          await audit(angebot.id, 'system', 'vollmacht_email_admins', { gesendet: vollmachtGesendet })
+        }
+        await audit(angebot.id, 'system', 'vollmacht_ausgefuellt', { ok: !!url })
       }
-      await audit(angebot.id, 'system', 'vollmacht_ausgefuellt', { ok: !!url })
     } catch (e) {
       console.error('[journey] Vollmacht-Ausfuellung fehlgeschlagen:', e)
       await audit(angebot.id, 'system', 'vollmacht_ausgefuellt', {

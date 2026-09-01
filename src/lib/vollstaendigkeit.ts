@@ -145,7 +145,9 @@ export function pruefeVollstaendigkeit(e: VollstaendigkeitsEingabe): Vollstaendi
   if (!e.vollmacht) {
     bausteine.push({ id: 'vollmacht', label: 'Beantragungsweg & Vollmacht', ok: false, hinweis: 'Noch nicht gewählt.' })
   } else if (e.vollmacht.beantragungsweg === 'eskalator') {
-    const ok = !!(e.vollmacht.unterzeichnet_von && (e.vollmacht.pdf_path || e.vollmacht.signatur_bild_path))
+    // Nachweis: ausgefuelltes PDF (Canvas ODER haendisch hochgeladen) oder
+    // archivierte gezeichnete Signatur mit Unterzeichner-Nachweis.
+    const ok = !!e.vollmacht.pdf_path || !!(e.vollmacht.unterzeichnet_von && e.vollmacht.signatur_bild_path)
     bausteine.push({
       id: 'vollmacht',
       label: 'Beantragungsweg & Vollmacht',

@@ -1,7 +1,20 @@
 import { PDFDocument } from 'pdf-lib'
 import { describe, expect, it } from 'vitest'
 
+import { BEVOLLMAECHTIGTER } from '@/lib/vollmacht/bevollmaechtigter'
 import { fuelleVollmachtAus, formatiereUnterschriftsdatum } from '@/lib/vollmacht/fuelle-vollmacht'
+
+describe('BEVOLLMAECHTIGTER (Vollmachtnehmer, Abschnitt 2 des Formulars)', () => {
+  it('ist vollstaendig gepflegt: Eskalator AG, Adresse, Antonja Brücker', () => {
+    expect(BEVOLLMAECHTIGTER.name).toBe('Eskalator AG')
+    expect(BEVOLLMAECHTIGTER.anrede).toBe('Frau')
+    expect(BEVOLLMAECHTIGTER.vorname).toBe('Antonja')
+    expect(BEVOLLMAECHTIGTER.nachname).toBe('Brücker')
+    expect(BEVOLLMAECHTIGTER.strasse).toContain('Churerstrasse')
+    expect(BEVOLLMAECHTIGTER.plz).toBe('8808')
+    expect(BEVOLLMAECHTIGTER.ort).toContain('Freienbach')
+  })
+})
 
 describe('formatiereUnterschriftsdatum', () => {
   it('formatiert TT.MM.JJJJ mit fuehrenden Nullen (BAFA-Formular)', () => {
