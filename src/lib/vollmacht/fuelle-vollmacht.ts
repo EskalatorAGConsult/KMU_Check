@@ -20,6 +20,13 @@ import { BEVOLLMAECHTIGTER } from '@/lib/vollmacht/bevollmaechtigter'
 
 const VORLAGE = path.join(process.cwd(), 'docs', 'vorlagen', 'eew_formular_eew_vm_3.pdf')
 
+/** Unterschriftsdatum im BAFA-ueblichen Format TT.MM.JJJJ (fuehrende Nullen). */
+export function formatiereUnterschriftsdatum(d: Date): string {
+  const tt = String(d.getDate()).padStart(2, '0')
+  const mm = String(d.getMonth() + 1).padStart(2, '0')
+  return `${tt}.${mm}.${d.getFullYear()}`
+}
+
 export interface VollmachtgeberDaten {
   unternehmensname: string
   strasse: string
@@ -82,9 +89,10 @@ export async function fuelleVollmachtAus(geber: VollmachtgeberDaten): Promise<Ui
   setze('Postleitzahl2', BEVOLLMAECHTIGTER.plz)
   setze('Ort2', BEVOLLMAECHTIGTER.ort)
 
-  // 3 · Erklaerungszeile: „Ort, Datum" als kombiniertes Feld
-  const datum = new Date().toLocaleDateString('de-DE')
-  setze('Datum', geber.ort ? `${geber.ort}, ${datum}` : datum)
+  // 3 · Erklaerungszeile: „Ort, Datum" als kombiniertes Feld – das
+  // Unterschriftsdatum (Zeitpunkt der Online-Signatur = Generierungszeitpunkt)
+  const datum = formatiereUnterschriftsdatum(new Date())
+  setze('Datum', geber.ort ? `${geber.ort}, den ${datum}` : datum)
 
   // Erscheinungsbild mit eingebetteter Schrift neu rendern (Umlaute!), dann flachrechnen
   const schrift = await doc.embedFont(StandardFonts.Helvetica)

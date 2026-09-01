@@ -675,7 +675,12 @@ export function KmuCheck() {
                           <span>
                             Ich willige ein, dass die MABE Maschinen- und Behälterbau GmbH meine Angaben zur Bearbeitung
                             meiner Anfrage und Kontaktaufnahme verarbeitet. Die{' '}
-                            <a href="#datenschutz" className="font-medium text-teal-700 underline">
+                            <a
+                              href="https://www.mabe.de/datenschutz"
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="font-medium text-teal-700 underline"
+                            >
                               Datenschutzhinweise
                             </a>{' '}
                             habe ich zur Kenntnis genommen. Widerruf jederzeit möglich.{' '}

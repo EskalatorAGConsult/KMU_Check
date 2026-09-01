@@ -3,6 +3,7 @@ import type { ReactNode } from 'react'
 import { DatenKopierenButton } from '@/components/admin/daten-kopieren-button'
 import { SystemkonzeptAktionen } from '@/components/admin/systemkonzept-aktionen'
 import { VorgangAktionen } from '@/components/admin/vorgang-aktionen'
+import { VorgangBearbeiten } from '@/components/admin/vorgang-bearbeiten'
 import { baueDossierText } from '@/lib/admin/dossier-text'
 import type { SystemkonzeptVorlage } from '@/lib/admin/systemkonzept-actions'
 import type { KundeVorgang } from '@/lib/db/repositories/kunden'
@@ -151,9 +152,12 @@ function EntwurfWert({ feld, wert }: { feld: string; wert: unknown }) {
 export function VorgangDatenblatt({
   vorgang: v,
   vorlagen,
+  onGespeichert,
 }: {
   vorgang: KundeVorgang
   vorlagen: SystemkonzeptVorlage[]
+  /** Reload-Hook nach Admin-Korrektur (nur in der aufklappbaren Fallakte gesetzt). */
+  onGespeichert?: () => void
 }) {
   const a = v.angebot
   const sd = v.stammdaten
@@ -226,6 +230,9 @@ export function VorgangDatenblatt({
           </div>
         </div>
       </section>
+
+      {/* Admin-Korrektur mit Revisionshistorie (Migration 19) */}
+      <VorgangBearbeiten vorgang={v} onGespeichert={onGespeichert} />
 
       {/* BAFA 7 · Technische Maßnahme (aus dem Angebot) */}
       <Sektion

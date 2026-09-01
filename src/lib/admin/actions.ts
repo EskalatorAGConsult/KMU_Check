@@ -5,8 +5,7 @@ import { z } from 'zod'
 import { requireAdmin } from '@/lib/auth/guards'
 import { erstelleAngebot, type NeuesAngebot } from '@/lib/db/repositories/angebote'
 import { supabaseServer } from '@/lib/db/server'
-import { audit, erstelleJourneyToken, setzeAngebotStatus, speichereFortschritt } from '@/lib/db/repositories/journey'
-import { sendeEinladung } from '@/lib/email/notify'
+import { audit, erstelleJourneyToken, speichereFortschritt } from '@/lib/db/repositories/journey'
 import { analysiereAngebot, type AngebotAnalyse } from '@/lib/gemini/angebot-analyse'
 import { ladeDokumentHoch } from '@/lib/storage/blob'
 
@@ -37,7 +36,11 @@ export type AdminActionErgebnis =
   | { ok: true; angebotId: string; link: string }
   | { ok: false; fehler: string }
 
-/** Legt ein Angebot an, erzeugt den Journey-Link und markiert es als eingeladen. */
+/** Legt ein Angebot an und erzeugt den Journey-Link – OHNE E-Mail-Versand.
+ * Die Einladungs-Mail wird bewusst entkoppelt: Der Vertrieb kopiert den Link
+ * selbst oder loest den Versand spaeter manuell aus (Button in der Erfolgs-
+ * ansicht bzw. „Einladung senden“ in der Kundenverwaltung). Erst dann gilt
+ * der Vorgang als 'eingeladen' – nach dem Anlegen bleibt er 'angelegt'. */
 export async function erstelleAngebotAction(eingabe: NeuesAngebot): Promise<AdminActionErgebnis> {
   const session = await requireAdmin()
 
@@ -52,11 +55,11 @@ export async function erstelleAngebotAction(eingabe: NeuesAngebot): Promise<Admi
       projektende: res.data.projektende || undefined,
     })
     const klartext = await erstelleJourneyToken(angebotId)
-    await setzeAngebotStatus(angebotId, 'eingeladen')
     await audit(angebotId, `admin:${session.user.id}`, 'angebot_angelegt', {
       angebot_nr: res.data.angebot_nr,
       kunde_firma: res.data.kunde_firma,
     })
+    await audit(angebotId, `admin:${session.user.id}`, 'journey_link_erstellt', { versand: 'manuell' })
 
     // Journey-Draft vorbefuellen: Adresse/USt-Id aus der Gemini-Extraktion
     // (der Kunde prueft die Werte im Schritt „Ihr Unternehmen" nur noch).
@@ -79,19 +82,6 @@ export async function erstelleAngebotAction(eingabe: NeuesAngebot): Promise<Admi
         console.error('[admin] Draft-Vorbefüllung fehlgeschlagen:', e)
       }
     }
-
-    // Einladungs-E-Mail mit dem persoenlichen Link (best effort).
-    const invest =
-      (res.data.invest_software ?? 0) + (res.data.invest_messtechnik ?? 0) + (res.data.invest_steuerung ?? 0)
-    const mailGesendet = await sendeEinladung({
-      an: res.data.kunde_email,
-      kundeFirma: res.data.kunde_firma,
-      angebotNr: res.data.angebot_nr,
-      journeyPfad: `/v/${klartext}`,
-      ansprechpartner: res.data.kunde_ansprechpartner,
-      zuschussBisZu: invest > 0 ? invest * 0.45 : null,
-    })
-    await audit(angebotId, 'system', 'einladung_email', { gesendet: mailGesendet })
 
     return { ok: true, angebotId, link: `/v/${klartext}` }
   } catch (e) {

@@ -158,7 +158,10 @@ export function SchrittDeminimis({
       </div>
 
       <div className="flex flex-col gap-3">
-        <p className="text-sm font-semibold text-mabe-900">Ist Ihr Unternehmen in den letzten drei Jahren entstanden durch …</p>
+        <p className="text-sm font-semibold text-mabe-900">
+          Ist Ihr Unternehmen in den letzten drei Jahren entstanden durch …{' '}
+          <span className="font-normal text-olive-500">(optional – nur ankreuzen, falls zutreffend)</span>
+        </p>
         <Checkbox
           checked={(daten.fusion_3j as boolean) ?? false}
           onChange={(v) => onChange('fusion_3j', v)}
@@ -176,18 +179,21 @@ export function SchrittDeminimis({
         />
       </div>
 
-      <Checkbox
-        checked={(daten.bestaetigt as boolean) ?? false}
-        onChange={(v) => onChange('bestaetigt', v)}
-        fehler={fehler.bestaetigt}
-        label={
-          <>
-            Ich bestätige, dass meine Angaben vollständig und wahrheitsgemäß sind. Mir ist bekannt, dass diese Angaben{' '}
-            <strong>subventionserheblich im Sinne des § 264 StGB</strong> sind und unrichtige oder unvollständige
-            Angaben strafbar sein können.
-          </>
-        }
-      />
+      <div className="rounded-2xl border border-amber-300 bg-amber-50/60 p-4">
+        <Checkbox
+          checked={(daten.bestaetigt as boolean) ?? false}
+          onChange={(v) => onChange('bestaetigt', v)}
+          fehler={fehler.bestaetigt}
+          label={
+            <>
+              <strong>Pflichtangabe:</strong> Ich bestätige, dass meine Angaben vollständig und wahrheitsgemäß sind.
+              Mir ist bekannt, dass diese Angaben <strong>subventionserheblich im Sinne des § 264 StGB</strong> sind
+              und unrichtige oder unvollständige Angaben strafbar sein können.{' '}
+              <span className="font-semibold text-red-700">*</span>
+            </>
+          }
+        />
+      </div>
     </div>
   )
 }

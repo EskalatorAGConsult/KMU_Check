@@ -83,8 +83,8 @@ export default function RootLayout({
               <FooterLink href="#vorteile">Vorteile</FooterLink>
               <FooterLink href="#ablauf">Ablauf</FooterLink>
               <FooterLink href="#faq">FAQ</FooterLink>
-              <FooterLink href="#datenschutz">Datenschutz</FooterLink>
-              <FooterLink href="#impressum">Impressum</FooterLink>
+              <FooterLink href="https://www.mabe.de/datenschutz">Datenschutz</FooterLink>
+              <FooterLink href="https://www.mabe.de/impressum">Impressum</FooterLink>
             </>
           }
           socialLinks={

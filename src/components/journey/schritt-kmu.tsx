@@ -21,10 +21,16 @@ function num(v: unknown): number {
   return isFinite(n) && n >= 0 ? n : 0
 }
 
-/** Die letzten zwei abgeschlossenen Geschaeftsjahre (dynamisch, kalenderbasiert). */
+/**
+ * BAFA-Vorgabe EEW Modul 3: Das Portal fragt fest die Geschaeftsjahre
+ * 2025 und 2024 ab (juengstes Jahr zaehlt fuer die Foerderquote).
+ * Bewusst NICHT dynamisch kalenderbasiert – die abgefragten Jahre richten
+ * sich nach dem BAFA-Formular, nicht nach dem aktuellen Datum.
+ */
+export const BAFA_GESCHAEFTSJAHRE = [2025, 2024] as const
+
 function standardJahre(): KmuJahrEingabe[] {
-  const aktuell = new Date().getFullYear()
-  return [aktuell - 1, aktuell - 2].map((gj) => ({ geschaeftsjahr: gj, abgeschlossen: true }))
+  return BAFA_GESCHAEFTSJAHRE.map((gj) => ({ geschaeftsjahr: gj, abgeschlossen: true }))
 }
 
 /**
@@ -153,12 +159,12 @@ export function SchrittKmu({
     <div className="flex flex-col gap-8">
       {/* Schnellstart: Handelsregister-Vorbefuellung (best effort, optional) */}
       <VerbundSuche token={token} initialRegisterId={registerId} onUebernehmen={uebernehmeVerbund} />
-      {/* Eigene Kennzahlen: letzte zwei abgeschlossene Geschaeftsjahre (dynamisch) */}
+      {/* Eigene Kennzahlen: BAFA fragt fest die Geschaeftsjahre 2025 + 2024 ab */}
       <div className="flex flex-col gap-5">
         <div className="rounded-2xl border border-olive-200 bg-olive-50/60 p-5">
           <h3 className="flex items-center text-base font-semibold text-mabe-900">
-            Ihre Kennzahlen der letzten zwei Geschäftsjahre
-            <Tooltip text="Das BAFA fragt die Kennzahlen der letzten zwei abgeschlossenen Geschäftsjahre ab. Für Ihre Förderquote zählt das jüngste Jahr – das zweite Jahr dokumentiert die Entwicklung Ihres Unternehmens." />
+            Ihre Kennzahlen der Geschäftsjahre 2025 und 2024
+            <Tooltip text="Das BAFA-Portal fragt fest die Kennzahlen der Geschäftsjahre 2025 und 2024 ab. Für Ihre Förderquote zählt das jüngste Jahr (2025) – das Jahr 2024 dokumentiert die Entwicklung Ihres Unternehmens." />
           </h3>
           <p className="mt-1 text-sm/6 text-olive-600">
             Sie finden alle Zahlen in Ihrem Jahresabschluss oder der BWA – im Zweifel kurz beim Steuerbüro
@@ -218,20 +224,6 @@ export function SchrittKmu({
                 onChange={(v) => setJahr(i, { abgeschlossen: v })}
                 label="Geschäftsjahr abgeschlossen (sonst plausible Schätzung nach Treu und Glauben)."
               />
-              <label className="flex items-center gap-2 text-xs text-olive-600">
-                Abweichendes Jahr:
-                <input
-                  type="number"
-                  min={2000}
-                  max={2100}
-                  className="w-24 rounded-lg border border-olive-300 px-2 py-1.5 text-sm text-mabe-900 focus:border-teal-600 focus:outline-none"
-                  value={String(jahr.geschaeftsjahr)}
-                  onChange={(e) =>
-                    setJahr(i, { geschaeftsjahr: Number(e.target.value) || jahr.geschaeftsjahr })
-                  }
-                  aria-label={`Geschäftsjahr ${i + 1} anpassen`}
-                />
-              </label>
             </div>
           </fieldset>
         ))}

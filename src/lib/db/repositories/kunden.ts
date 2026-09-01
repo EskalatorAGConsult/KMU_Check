@@ -1,6 +1,7 @@
 import 'server-only'
 
 import { supabaseServer } from '@/lib/db/server'
+import { listeRevisionen } from '@/lib/db/repositories/revisionen'
 import type {
   Angebot,
   AngebotStatus,
@@ -13,6 +14,7 @@ import type {
   StammdatenRow,
   UebergabeRow,
   VollmachtRow,
+  VorgangRevisionRow,
 } from '@/lib/db/types'
 
 /**
@@ -99,6 +101,8 @@ export interface KundeVorgang {
   entwurf: JourneyEntwurf | null
   uebergaben: UebergabeRow[]
   audit: AuditEventRow[]
+  /** Admin-Aenderungshistorie (Migration 19), neueste zuerst. */
+  revisionen: VorgangRevisionRow[]
 }
 
 export interface KundeDetail {
@@ -189,6 +193,10 @@ export async function holeKunde(email: string): Promise<KundeDetail | null> {
   const uebNachAngebot = gruppiere((uebRes.data ?? []) as UebergabeRow[], MAX_UEBERGABEN)
   const audNachAngebot = gruppiere((audRes.data ?? []) as AuditEventRow[], MAX_AUDIT)
 
+  // Revisionshistorie (Migration 19) separat laden und je Vorgang gruppieren
+  const revisionen = await listeRevisionen(ids)
+  const revNachAngebot = gruppiere(revisionen)
+
   const juengster = angebote[0] as Angebot
   return {
     email: juengster.kunde_email,
@@ -207,6 +215,7 @@ export async function holeKunde(email: string): Promise<KundeDetail | null> {
       entwurf: entwurfNachAngebot.get(a.id) ?? null,
       uebergaben: uebNachAngebot.get(a.id) ?? [],
       audit: audNachAngebot.get(a.id) ?? [],
+      revisionen: revNachAngebot.get(a.id) ?? [],
     })),
   }
 }

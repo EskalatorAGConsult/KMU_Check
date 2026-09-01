@@ -35,20 +35,25 @@ export function KundenListe({ kunden }: { kunden: KundeUebersicht[] }) {
   const [offen, setOffen] = useState<Record<string, boolean>>({})
   const [akten, setAkten] = useState<Record<string, AktenZustand>>({})
 
+  async function ladeAkte(email: string) {
+    const schluessel = email.toLowerCase()
+    setAkten((a) => ({ ...a, [schluessel]: { status: 'laden' } }))
+    const antwort = await ladeFallakte(email)
+    setAkten((a) => ({
+      ...a,
+      [schluessel]: antwort.ok
+        ? { status: 'fertig', kunde: antwort.kunde, vorlagen: antwort.vorlagen }
+        : { status: 'fehler', fehler: antwort.fehler },
+    }))
+  }
+
   async function umschalten(email: string) {
     const schluessel = email.toLowerCase()
     const wirdAufgeklappt = !offen[schluessel]
     setOffen((o) => ({ ...o, [schluessel]: wirdAufgeklappt }))
     // Lazy laden: nur beim ersten Aufklappen
     if (wirdAufgeklappt && !akten[schluessel]) {
-      setAkten((a) => ({ ...a, [schluessel]: { status: 'laden' } }))
-      const antwort = await ladeFallakte(email)
-      setAkten((a) => ({
-        ...a,
-        [schluessel]: antwort.ok
-          ? { status: 'fertig', kunde: antwort.kunde, vorlagen: antwort.vorlagen }
-          : { status: 'fehler', fehler: antwort.fehler },
-      }))
+      await ladeAkte(email)
     }
   }
 
@@ -146,7 +151,11 @@ export function KundenListe({ kunden }: { kunden: KundeUebersicht[] }) {
                             Vorgang {i + 1} von {akt.kunde.vorgaenge.length}
                           </p>
                         )}
-                        <VorgangDatenblatt vorgang={v} vorlagen={akt.vorlagen} />
+                        <VorgangDatenblatt
+                          vorgang={v}
+                          vorlagen={akt.vorlagen}
+                          onGespeichert={() => void ladeAkte(k.email)}
+                        />
                       </div>
                     ))}
                   </div>

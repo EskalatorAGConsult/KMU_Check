@@ -4,49 +4,44 @@ import { formatEUR, formatNumber, type Category, type KmuResult } from '@/lib/km
 
 /**
  * KMU-Ampel: zeigt Laien sofort verstaendlich die Foerderstufe.
- *  gruen  = Kleinst-/Kleinunternehmen -> 45 %
- *  gelb   = Mittleres Unternehmen     -> 35 %
- *  rot    = kein KMU                  -> 25 % (Basis-Quote)
- * Zusaetzlich die konkrete Foerdersumme aus Angebots-Investition x Quote.
+ * Das Licht ist bewusst IMMER gruen – jede Einstufung ist foerderfaehig
+ * (45 / 35 / 25 %), es gibt keine „schlechte" Ampel. Der Text differenziert
+ * trotzdem ehrlich nach Kategorie und nennt die konkrete Quote und Summe.
  */
 
 interface Stufe {
-  farbe: 'gruen' | 'gelb' | 'rot'
+  kategorien: Category[]
   titel: string
   text: string
 }
 
-const STUFEN: Record<'gruen' | 'gelb' | 'rot', Stufe & { kategorien: Category[] }> = {
-  gruen: {
-    farbe: 'gruen',
+const STUFEN: Stufe[] = [
+  {
     kategorien: ['kleinst', 'klein'],
-    titel: 'Grün – Sie erhalten die Höchstförderung!',
+    titel: 'Sie erhalten die Höchstförderung!',
     text: 'Ihr Unternehmen gilt als kleines Unternehmen. Damit steht Ihnen die höchste Förderquote von 45 % zu.',
   },
-  gelb: {
-    farbe: 'gelb',
+  {
     kategorien: ['mittel'],
-    titel: 'Gelb – gute Förderung mit 35 %',
-    text: 'Ihr Unternehmen gilt als mittleres Unternehmen. Die Förderquote beträgt 35 % – immer noch ein deutlicher Zuschuss.',
+    titel: 'Sie werden mit 35 % gefördert!',
+    text: 'Ihr Unternehmen gilt als mittleres Unternehmen. Die Förderquote beträgt 35 % – ein deutlicher Zuschuss zu Ihrer Investition.',
   },
-  rot: {
-    farbe: 'rot',
+  {
     kategorien: ['gross'],
-    titel: 'Rot – Basis-Förderung mit 25 %',
-    text: 'Ihr Unternehmen überschreitet die KMU-Grenzen. Die Förderung ist weiterhin mit 25 % möglich – nur die KMU-Bonus-Quoten entfallen.',
+    titel: 'Sie werden mit 25 % gefördert!',
+    text: 'Ihr Unternehmen überschreitet die KMU-Grenzen – die Förderung ist trotzdem mit 25 % möglich, nur die KMU-Bonus-Quoten entfallen.',
   },
+]
+
+function stufeFuer(category: Category): Stufe {
+  return STUFEN.find((s) => s.kategorien.includes(category)) ?? STUFEN[STUFEN.length - 1]
 }
 
-function stufeFuer(category: Category): Stufe & { farbe: 'gruen' | 'gelb' | 'rot' } {
-  if (STUFEN.gruen.kategorien.includes(category)) return STUFEN.gruen
-  if (STUFEN.gelb.kategorien.includes(category)) return STUFEN.gelb
-  return STUFEN.rot
-}
-
+// Ampel-Lichter: nur Gruen leuchtet (alle Stufen sind foerderfaehig).
 const LICHT_FARBEN = {
-  rot: { aktiv: 'bg-red-500 shadow-[0_0_20px_4px_rgba(239,68,68,0.55)]', inaktiv: 'bg-red-950/60' },
-  gelb: { aktiv: 'bg-amber-400 shadow-[0_0_20px_4px_rgba(251,191,36,0.55)]', inaktiv: 'bg-amber-950/60' },
-  gruen: { aktiv: 'bg-emerald-400 shadow-[0_0_20px_4px_rgba(52,211,153,0.55)]', inaktiv: 'bg-emerald-950/60' },
+  rot: { aktiv: '', inaktiv: 'bg-red-950/60' },
+  gelb: { aktiv: '', inaktiv: 'bg-amber-950/60' },
+  gruen: { aktiv: 'bg-emerald-400 shadow-[0_0_20px_4px_rgba(52,211,153,0.55)]', inaktiv: '' },
 } as const
 
 export function KmuAmpel({ ergebnis, investSumme }: { ergebnis: KmuResult; investSumme: number | null }) {
@@ -60,13 +55,13 @@ export function KmuAmpel({ ergebnis, investSumme }: { ergebnis: KmuResult; inves
       className="overflow-hidden rounded-2xl bg-mabe-900 text-white shadow-lg"
     >
       <div className="flex flex-col gap-5 p-5 sm:flex-row sm:items-center sm:gap-7 sm:p-7">
-        {/* Ampel */}
+        {/* Ampel – leuchtet immer gruen: jede Stufe ist foerderfaehig */}
         <div
           className="flex shrink-0 items-center justify-center gap-3 self-start rounded-2xl bg-black/30 px-4 py-3 sm:flex-col sm:gap-3.5 sm:px-4 sm:py-5"
           aria-hidden
         >
           {(['rot', 'gelb', 'gruen'] as const).map((farbe) => {
-            const aktiv = stufe.farbe === farbe
+            const aktiv = farbe === 'gruen'
             return (
               <span
                 key={farbe}

@@ -38,8 +38,10 @@ export async function ladeFallakte(
 }
 
 /**
- * Erzeugt einen neuen Journey-Link und sendet die Einladung erneut
- * (z. B. wenn der Kunde die Mail verloren hat oder der Link abgelaufen ist).
+ * Sendet die Einladungs-E-Mail mit einem frischen Journey-Link an den Kunden.
+ * Dient als Erstversand (Status 'angelegt', nach dem Anlegen ohne Auto-Versand)
+ * und als erneuter Versand (Mail verloren / Link abgelaufen). Setzt den
+ * Vorgang auf 'eingeladen'.
  */
 export async function erneutEinladen(angebotId: string): Promise<KundeActionErgebnis> {
   const session = await requireAdmin()
@@ -62,12 +64,12 @@ export async function erneutEinladen(angebotId: string): Promise<KundeActionErge
       ansprechpartner: angebot.kunde_ansprechpartner ?? undefined,
       zuschussBisZu: invest > 0 ? invest * 0.45 : null,
     })
-    await audit(angebotId, `admin:${session.user.id}`, 'einladung_erneut', { gesendet })
+    await audit(angebotId, `admin:${session.user.id}`, 'einladung_gesendet', { gesendet })
     revalidatePath('/admin/kunden')
     return {
       ok: true,
       hinweis: gesendet
-        ? 'Einladung erneut an den Kunden gesendet.'
+        ? 'Einladung an den Kunden gesendet.'
         : `Neuer Link erstellt, aber E-Mail-Versand fehlgeschlagen. Link: /v/${klartext}`,
     }
   } catch (e) {

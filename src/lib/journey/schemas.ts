@@ -95,10 +95,10 @@ export const kmuJahrSchema = z.object({
 export type KmuJahrDaten = z.infer<typeof kmuJahrSchema>
 
 /**
- * KMU-Schritt: Kennzahlen der letzten ZWEI abgeschlossenen Geschaeftsjahre
- * (dynamisch, nicht fest verdrahtet wie im n8n-Formular) + Verbund.
- * Die Bewertung/Foerderquote ergibt sich aus dem juengsten Jahr; das zweite
- * Jahr dokumentiert die Entwicklung (BAFA fragt beide Jahre ab).
+ * KMU-Schritt: Kennzahlen der Geschaeftsjahre 2025 und 2024 – fest, wie das
+ * BAFA-Portal sie abfragt (siehe BAFA_GESCHAEFTSJAHRE in schritt-kmu.tsx).
+ * Die Bewertung/Foerderquote ergibt sich aus dem juengsten Jahr (2025); das
+ * Jahr 2024 dokumentiert die Entwicklung (BAFA fragt beide Jahre ab).
  */
 export const kmuSchema = z.object({
   jahre: z.array(kmuJahrSchema).length(2, 'Bitte die Kennzahlen beider Geschäftsjahre ausfüllen.'),

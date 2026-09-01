@@ -3,6 +3,7 @@
 import { useRef, useState, useTransition } from 'react'
 
 import { analysiereAngebotPdf, erstelleAngebotAction, speichereAngebotPdf } from '@/lib/admin/actions'
+import { erneutEinladen } from '@/lib/admin/kunden-actions'
 import type { Technologie } from '@/lib/db/types'
 import type { AngebotAnalyse } from '@/lib/gemini/parser'
 
@@ -37,6 +38,9 @@ export function AngebotForm() {
   const [technologien, setTechnologien] = useState<Technologie[]>(['messtechnik'])
   const [fehler, setFehler] = useState<string | null>(null)
   const [link, setLink] = useState<string | null>(null)
+  const [angebotId, setAngebotId] = useState<string | null>(null)
+  const [mailStatus, setMailStatus] = useState<'idle' | 'sendet' | 'ok' | 'fehler'>('idle')
+  const [mailMeldung, setMailMeldung] = useState<string | null>(null)
   const [kopiert, setKopiert] = useState(false)
   const [busy, startTransition] = useTransition()
 
@@ -117,16 +121,28 @@ export function AngebotForm() {
         if (!archiv.ok) console.warn('[admin] PDF-Archivierung:', archiv.fehler)
       }
       setLink(`${window.location.origin}${res.link}`)
+      setAngebotId(res.angebotId)
     })
+  }
+
+  const einladungSenden = () => {
+    if (!angebotId) return
+    setMailStatus('sendet')
+    setMailMeldung(null)
+    void (async () => {
+      const res = await erneutEinladen(angebotId)
+      setMailStatus(res.ok ? 'ok' : 'fehler')
+      setMailMeldung(res.ok ? res.hinweis : res.fehler)
+    })()
   }
 
   if (link) {
     return (
       <div className="flex max-w-2xl flex-col gap-5 rounded-2xl border border-teal-600/30 bg-teal-50/50 p-8">
         <h2 className="text-lg font-semibold text-mabe-900">Angebot angelegt – Kunden-Link bereit ✅</h2>
-        <p className="text-sm/6 text-olive-700">
-          Senden Sie diesen Link an Ihren Kunden. Er ist <strong>90 Tage</strong> gültig und führt direkt in die
-          persönliche Förder-Journey:
+        <p className="rounded-xl bg-amber-50 px-4 py-3 text-sm/6 text-amber-800 ring-1 ring-amber-200">
+          <strong>Es wurde noch keine E-Mail versendet.</strong> Kopieren Sie den Link und schicken Sie ihn selbst –
+          oder lösen Sie die Einladungs-E-Mail hier manuell aus.
         </p>
         <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
           <code className="min-w-0 flex-1 overflow-x-auto rounded-xl bg-white px-4 py-3 text-sm break-all text-mabe-900 ring-1 ring-olive-200">
@@ -144,11 +160,38 @@ export function AngebotForm() {
             {kopiert ? 'Kopiert ✓' : 'Kopieren'}
           </button>
         </div>
+        <div className="flex flex-col gap-2">
+          <button
+            type="button"
+            onClick={einladungSenden}
+            disabled={mailStatus === 'sendet' || mailStatus === 'ok'}
+            className="self-start rounded-xl bg-teal-600 px-5 py-3 text-sm font-semibold text-white hover:bg-teal-500 disabled:opacity-60"
+          >
+            {mailStatus === 'sendet'
+              ? 'E-Mail wird gesendet …'
+              : mailStatus === 'ok'
+                ? 'Einladung gesendet ✓'
+                : '✉️ Einladungs-E-Mail jetzt an den Kunden senden'}
+          </button>
+          {mailMeldung && (
+            <p
+              role="status"
+              className={`rounded-lg px-3 py-2 text-xs font-medium break-all ${
+                mailStatus === 'fehler' ? 'bg-red-50 text-red-700' : 'bg-teal-50 text-teal-800'
+              }`}
+            >
+              {mailMeldung}
+            </p>
+          )}
+        </div>
         <div className="flex gap-3">
           <button
             type="button"
             onClick={() => {
               setLink(null)
+              setAngebotId(null)
+              setMailStatus('idle')
+              setMailMeldung(null)
               setPdfDatei(null)
               setExtraktion(null)
               setAnalyseStatus('idle')

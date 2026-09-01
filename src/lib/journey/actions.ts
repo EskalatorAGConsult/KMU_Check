@@ -14,7 +14,7 @@ import {
 import { SCHRITTE, schrittNach } from '@/lib/journey/schritte'
 import { schemaFuerSchritt, type DeminimisSchrittDaten, type KmuSchrittDaten, type VollmachtSchrittDaten } from '@/lib/journey/schemas'
 import { evaluateKmu } from '@/lib/kmu'
-import { sendeEingangsbestaetigung } from '@/lib/email/notify'
+import { sendeEingangsbestaetigung, sendeVollmachtAnAdmins } from '@/lib/email/notify'
 import { generiereSystemkonzept } from '@/lib/systemkonzept/generate'
 import { ladeDokumentHoch } from '@/lib/storage/blob'
 import { fuelleVollmachtAus } from '@/lib/vollmacht/fuelle-vollmacht'
@@ -392,6 +392,16 @@ export async function schliesseJourneyAb(
           storage_path: url,
         })
         if (e8) throw new Error(`Dokumente: ${e8.message}`)
+
+        // Unterschriebenes PDF an die Admins senden (Empfaenger im Admin-Menue
+        // konfigurierbar); best effort – die Datei bleibt im Blob/Download.
+        const vollmachtGesendet = await sendeVollmachtAnAdmins({
+          kundeFirma: angebot.kunde_firma,
+          angebotNr: angebot.angebot_nr,
+          unterzeichnetVon: vollmacht.unterschrift_name ?? null,
+          pdfBytes: vollmachtPdf,
+        })
+        await audit(angebot.id, 'system', 'vollmacht_email_admins', { gesendet: vollmachtGesendet })
       }
       await audit(angebot.id, 'system', 'vollmacht_ausgefuellt', { ok: !!url })
     } catch (e) {

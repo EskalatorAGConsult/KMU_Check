@@ -431,7 +431,16 @@ export default function Page() {
                 Wir verarbeiten Ihre Angaben aus dem KMU-Check auf Grundlage Ihrer Einwilligung (Art. 6 Abs. 1 lit. a
                 DSGVO) zur Erstellung Ihrer Auswertung und zur Kontaktaufnahme. Eine Weitergabe an Dritte erfolgt nicht.
                 Sie können Ihre Einwilligung jederzeit mit Wirkung für die Zukunft widerrufen. Details erhalten Sie in
-                der vollständigen Datenschutzerklärung der MABE Maschinen- und Behälterbau GmbH.
+                der{' '}
+                <a
+                  href="https://www.mabe.de/datenschutz"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="font-medium text-teal-700 underline hover:text-teal-600"
+                >
+                  vollständigen Datenschutzerklärung
+                </a>{' '}
+                der MABE Maschinen- und Behälterbau GmbH.
               </p>
             </div>
             <div id="impressum" className="flex scroll-mt-28 flex-col gap-3">
@@ -440,7 +449,16 @@ export default function Page() {
                 MABE Maschinen- und Behälterbau GmbH
                 <br />
                 Anbieter im Sinne des § 5 DDG. Vollständige Anbieterkennzeichnung, Vertretungsberechtigte und
-                Registereintrag finden Sie im offiziellen Impressum auf mabe.de.
+                Registereintrag finden Sie im{' '}
+                <a
+                  href="https://www.mabe.de/impressum"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="font-medium text-teal-700 underline hover:text-teal-600"
+                >
+                  offiziellen Impressum auf mabe.de
+                </a>
+                .
               </p>
             </div>
           </div>

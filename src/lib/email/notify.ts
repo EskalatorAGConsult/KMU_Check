@@ -15,7 +15,12 @@ import { button, esc, h1, infoBox, layout, p } from './templates'
  * - Neue Benachrichtigungen = neue Funktion hier + Template in templates.ts.
  */
 
-async function sendeMail(an: string | string[], betreff: string, html: string): Promise<boolean> {
+async function sendeMail(
+  an: string | string[],
+  betreff: string,
+  html: string,
+  anhaenge?: { filename: string; content: string }[], // content = base64
+): Promise<boolean> {
   // Sicherheitsnetz: Test-/Platzhalter-Adressen niemals wirklich versenden
   const empfaenger = (Array.isArray(an) ? an : [an]).filter((a) => !istTestAdresse(a))
   if (empfaenger.length === 0) {
@@ -28,7 +33,13 @@ async function sendeMail(an: string | string[], betreff: string, html: string): 
     return false
   }
   try {
-    const { error } = await client.emails.send({ from: absender(), to: empfaenger, subject: betreff, html })
+    const { error } = await client.emails.send({
+      from: absender(),
+      to: empfaenger,
+      subject: betreff,
+      html,
+      ...(anhaenge && anhaenge.length > 0 ? { attachments: anhaenge } : {}),
+    })
     if (error) {
       console.error(`[email] Resend-Fehler bei "${betreff}" an ${empfaenger.join(', ')}:`, error)
       return false
@@ -228,4 +239,48 @@ export async function sendeLeadBenachrichtigung(payload: LeadPayload): Promise<b
   )
   // Eine Mail an alle Empfaenger (sichtbare Empfaengerliste, interner Verteiler)
   return sendeMail(empfaenger, `Neuer KMU-Check-Lead: ${firma} (${payload.result.categoryLabel})`, html)
+}
+
+/**
+ * 8 · Unterschriebene Vollmacht (intern): Kunde hat die BAFA-Vollmacht
+ * online unterzeichnet (Beantragung durch Eskalator AG). Das ausgefuellte
+ * Original-Formular eew_vm_3 inkl. eingebetteter Signatur geht als PDF-Anhang
+ * an die konfigurierten Empfaenger (lead_email_empfaenger im Admin-Menue).
+ * Best effort – die Datei liegt zusaetzlich dauerhaft im Blob/Admin-Download.
+ */
+export async function sendeVollmachtAnAdmins(daten: {
+  kundeFirma: string
+  angebotNr: string
+  unterzeichnetVon: string | null
+  pdfBytes: Uint8Array
+}): Promise<boolean> {
+  const { ermittleLeadEmpfaenger } = await import('@/lib/db/repositories/einstellungen')
+  const { empfaenger } = await ermittleLeadEmpfaenger()
+  if (empfaenger.length === 0) {
+    console.warn('[email] Keine Lead-Empfänger konfiguriert – Vollmacht-Versand übersprungen.')
+    return false
+  }
+  const html = layout(
+    `Unterschriebene Vollmacht: ${daten.kundeFirma}`,
+    [
+      h1('Unterschriebene Vollmacht eingegangen'),
+      p(
+        `<strong>${esc(daten.kundeFirma)}</strong> hat die BAFA-Vollmacht zum Vorgang ` +
+          `<strong>${esc(daten.angebotNr)}</strong> online unterzeichnet` +
+          (daten.unterzeichnetVon ? ` (Unterzeichner/in: <strong>${esc(daten.unterzeichnetVon)}</strong>)` : '') +
+          '.',
+      ),
+      infoBox(
+        `Das <strong>ausgefüllte Original-Formular eew_vm_3</strong> mit eingebetteter Unterschrift liegt als ` +
+          `PDF-Anhang bei. Es ist zusätzlich dauerhaft im Admin-Menü (Fallakte → Dokumente & Ablage) hinterlegt.`,
+      ),
+      p(`Der Vorgang kann jetzt zur Antragstellung an die Eskalator AG übergeben werden.`),
+    ].join(''),
+  )
+  return sendeMail(
+    empfaenger,
+    `Unterschriebene Vollmacht: ${daten.kundeFirma} (${daten.angebotNr})`,
+    html,
+    [{ filename: `Vollmacht_${daten.angebotNr}.pdf`, content: Buffer.from(daten.pdfBytes).toString('base64') }],
+  )
 }

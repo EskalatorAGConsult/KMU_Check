@@ -11,6 +11,9 @@ export function VorgangAktionen({ angebotId, status }: { angebotId: string; stat
 
   const einladbar = !['eingereicht', 'abgeschlossen', 'widerrufen'].includes(status)
   const widerrufbar = status !== 'widerrufen'
+  // Seit der Entkopplung des Versands bleibt ein neuer Vorgang 'angelegt',
+  // bis die Einladungs-Mail manuell ausgeloest wird.
+  const einladungLabel = status === 'angelegt' ? '✉️ Einladungs-E-Mail senden' : 'Einladung erneut senden'
 
   const ausfuehren = (aktion: () => Promise<{ ok: true; hinweis: string } | { ok: false; fehler: string }>) => {
     setMeldung(null)
@@ -30,7 +33,7 @@ export function VorgangAktionen({ angebotId, status }: { angebotId: string; stat
             onClick={() => ausfuehren(() => erneutEinladen(angebotId))}
             className="rounded-lg bg-teal-600 px-3.5 py-2 text-xs font-semibold text-white hover:bg-teal-500 disabled:opacity-50"
           >
-            Einladung erneut senden
+            {einladungLabel}
           </button>
         )}
         {widerrufbar && (

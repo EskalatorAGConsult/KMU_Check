@@ -216,3 +216,14 @@ export interface AuditEventRow {
   details: Record<string, unknown> | null
   created_at: string
 }
+
+/** Feldgenaue Admin-Aenderungshistorie (Migration 19). */
+export interface VorgangRevisionRow {
+  id: string
+  angebot_id: string
+  bearbeitet_von: string
+  bereich: 'angebot' | 'stammdaten'
+  /** { feld: { alt, neu } } – nur geaenderte Felder. */
+  aenderungen: Record<string, { alt: unknown; neu: unknown }>
+  created_at: string
+}

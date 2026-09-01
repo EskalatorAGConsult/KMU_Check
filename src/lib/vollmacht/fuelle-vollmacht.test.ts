@@ -1,7 +1,14 @@
 import { PDFDocument } from 'pdf-lib'
 import { describe, expect, it } from 'vitest'
 
-import { fuelleVollmachtAus } from '@/lib/vollmacht/fuelle-vollmacht'
+import { fuelleVollmachtAus, formatiereUnterschriftsdatum } from '@/lib/vollmacht/fuelle-vollmacht'
+
+describe('formatiereUnterschriftsdatum', () => {
+  it('formatiert TT.MM.JJJJ mit fuehrenden Nullen (BAFA-Formular)', () => {
+    expect(formatiereUnterschriftsdatum(new Date(2026, 8, 1))).toBe('01.09.2026')
+    expect(formatiereUnterschriftsdatum(new Date(2026, 11, 25))).toBe('25.12.2026')
+  })
+})
 
 /**
  * BAFA-Vollmacht (eew_vm_3): prueft, dass das offizielle Formular gefuellt,

@@ -26,7 +26,7 @@ export function SchrittVollmacht({
     wert: 'eskalator' | 'selbst',
     titel: string,
     beschreibung: string,
-    empfohlen: boolean,
+    badges: { label: string; cls: string }[],
   ) => {
     const aktiv = weg === wert
     return (
@@ -34,13 +34,17 @@ export function SchrittVollmacht({
         type="button"
         onClick={() => onChange('beantragungsweg', wert)}
         aria-pressed={aktiv}
-        className={`relative flex flex-col gap-2 rounded-2xl border-2 p-5 text-left transition-colors ${
+        className={`relative flex flex-col gap-2 rounded-2xl border-2 p-5 pt-6 text-left transition-colors ${
           aktiv ? 'border-teal-600 bg-teal-50/60' : 'border-olive-200 bg-white hover:border-teal-400'
         }`}
       >
-        {empfohlen && (
-          <span className="absolute -top-3 left-4 rounded-full bg-teal-600 px-2.5 py-0.5 text-xs font-semibold text-white">
-            Empfohlen
+        {badges.length > 0 && (
+          <span className="absolute -top-3 left-4 flex flex-wrap gap-1.5">
+            {badges.map((b) => (
+              <span key={b.label} className={`rounded-full px-2.5 py-0.5 text-xs font-bold tracking-wide ${b.cls}`}>
+                {b.label}
+              </span>
+            ))}
           </span>
         )}
         <span className="text-base font-semibold text-mabe-900">{titel}</span>
@@ -55,14 +59,17 @@ export function SchrittVollmacht({
         {karte(
           'eskalator',
           'Beantragung durch den Fördermittel-Concierge der Eskalator AG',
-          'Die Eskalator AG stellt den Antrag in Ihrem Namen, beantwortet Rückfragen der Bewilligungsstelle und begleitet Sie bis zur Bewilligung. Dafür erteilen Sie eine digitale Vollmacht.',
-          true,
+          'Die Eskalator AG stellt den Antrag in Ihrem Namen, beantwortet Rückfragen der Bewilligungsstelle und begleitet Sie bis zur Bewilligung – für Sie völlig kostenlos. Dafür erteilen Sie eine digitale Vollmacht.',
+          [
+            { label: '⭐ Unsere Empfehlung', cls: 'bg-teal-600 text-white' },
+            { label: 'KOSTENLOS', cls: 'bg-amber-400 text-mabe-900 ring-1 ring-amber-500' },
+          ],
         )}
         {karte(
           'selbst',
           'Beantragung durch unser Unternehmen selbst',
           'Sie erhalten Ihr vollständiges Antrags-Dossier zum Download und stellen den Antrag eigenständig im FZD-Portal. Hinweis: Für das Portal ist ein ELSTER-Organisationszertifikat erforderlich.',
-          false,
+          [],
         )}
       </div>
       {fehler.beantragungsweg && <p className="text-xs/5 font-medium text-red-700">{fehler.beantragungsweg}</p>}
