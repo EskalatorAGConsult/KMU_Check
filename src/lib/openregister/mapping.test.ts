@@ -5,6 +5,9 @@ import {
   analysiereVerbundKette,
   kennzahlenAusIndikatoren,
   mapTreffer,
+  mergeSuchTreffer,
+  normalisiereSuchbegriff,
+  personenartAusRechtsform,
   rechtsformLabel,
   type Rohdaten,
 } from './mapping'
@@ -54,6 +57,52 @@ describe('rechtsformLabel', () => {
     expect(rechtsformLabel('ag')).toBe('AG')
     expect(rechtsformLabel(null)).toBeNull()
     expect(rechtsformLabel('xyz')).toBe('XYZ')
+  })
+})
+
+describe('personenartAusRechtsform', () => {
+  it('mappt eindeutige Rechtsformen, lässt unklare leer', () => {
+    expect(personenartAusRechtsform('gmbh')).toBe('juristisch')
+    expect(personenartAusRechtsform('ag')).toBe('juristisch')
+    expect(personenartAusRechtsform('kg')).toBe('juristisch')
+    expect(personenartAusRechtsform('ek')).toBe('natuerlich')
+    expect(personenartAusRechtsform(null)).toBeNull()
+    expect(personenartAusRechtsform('gbr')).toBeNull() // bewusst kein Prefill bei unklarer Form
+  })
+})
+
+describe('normalisiereSuchbegriff', () => {
+  it('entfernt Rechtsform-Zusätze (Kernbefund des MABE-Audits)', () => {
+    expect(normalisiereSuchbegriff('Maschinen- und Behälterbau GmbH')).toBe('maschinen- und behälterbau')
+    expect(normalisiereSuchbegriff('Muster AG')).toBe('muster')
+    expect(normalisiereSuchbegriff('Schmidt e.K.')).toBe('schmidt')
+    expect(normalisiereSuchbegriff('Müller GmbH & Co. KG')).toBe('müller')
+  })
+
+  it('lässt begriffe ohne Rechtsform unverändert', () => {
+    expect(normalisiereSuchbegriff('Maschinen- und Behälterbau')).toBe('maschinen- und behälterbau')
+  })
+
+  it('fällt auf das Original zurück, wenn nichts übrig bleibt', () => {
+    expect(normalisiereSuchbegriff('GmbH')).toBe('GmbH')
+    expect(normalisiereSuchbegriff('AG')).toBe('AG')
+  })
+})
+
+describe('mergeSuchTreffer', () => {
+  const treffer = (id: string, name: string): OrSuchTreffer => ({ company_id: id, name, active: true })
+
+  it('dedupliziert nach company_id und hält die Reihenfolge der Strategien', () => {
+    const a = [treffer('DE-1', 'A'), treffer('DE-2', 'B')]
+    const b = [treffer('DE-2', 'B doppelt'), treffer('DE-3', 'C')]
+    const c = [treffer('DE-1', 'A doppelt'), treffer('DE-4', 'D')]
+    expect(mergeSuchTreffer([a, b, c]).map((t) => t.company_id)).toEqual(['DE-1', 'DE-2', 'DE-3', 'DE-4'])
+  })
+
+  it('toleriert leere Listen und kappt auf das Limit', () => {
+    expect(mergeSuchTreffer([[], []])).toEqual([])
+    const viele = Array.from({ length: 30 }, (_, i) => treffer(`DE-${i}`, `F${i}`))
+    expect(mergeSuchTreffer([viele])).toHaveLength(20)
   })
 })
 

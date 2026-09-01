@@ -2,18 +2,22 @@
 
 import { useEffect, useRef, useState } from 'react'
 
-import { openregisterSuche, openregisterVerbund } from '@/lib/openregister/actions'
-import type { RegisterTreffer, VerbundErgebnis } from '@/lib/openregister/mapping'
+import { openregisterVerbund } from '@/lib/openregister/actions'
+import type { VerbundErgebnis } from '@/lib/openregister/mapping'
 
-import { inputCls } from './ui'
+import { RegisterSuche } from './register-suche'
 
 /**
  * Handelsregister-Assistent im KMU-Schritt: Der Kunde sucht sein Unternehmen,
  * wir laden Gesellschafter + Beteiligungen + veröffentlichte Kennzahlen aus
- * dem Handelsregister/Bundesanzeiger (OpenRegister) und befüllen auf Wunsch
- * die Formularfelder vor. Alles bleibt editierbar – der Kunde prüft und
- * bestätigt. Best effort: Bei einem Fehler funktioniert die manuelle
- * Eingabe darunter einfach weiter.
+ * dem Handelsregister/Bundesanzeiger (OpenRegister) inkl. aller Folgestufen
+ * der Beteiligungskette und befüllen auf Wunsch die Formularfelder vor.
+ * Alles bleibt editierbar – der Kunde prüft und bestätigt.
+ *
+ * Hat der Kunde seine Firma bereits im Schritt „Ihr Unternehmen" gewählt,
+ * wird das Ergebnis ueber `initialRegisterId` automatisch nachgeladen
+ * (kommt aus dem 30-Tage-Cache, kostet keine erneuten Credits).
+ * Best effort: Bei einem Fehler funktioniert die manuelle Eingabe weiter.
  */
 
 const fmtZahl = new Intl.NumberFormat('de-DE', { maximumFractionDigits: 0 })
@@ -42,73 +46,44 @@ function euKlasse(b: { klasse: 'partner' | 'verbunden'; anteil_pct: number }): {
 
 export function VerbundSuche({
   token,
+  initialRegisterId,
   onUebernehmen,
 }: {
   token: string
+  initialRegisterId?: string
   onUebernehmen: (ergebnis: VerbundErgebnis) => void
 }) {
-  const [query, setQuery] = useState('')
-  const [treffer, setTreffer] = useState<RegisterTreffer[] | null>(null)
-  const [sucht, setSucht] = useState(false)
   const [laedt, setLaedt] = useState(false)
   const [fehler, setFehler] = useState<string | null>(null)
   const [ergebnis, setErgebnis] = useState<VerbundErgebnis | null>(null)
   const [ausCache, setAusCache] = useState(false)
   const [uebernommen, setUebernommen] = useState(false)
-  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null)
-  const laufId = useRef(0)
+  const [quelle, setQuelle] = useState<'suche' | 'stammdaten' | null>(null)
+  const autoLaden = useRef(false)
 
-  // Laufende Suche bei Unmount abbrechen
-  useEffect(
-    () => () => {
-      if (debounceRef.current) clearTimeout(debounceRef.current)
-    },
-    [],
-  )
-
-  // Debounced Suche ab 3 Zeichen (im Event-Handler, nicht im Effect)
-  const onQueryChange = (v: string) => {
-    setQuery(v)
-    setErgebnis(null)
-    setUebernommen(false)
-    setFehler(null)
-    if (debounceRef.current) clearTimeout(debounceRef.current)
-    const q = v.trim()
-    if (q.length < 3) {
-      setTreffer(null)
-      setSucht(false)
-      return
-    }
-    setSucht(true)
-    debounceRef.current = setTimeout(async () => {
-      const id = ++laufId.current
-      const res = await openregisterSuche(token, q)
-      if (id !== laufId.current) return // veraltete Antwort verwerfen
-      setSucht(false)
-      if (res.ok) setTreffer(res.treffer)
-      else {
-        setTreffer(null)
-        setFehler(res.fehler)
-      }
-    }, 400)
-  }
-
-  const waehlen = async (t: RegisterTreffer) => {
+  const laden = async (companyId: string, herkunft: 'suche' | 'stammdaten') => {
     setLaedt(true)
     setFehler(null)
     setErgebnis(null)
     setUebernommen(false)
-    setTreffer(null)
-    setQuery(t.name)
-    const res = await openregisterVerbund(token, t.companyId)
+    const res = await openregisterVerbund(token, companyId)
     setLaedt(false)
     if (res.ok) {
       setErgebnis(res.ergebnis)
       setAusCache(res.ausCache)
+      setQuelle(herkunft)
     } else {
       setFehler(res.fehler)
     }
   }
+
+  // Firmenwahl aus dem Stammdaten-Schritt automatisch uebernehmen (einmalig)
+  useEffect(() => {
+    if (!initialRegisterId || autoLaden.current) return
+    autoLaden.current = true
+    void laden(initialRegisterId, 'stammdaten')
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [initialRegisterId])
 
   return (
     <section className="flex flex-col gap-4 rounded-2xl border border-teal-600/25 bg-teal-50/40 p-5 sm:p-6">
@@ -131,58 +106,14 @@ export function VerbundSuche({
         </p>
       </div>
 
-      {/* Suche */}
-      <div className="relative">
-        <label htmlFor="hr-suche" className="sr-only">
-          Unternehmen im Handelsregister suchen
-        </label>
-        <input
-          id="hr-suche"
-          type="search"
-          autoComplete="off"
-          className={inputCls}
-          placeholder="Firmenname eingeben, z. B. Muster GmbH …"
-          value={query}
-          onChange={(e) => onQueryChange(e.target.value)}
-        />
-        {sucht && (
-          <span className="absolute top-1/2 right-4 -translate-y-1/2 text-xs font-medium text-olive-500">
-            Suche …
-          </span>
-        )}
-      </div>
-
-      {/* Trefferliste */}
-      {treffer && !ergebnis && (
-        <ul className="flex flex-col gap-2" aria-label="Suchergebnisse">
-          {treffer.length === 0 && (
-            <li className="rounded-xl border border-olive-200 bg-white px-4 py-3 text-sm text-olive-600">
-              Kein Treffer im Handelsregister – bitte die Zahlen unten manuell eintragen.
-            </li>
-          )}
-          {treffer.map((t) => (
-            <li key={t.companyId}>
-              <button
-                type="button"
-                onClick={() => waehlen(t)}
-                className="flex w-full min-w-0 flex-col gap-0.5 rounded-xl border border-olive-200 bg-white px-4 py-3 text-left transition-colors hover:border-teal-600 hover:bg-teal-50/60 focus:outline-none focus-visible:ring-2 focus-visible:ring-teal-600/40"
-              >
-                <span className="flex flex-wrap items-center gap-x-2 gap-y-1">
-                  <span className="text-sm font-semibold break-words text-mabe-900">{t.name}</span>
-                  {!t.aktiv && (
-                    <span className="rounded-full bg-olive-100 px-2 py-0.5 text-[11px] font-medium text-olive-600 ring-1 ring-olive-300">
-                      erloschen/inaktiv
-                    </span>
-                  )}
-                </span>
-                <span className="text-xs/5 break-words text-olive-600">
-                  {[t.adresse, t.registerLabel].filter(Boolean).join(' · ')}
-                </span>
-              </button>
-            </li>
-          ))}
-        </ul>
-      )}
+      <RegisterSuche
+        token={token}
+        inputId="hr-suche-kmu"
+        onWaehlen={(t) => {
+          autoLaden.current = true // explizite Suche ersetzt den Stammdaten-Bezug
+          void laden(t.companyId, 'suche')
+        }}
+      />
 
       {laedt && (
         <p className="flex items-center gap-2 rounded-xl border border-teal-600/20 bg-white px-4 py-3 text-sm text-olive-700" role="status">
@@ -204,7 +135,10 @@ export function VerbundSuche({
       {ergebnis && (
         <div className="flex flex-col gap-4">
           <div className="rounded-xl border border-olive-200 bg-white p-4 sm:p-5">
-            <p className="text-xs font-semibold tracking-wide text-olive-500 uppercase">Gefunden im Handelsregister</p>
+            <p className="text-xs font-semibold tracking-wide text-olive-500 uppercase">
+              Gefunden im Handelsregister
+              {quelle === 'stammdaten' ? ' · Ihre Auswahl aus „Ihr Unternehmen"' : ''}
+            </p>
             <p className="mt-1 text-base font-semibold break-words text-mabe-900">{ergebnis.unternehmen.name}</p>
             <p className="text-sm/6 break-words text-olive-600">
               {[ergebnis.unternehmen.strasse, `${ergebnis.unternehmen.plz ?? ''} ${ergebnis.unternehmen.ort ?? ''}`.trim()]

@@ -33,6 +33,7 @@ export const SCHRITTE: SchrittDef[] = [
     erklaerung:
       'Der Zuschuss wird offiziell an Ihr Unternehmen gezahlt. Deshalb brauchen wir die Daten exakt so, wie sie im Handelsregister bzw. bei Ihrem Finanzamt hinterlegt sind.',
     komponente: 'generisch',
+    registerSuche: true,
     felder: [
       { name: 'unternehmensname', typ: 'text', label: 'Unternehmensname', pflicht: true },
       {
@@ -120,6 +121,15 @@ export const SCHRITTE: SchrittDef[] = [
         hilfe: 'Die Steuernummer des Unternehmens (nicht die USt-IdNr.), Format z. B. 123/456/78901.',
         tooltip:
           'Die Steuernummer hat Ihr Unternehmen vom Finanzamt erhalten – sie steht auf jedem Schreiben des Finanzamts. Nicht verwechseln mit der USt-IdNr. (beginnt mit „DE“).',
+      },
+      {
+        name: 'ust_id',
+        typ: 'text',
+        label: 'USt-IdNr. (falls vorhanden)',
+        sichtbarWenn: { feld: 'personenart', ist: 'juristisch' },
+        hilfe: 'Beginnt mit „DE“, gefolgt von 9 Ziffern. Steht auf Rechnungen und im Impressum.',
+        tooltip:
+          'Die Umsatzsteuer-Identifikationsnummer braucht das BAFA für die Antragsprüfung. Keine vorhanden? Dann lassen Sie das Feld einfach leer – die Steuernummer genügt.',
       },
     ],
   },
@@ -213,11 +223,13 @@ export const SCHRITTE: SchrittDef[] = [
       {
         name: 'standort_plz',
         typ: 'plz',
-        label: 'Standort der Maßnahme: PLZ',
-        hilfe: 'Nur ausfüllen, wenn der Installationsort von der Firmenadresse abweicht.',
+        label: 'Ort der Umsetzung: PLZ',
+        hilfe: 'Wo wird die Maßnahme installiert? Nur ausfüllen, wenn das von Ihrer Firmenadresse abweicht.',
+        tooltip:
+          'Das BAFA braucht den genauen Installationsort der Mess- und Steuerungstechnik. In den meisten Fällen ist das Ihr Firmensitz – dann einfach leer lassen.',
       },
-      { name: 'standort_ort', typ: 'text', label: 'Standort: Ort' },
-      { name: 'standort_strasse', typ: 'text', label: 'Standort: Straße' },
+      { name: 'standort_ort', typ: 'text', label: 'Ort der Umsetzung: Ort' },
+      { name: 'standort_strasse', typ: 'text', label: 'Ort der Umsetzung: Straße + Hausnr.' },
       { name: 'kontoinhaber', typ: 'text', label: 'Kontoinhaber (Vor- & Nachname)', pflicht: true },
       {
         name: 'iban',

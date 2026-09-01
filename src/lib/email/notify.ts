@@ -1,5 +1,7 @@
 import 'server-only'
 
+import { istTestAdresse } from './guard'
+import { baueLeadBenachrichtigungHtml, type LeadPayload } from './lead-benachrichtigung'
 import { absender, portalUrl, resendClient } from './resend'
 import { button, esc, h1, infoBox, layout, p } from './templates'
 
@@ -13,21 +15,27 @@ import { button, esc, h1, infoBox, layout, p } from './templates'
  * - Neue Benachrichtigungen = neue Funktion hier + Template in templates.ts.
  */
 
-async function sendeMail(an: string, betreff: string, html: string): Promise<boolean> {
+async function sendeMail(an: string | string[], betreff: string, html: string): Promise<boolean> {
+  // Sicherheitsnetz: Test-/Platzhalter-Adressen niemals wirklich versenden
+  const empfaenger = (Array.isArray(an) ? an : [an]).filter((a) => !istTestAdresse(a))
+  if (empfaenger.length === 0) {
+    console.warn(`[email] Nur Test-/Platzhalter-Adressen – kein Versand: "${betreff}"`)
+    return false
+  }
   const client = resendClient()
   if (!client) {
-    console.warn(`[email] Kein RESEND_API_KEY gesetzt – Versand übersprungen: "${betreff}" an ${an}`)
+    console.warn(`[email] Kein RESEND_API_KEY gesetzt – Versand übersprungen: "${betreff}" an ${empfaenger.join(', ')}`)
     return false
   }
   try {
-    const { error } = await client.emails.send({ from: absender(), to: an, subject: betreff, html })
+    const { error } = await client.emails.send({ from: absender(), to: empfaenger, subject: betreff, html })
     if (error) {
-      console.error(`[email] Resend-Fehler bei "${betreff}" an ${an}:`, error)
+      console.error(`[email] Resend-Fehler bei "${betreff}" an ${empfaenger.join(', ')}:`, error)
       return false
     }
     return true
   } catch (e) {
-    console.error(`[email] Versand fehlgeschlagen ("${betreff}" an ${an}):`, e)
+    console.error(`[email] Versand fehlgeschlagen ("${betreff}" an ${empfaenger.join(', ')}):`, e)
     return false
   }
 }
@@ -189,4 +197,35 @@ export async function sendeBenutzerEinladung(daten: {
     ].join(''),
   )
   return sendeMail(daten.an, 'Einladung zum MABE Förderportal', html)
+}
+
+/**
+ * 7 · Lead-Benachrichtigung (intern): Landingpage-KMU-Check wurde mit
+ * Kontaktdaten abgeschlossen. Enthaelt ALLE Angaben als kopierfähige
+ * Tabellen (KMU-Ergebnis, Verflechtung, Verrechnung, Kontakt, Meta).
+ * Empfaenger aus den Admin-Einstellungen (lead_email_empfaenger) mit
+ * ENV-/Standard-Fallback. Best effort – blockiert den Lead nie.
+ */
+export async function sendeLeadBenachrichtigung(payload: LeadPayload): Promise<boolean> {
+  const { ermittleLeadEmpfaenger } = await import('@/lib/db/repositories/einstellungen')
+  const { empfaenger } = await ermittleLeadEmpfaenger()
+  if (empfaenger.length === 0) {
+    console.warn('[email] Keine Lead-Empfänger konfiguriert – Versand übersprungen.')
+    return false
+  }
+  const firma = payload.company?.name || 'Unbekanntes Unternehmen'
+  const html = layout(
+    `Neuer Lead: ${firma}`,
+    [
+      h1(`Neuer KMU-Check-Lead: ${esc(firma)}`),
+      infoBox(
+        `<strong>${esc(payload.result.categoryLabel)}</strong> · Förderquote ` +
+          `<strong>${payload.result.fundingRatePct} %</strong> · Ansprechpartner: ` +
+          `${esc([payload.lead.firstName, payload.lead.lastName].filter(Boolean).join(' '))} (${esc(payload.lead.email)})`,
+      ),
+      baueLeadBenachrichtigungHtml(payload),
+    ].join(''),
+  )
+  // Eine Mail an alle Empfaenger (sichtbare Empfaengerliste, interner Verteiler)
+  return sendeMail(empfaenger, `Neuer KMU-Check-Lead: ${firma} (${payload.result.categoryLabel})`, html)
 }

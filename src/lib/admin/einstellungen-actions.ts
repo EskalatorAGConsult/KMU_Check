@@ -79,3 +79,36 @@ export async function testeWebhook(): Promise<WebhookTestErgebnis> {
     return { ok: false, fehler: 'Webhook nicht erreichbar (Timeout oder Netzwerkfehler).' }
   }
 }
+
+const EMAIL_RE = /^[^\s@,;]+@[^\s@,;]+\.[^\s@,;]+$/
+
+/** Speichert die Empfaenger der Lead-Benachrichtigung (Komma/Semikolon-getrennt; leer = Standard). */
+export async function speichereLeadEmpfaenger(wert: string): Promise<EinstellungErgebnis> {
+  const session = await requireAdmin()
+  const adressen = wert
+    .split(/[;,]/)
+    .map((s) => s.trim())
+    .filter(Boolean)
+
+  const ungueltig = adressen.filter((a) => !EMAIL_RE.test(a))
+  if (ungueltig.length > 0) {
+    return { ok: false, fehler: `Ungültige E-Mail-Adresse(n): ${ungueltig.join(', ')}` }
+  }
+
+  try {
+    await setzeEinstellung('lead_email_empfaenger', adressen.join(', '), session.user.id)
+    await audit(null, `admin:${session.user.id}`, 'einstellung_lead_empfaenger', {
+      anzahl: adressen.length,
+    })
+    revalidatePath('/admin/einstellungen')
+    return {
+      ok: true,
+      hinweis:
+        adressen.length > 0
+          ? `Lead-Benachrichtigung geht jetzt an: ${adressen.join(', ')}`
+          : 'Empfänger zurückgesetzt – es gilt der Standard (robin@eskalator.ag) bzw. ENV-Fallback.',
+    }
+  } catch (e) {
+    return { ok: false, fehler: e instanceof Error ? e.message : 'Speichern fehlgeschlagen.' }
+  }
+}

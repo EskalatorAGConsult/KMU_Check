@@ -62,10 +62,16 @@ describe.skipIf(!LIVE)('OpenRegister-Anbindung (Live-Integration)', async () => 
     const ungueltig = await openregisterSuche('falscher-token', 'MABE')
     expect(ungueltig.ok).toBe(false)
 
-    // 2 · Suche findet MABE
+    // 2 · Suche findet MABE – auch mit Rechtsform-Zusatz im Suchbegriff
+    // (Kernbefund des Audits: Autocomplete UND Filtersuche verlieren MABE,
+    // sobald „GmbH" getippt wird; die normalisierte Variante faengt das ab)
     const suche = await openregisterSuche(KLARTEXT, 'MABE Behälterbau Daaden')
     expect(suche.ok).toBe(true)
     if (suche.ok) expect(suche.treffer.length).toBeGreaterThan(0)
+
+    const sucheGmbh = await openregisterSuche(KLARTEXT, 'Maschinen- und Behälterbau GmbH')
+    expect(sucheGmbh.ok).toBe(true)
+    if (sucheGmbh.ok) expect(sucheGmbh.treffer.map((t) => t.companyId)).toContain(MABE_ID)
 
     // 3 · Verbund-Abfrage: Walter Henrich GmbH als 100-%-Gesellschafter (aufwaerts)
     const verbund = await openregisterVerbund(KLARTEXT, MABE_ID)

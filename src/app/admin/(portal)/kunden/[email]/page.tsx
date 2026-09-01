@@ -2,7 +2,9 @@ import type { Metadata } from 'next'
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
 
+import { SystemkonzeptAktionen } from '@/components/admin/systemkonzept-aktionen'
 import { VorgangAktionen } from '@/components/admin/vorgang-aktionen'
+import { listeSystemkonzeptVorlagen } from '@/lib/admin/systemkonzept-actions'
 import { holeKunde } from '@/lib/db/repositories/kunden'
 import type { AngebotStatus } from '@/lib/db/types'
 import { CATEGORY_LABELS, type Category } from '@/lib/kmu'
@@ -32,6 +34,7 @@ export default async function KundeDetailPage({ params }: { params: Promise<{ em
   const { email } = await params
   const kunde = await holeKunde(decodeURIComponent(email))
   if (!kunde) notFound()
+  const vorlagen = await listeSystemkonzeptVorlagen()
 
   return (
     <div className="flex flex-col gap-8">
@@ -94,6 +97,13 @@ export default async function KundeDetailPage({ params }: { params: Promise<{ em
               <span className={`rounded-full px-2.5 py-1 text-xs font-semibold ${STATUS_CLS[v.angebot.status]}`}>
                 {STATUS_LABEL[v.angebot.status]}
               </span>
+            </div>
+            <div className="mt-4 border-t border-olive-100 pt-4">
+              <SystemkonzeptAktionen
+                angebotId={v.angebot.id}
+                aktuelleUrl={v.dokumente.find((d) => d.typ === 'systemkonzept')?.storage_path ?? null}
+                vorlagen={vorlagen}
+              />
             </div>
             <div className="mt-4 border-t border-olive-100 pt-4">
               <VorgangAktionen angebotId={v.angebot.id} status={v.angebot.status} />

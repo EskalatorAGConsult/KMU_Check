@@ -1,7 +1,8 @@
 import type { Metadata } from 'next'
 
+import { LeadEmpfaengerForm } from '@/components/admin/lead-empfaenger-form'
 import { WebhookForm } from '@/components/admin/webhook-form'
-import { holeEinstellung } from '@/lib/db/repositories/einstellungen'
+import { ermittleLeadEmpfaenger, holeEinstellung } from '@/lib/db/repositories/einstellungen'
 import { loeseWebhookAuf } from '@/lib/webhook'
 
 export const metadata: Metadata = { title: 'Einstellungen | MABE Förderportal', robots: { index: false } }
@@ -27,6 +28,8 @@ function maskiere(url: string): string {
 export default async function EinstellungenPage() {
   const dbWert = (await holeEinstellung('webhook_url')) ?? ''
   const aufloesung = loeseWebhookAuf(dbWert, process.env.WEBHOOK_URL)
+  const dbEmpfaenger = (await holeEinstellung('lead_email_empfaenger')) ?? ''
+  const leadEmpfaenger = await ermittleLeadEmpfaenger()
 
   return (
     <div className="flex max-w-3xl flex-col gap-8">
@@ -36,6 +39,24 @@ export default async function EinstellungenPage() {
           Zentrale Konfiguration des Portals. Änderungen wirken sofort, ohne Redeploy.
         </p>
       </div>
+
+      <section className="rounded-2xl border border-olive-200 bg-white p-5 sm:p-6">
+        <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
+          <h3 className="text-sm font-semibold text-mabe-900">Lead-Benachrichtigung (KMU-Check)</h3>
+          <span className="rounded-full bg-teal-100 px-2.5 py-1 text-xs font-semibold text-teal-800">
+            {leadEmpfaenger.quelle === 'datenbank'
+              ? 'Individuell (Einstellungen)'
+              : leadEmpfaenger.quelle === 'umgebung'
+                ? 'ENV-Fallback (LEAD_EMAIL_AN)'
+                : 'Standard'}
+          </span>
+        </div>
+        <p className="mb-4 text-sm text-olive-600">
+          Wirksame Empfänger:{' '}
+          <code className="rounded bg-olive-100 px-1.5 py-0.5 text-xs">{leadEmpfaenger.empfaenger.join(', ')}</code>
+        </p>
+        <LeadEmpfaengerForm initialWert={dbEmpfaenger} />
+      </section>
 
       <section className="rounded-2xl border border-olive-200 bg-white p-5 sm:p-6">
         <div className="mb-4 flex flex-wrap items-center justify-between gap-2">

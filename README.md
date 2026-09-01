@@ -118,8 +118,15 @@ vorbefüllt aus dem Handelsregister, jederzeit editierbar, Absenden über den Wi
 einen leeren Verbund, auch wenn der Client veraltete Zeilen mitschickt; die Live-Ampel rechnet mit
 denselben wirksamen Daten wie die finale Einreichung.
 
-**Handelsregister-Abfrage (OpenRegister):** Im KMU-Schritt kann der Kunde sein Unternehmen im
-offiziellen Handelsregister suchen (Autocomplete). Nach der Auswahl lädt das Portal Gesellschafter
+**Handelsregister-Abfrage (OpenRegister):** Bereits im Schritt **„Ihr Unternehmen"** sucht der Kunde seine
+Firma im offiziellen Handelsregister (Autocomplete); Name, Anschrift, WZ-Code und Personenart
+(juristisch/natürlich, `personenartAusRechtsform` – e. K. wird korrekt als natürliche Person erkannt)
+werden direkt in die Formularfelder übernommen (`unternehmen-suche.tsx`, per `registerSuche: true`
+am Schritt in `schritte.ts` aktiviert). Die gewählte Register-ID liegt als `register_id` im
+Schritt-Payload (bei der finalen Validierung gestripped) und steuert den KMU-Schritt: Dort wird
+dasselbe Unternehmen automatisch nachgeladen (30-Tage-Cache → keine Zusatz-Credits) und der Kunde
+übernimmt Kennzahlen + Verbund per Klick. Im KMU-Schritt kann der Kunde sein Unternehmen ebenfalls
+direkt suchen; nach der Auswahl lädt das Portal Gesellschafter
 (Owners), Beteiligungen (Holdings) und die veröffentlichten Finanzkennzahlen (Beschäftigte, Umsatz,
 Bilanzsumme aus dem Bundesanzeiger) und befüllt auf Knopfdruck Geschäftsjahre und Verbund vor –
 inkl. EU-Klassifizierung jeder Beteiligung (< 25 % irrelevant, 25–50 % Partner, > 50 % verbunden)

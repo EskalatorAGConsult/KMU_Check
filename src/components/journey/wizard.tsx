@@ -12,6 +12,7 @@ import { SchrittKmu } from './schritt-kmu'
 import { SchrittUebersicht } from './schritt-uebersicht'
 import { SchrittVollmacht } from './schritt-vollmacht'
 import { StepGenerisch } from './step-generisch'
+import { UnternehmenSuche } from './unternehmen-suche'
 
 type SchrittDaten = Record<string, Record<string, unknown>>
 
@@ -164,11 +165,25 @@ export function Wizard({
 
         {/* Schritt-Inhalt (Registry ueber komponente) */}
         {schritt.komponente === 'uebersicht' && <SchrittUebersicht angebot={angebot} />}
+        {schritt.registerSuche && (
+          <UnternehmenSuche
+            token={token}
+            uebernommenFirma={(schrittDaten.register_id as string | undefined) ? String(schrittDaten.unternehmensname ?? '') || null : null}
+            onChange={setze}
+          />
+        )}
         {schritt.komponente === 'generisch' && (
           <StepGenerisch schritt={schritt} daten={schrittDaten} fehler={fehler} onChange={setze} />
         )}
         {schritt.komponente === 'kmu' && (
-          <SchrittKmu daten={schrittDaten} fehler={fehler} investSumme={investSumme} token={token} onChange={setze} />
+          <SchrittKmu
+            daten={schrittDaten}
+            fehler={fehler}
+            investSumme={investSumme}
+            token={token}
+            registerId={(daten['unternehmen']?.register_id as string | undefined) ?? undefined}
+            onChange={setze}
+          />
         )}
         {schritt.komponente === 'deminimis' && (
           <SchrittDeminimis daten={schrittDaten} fehler={fehler} onChange={setze} />

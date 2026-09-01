@@ -72,41 +72,38 @@ export function SchrittVollmacht({
             <h3 className="text-sm font-semibold text-mabe-900">
               Vollmacht nach § 14 VwVfG
               <span className="ml-2 text-xs font-normal text-olive-500">
-                offizieller Wortlaut · BAFA-Formular eew_vm_3
+                Original · BAFA-Formular eew_vm_3
               </span>
             </h3>
-            <div className="flex flex-col gap-3 text-sm/6 text-olive-700">
-              <p>
-                Ich erkläre, dass die <strong>Eskalator AG</strong> als bevollmächtigte Organisation im Sinne des
-                § 14 VwVfG bestellt ist. Die Vollmacht ermächtigt zu allen das Verwaltungsverfahren betreffenden
-                Verfahrenshandlungen gegenüber dem Bundesamt für Wirtschaft und Ausfuhrkontrolle (im Folgenden:
-                BAFA); Frankfurter Straße 29 – 35; 65760 Eschborn. Dazu gehören z. B. die Abgabe von detaillierten
-                Informationen zum antragstellenden Unternehmen, Angaben zu den geplanten oder durchgeführten
-                Investitionen, die Abgabe von Stellungnahmen und Erklärungen.
-              </p>
-              <p>
-                Ich nehme zur Kenntnis und erkläre mich damit einverstanden, dass das BAFA sämtlichen
-                Schriftverkehr (z. B. Schreiben zur Aufklärung des Sachverhalts, Zuwendungs-, Ablehnungs-,
-                Rücknahme- oder Widerrufsbescheide) an die von mir bevollmächtigte Organisation versenden wird.
-                Unabhängig davon kann das BAFA sich ebenso direkt an mich wenden.
-              </p>
-              <p>
-                Mir ist bekannt, dass ich ungeachtet dieser Bevollmächtigung verfahrensbeteiligt im Sinne des
-                VwVfG bin und bleibe und dass die bevollmächtigte Organisation in meinem Namen handelt und ich
-                die Rechtsfolgen ihrer Handlungen trage.
-              </p>
-              <p>
-                <strong>Datenschutzerklärung:</strong> Ich bin damit einverstanden, dass das BAFA
-                verfahrensrelevante Daten im Rahmen des Antragsverfahrens speichert, nutzt und weiterverarbeitet,
-                soweit dies zur Überprüfung der Anspruchsvoraussetzungen erforderlich ist oder statistischen
-                Zwecken dient.
-              </p>
-              <p className="rounded-xl bg-white px-4 py-3 text-xs/5 text-olive-600 ring-1 ring-olive-200">
-                Nach dem Absenden erstellen wir automatisch das ausgefüllte BAFA-Formular
-                <strong> eew_vm_3</strong> mit Ihren Angaben – Sie finden es in Ihrem Kundenkonto unter
-                „Das reichen wir für Sie ein“.
-              </p>
-            </div>
+            <p className="text-sm/6 text-olive-700">
+              Mit Ihrer Unterschrift bestellen Sie die <strong>Eskalator AG</strong> als bevollmächtigte
+              Organisation im Sinne des § 14 VwVfG gegenüber dem Bundesamt für Wirtschaft und Ausfuhrkontrolle
+              (BAFA). Maßgeblich ist ausschließlich das folgende <strong>Original-Formular des BAFA</strong> –
+              lesen Sie es hier direkt durch:
+            </p>
+
+            {/* Original-Formular eingebettet (Desktop); mobil oeffnet es in einem eigenen Tab,
+                weil iOS/Android PDFs in iframes nicht zuverlaessig darstellen. */}
+            <iframe
+              src="/vorlagen/eew_vm_3.pdf#view=FitH"
+              title="BAFA-Vollmacht – offizielles Formular eew_vm_3"
+              className="hidden h-[36rem] w-full rounded-xl bg-white ring-1 ring-olive-200 sm:block"
+            />
+            <a
+              href="/vorlagen/eew_vm_3.pdf"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex w-fit items-center gap-1.5 rounded-xl border border-teal-600 bg-white px-4 py-2.5 text-sm font-semibold text-teal-700 hover:bg-teal-50"
+            >
+              Vollmacht-Formular öffnen (PDF, 2 Seiten) ↗
+            </a>
+
+            <p className="rounded-xl bg-white px-4 py-3 text-xs/5 text-olive-600 ring-1 ring-olive-200">
+              Nach dem Absenden erstellen wir automatisch das <strong>ausgefüllte</strong> BAFA-Formular
+              eew_vm_3 mit Ihren Stammdaten und Ihrer Unterschrift – Sie finden es in Ihrem Kundenkonto unter
+              „Das reichen wir für Sie ein“.
+            </p>
+
           <Feld
             label="Online-Unterschrift (vollständiger Name)"
             hilfe="Rechtswirksam als einfache elektronische Signatur. Zeitpunkt und technische Daten werden protokolliert."
