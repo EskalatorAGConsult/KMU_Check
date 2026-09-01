@@ -300,40 +300,48 @@ export async function schliesseJourneyAb(
   await audit(angebot.id, 'system', 'bestaetigung_email', { gesendet: mailGesendet })
 
   // 11 · Systemkonzept generieren + ablegen (best effort, blockiert den Abschluss nicht)
+  // Ausnahme: Hat der Admin bereits ein kundenindividuelles Systemkonzept
+  // hinterlegt (Upload/Vorlage), bleibt dieses bestehen – nicht ueberschreiben.
   try {
-    const pdfBytes = await generiereSystemkonzept(
-      angebot,
-      {
-        unternehmensname: String(unternehmen.unternehmensname),
-        strasse: String(unternehmen.strasse),
-        plz: String(unternehmen.plz),
-        ort: String(unternehmen.ort),
-        land: String(unternehmen.land ?? 'Deutschland'),
-        wz_code: String(unternehmen.wz_code),
-        ap_rolle: String(ansprechpartner.ap_rolle),
-        ap_vorname: String(ansprechpartner.ap_vorname),
-        ap_nachname: String(ansprechpartner.ap_nachname),
-        standort_strasse: (antrag.standort_strasse as string) || null,
-        standort_plz: (antrag.standort_plz as string) || null,
-        standort_ort: (antrag.standort_ort as string) || null,
-      },
-      { kategorie: kmuErgebnis.category, foerderquotePct: kmuErgebnis.fundingRatePct },
-    )
-    const url = await ladeDokumentHoch(
-      `systemkonzept/${angebot.angebot_nr}.pdf`,
-      pdfBytes,
-    )
-    if (url) {
-      // storage_path ist unique – bei erneuter Einreichung alten Eintrag ersetzen
-      await db.from('dokumente').delete().eq('angebot_id', angebot.id).eq('typ', 'systemkonzept')
-      const { error: e7 } = await db.from('dokumente').insert({
-        angebot_id: angebot.id,
-        typ: 'systemkonzept',
-        storage_path: url,
-      })
-      if (e7) throw new Error(`Dokumente: ${e7.message}`)
+    const { count: vorhandenes } = await db
+      .from('dokumente')
+      .select('id', { count: 'exact', head: true })
+      .eq('angebot_id', angebot.id)
+      .eq('typ', 'systemkonzept')
+    if ((vorhandenes ?? 0) > 0) {
+      await audit(angebot.id, 'system', 'systemkonzept_generiert', { ok: true, uebersprungen: 'admin_vorlage' })
+    } else {
+      const pdfBytes = await generiereSystemkonzept(
+        angebot,
+        {
+          unternehmensname: String(unternehmen.unternehmensname),
+          strasse: String(unternehmen.strasse),
+          plz: String(unternehmen.plz),
+          ort: String(unternehmen.ort),
+          land: String(unternehmen.land ?? 'Deutschland'),
+          wz_code: String(unternehmen.wz_code),
+          ap_rolle: String(ansprechpartner.ap_rolle),
+          ap_vorname: String(ansprechpartner.ap_vorname),
+          ap_nachname: String(ansprechpartner.ap_nachname),
+          standort_strasse: (antrag.standort_strasse as string) || null,
+          standort_plz: (antrag.standort_plz as string) || null,
+          standort_ort: (antrag.standort_ort as string) || null,
+        },
+        { kategorie: kmuErgebnis.category, foerderquotePct: kmuErgebnis.fundingRatePct },
+      )
+      const url = await ladeDokumentHoch(`systemkonzept/${angebot.angebot_nr}.pdf`, pdfBytes)
+      if (url) {
+        // storage_path ist unique – bei erneuter Einreichung alten Eintrag ersetzen
+        await db.from('dokumente').delete().eq('angebot_id', angebot.id).eq('typ', 'systemkonzept')
+        const { error: e7 } = await db.from('dokumente').insert({
+          angebot_id: angebot.id,
+          typ: 'systemkonzept',
+          storage_path: url,
+        })
+        if (e7) throw new Error(`Dokumente: ${e7.message}`)
+      }
+      await audit(angebot.id, 'system', 'systemkonzept_generiert', { ok: !!url })
     }
-    await audit(angebot.id, 'system', 'systemkonzept_generiert', { ok: !!url })
   } catch (e) {
     console.error('[journey] Systemkonzept-Generierung fehlgeschlagen:', e)
     await audit(angebot.id, 'system', 'systemkonzept_generiert', {

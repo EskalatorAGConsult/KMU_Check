@@ -10,6 +10,8 @@ import { sendeEinladung } from '@/lib/email/notify'
 import { analysiereAngebot, type AngebotAnalyse } from '@/lib/gemini/angebot-analyse'
 import { ladeDokumentHoch } from '@/lib/storage/blob'
 
+import { validierePdf } from './pdf-upload'
+
 const schema = z.object({
   kunde_firma: z.string().trim().min(2, 'Firmenname fehlt.').max(200),
   kunde_ansprechpartner: z.string().trim().optional(),
@@ -102,21 +104,6 @@ export async function erstelleAngebotAction(eingabe: NeuesAngebot): Promise<Admi
 export type AnalyseErgebnis =
   | { ok: true; analyse: AngebotAnalyse }
   | { ok: false; fehler: string }
-
-const MAX_UPLOAD = 15 * 1024 * 1024
-
-/** Liest und validiert die hochgeladene PDF-Datei aus einer FormData. */
-async function validierePdf(formData: FormData): Promise<{ bytes: Uint8Array; name: string } | { fehler: string }> {
-  const datei = formData.get('datei')
-  if (!(datei instanceof File) || datei.size === 0) return { fehler: 'Keine Datei übergeben.' }
-  if (datei.size > MAX_UPLOAD) return { fehler: 'Die Datei ist größer als 15 MB.' }
-  const bytes = new Uint8Array(await datei.arrayBuffer())
-  // PDF-Magic-Bytes pruefen (MIME-Type des Clients ist vertrauensunwuerdig)
-  if (!(bytes[0] === 0x25 && bytes[1] === 0x50 && bytes[2] === 0x44 && bytes[3] === 0x46)) {
-    return { fehler: 'Die Datei ist keine PDF (unerwartetes Dateiformat).' }
-  }
-  return { bytes, name: datei.name }
-}
 
 /**
  * Analysiert das Angebots-PDF mit Gemini (OCR) und liefert die extrahierten
