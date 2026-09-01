@@ -35,12 +35,13 @@ export const SCHRITTE: SchrittDef[] = [
     komponente: 'generisch',
     registerSuche: true,
     felder: [
-      { name: 'unternehmensname', typ: 'text', label: 'Unternehmensname', pflicht: true },
+      { name: 'unternehmensname', typ: 'text', label: 'Unternehmensname', pflicht: true, gruppe: 'Unternehmen & Adresse' },
       {
         name: 'land',
         typ: 'auswahl',
         label: 'Land',
         pflicht: true,
+        standard: 'Deutschland',
         hilfe: 'Förderfähig sind nur Unternehmen mit Sitz in Deutschland (BAFA = Bundesprogramm).',
         tooltip:
           'Das BAFA ist eine Bundesförderung: Der Zuschuss geht nur an Unternehmen mit Sitz und Umsetzungsstandort in Deutschland. Deshalb ist hier „Deutschland“ fest vorgegeben.',
@@ -65,6 +66,7 @@ export const SCHRITTE: SchrittDef[] = [
         typ: 'auswahl',
         label: 'Unternehmensart',
         pflicht: true,
+        gruppe: 'Rechtsform & Steuern',
         hilfe: 'Steht Ihr Unternehmen in Beteiligungsverhältnissen? Das wird im Schritt „Ihr KMU-Status“ konkret verrechnet.',
         tooltip:
           '„Partner“ oder „verbunden“ heißt: Ein anderes Unternehmen hält mindestens 25 % Ihrer Anteile – oder Sie halten mindestens 25 % an einem anderen. Wenn das nicht der Fall ist, wählen Sie „eigenständig“.',
@@ -79,7 +81,8 @@ export const SCHRITTE: SchrittDef[] = [
         typ: 'auswahl',
         label: 'Vorsteuerabzugsberechtigt?',
         pflicht: true,
-        hilfe: 'Förderfähig sind Netto-Kosten bei Vorsteuerabzug, sonst Brutto-Kosten.',
+        standard: 'ja',
+        hilfe: 'Förderfähig sind Netto-Kosten bei Vorsteuerabzug, sonst Brutto-Kosten. Für fast alle Unternehmen ist „Ja“ richtig.',
         tooltip:
           'Fast alle Unternehmen sind vorsteuerabzugsberechtigt – das heißt: Sie bekommen die Mehrwertsteuer auf Einkäufe vom Finanzamt zurück. Dann wählen Sie „Ja“. Unsicher? Ein Blick in die letzte Umsatzsteuervoranmeldung oder ein Anruf beim Steuerbüro genügt.',
         optionen: [
@@ -112,6 +115,7 @@ export const SCHRITTE: SchrittDef[] = [
         label: 'Steuer-ID (11-stellig)',
         sichtbarWenn: { feld: 'personenart', ist: 'natuerlich' },
         pflicht: true,
+        hilfe: 'Pflichtangabe des BAFA – wird verschlüsselt übertragen und nicht an Dritte weitergegeben.',
         tooltip:
           'Ihre persönliche steuerliche Identifikationsnummer (11 Ziffern). Sie steht auf jedem Einkommensteuerbescheid und auf der Lohnabrechnung.',
       },
@@ -200,6 +204,7 @@ export const SCHRITTE: SchrittDef[] = [
         typ: 'auswahl',
         label: 'Gruppenzugehörigkeit',
         pflicht: true,
+        standard: 'privat',
         tooltip:
           'Die Antragsstatistik des Bundes unterscheidet, wem das Unternehmen gehört. Die allermeisten Antragsteller wählen hier „Privates Unternehmen“.',
         optionen: [
@@ -239,7 +244,7 @@ export const SCHRITTE: SchrittDef[] = [
         typ: 'iban',
         label: 'IBAN',
         pflicht: true,
-        hilfe: 'Konto des Antragstellers für die Auszahlung des Zuschusses.',
+        hilfe: 'Wird nur für die Auszahlung Ihres Zuschusses benötigt – keine Abbuchung, keine Weitergabe.',
         tooltip:
           'Die IBAN Ihres Firmenkontos (beginnt mit „DE“, 22 Stellen). Von diesem Konto muss auch die Investition bezahlt werden – die Bewilligungsstelle gleicht das später ab.',
       },

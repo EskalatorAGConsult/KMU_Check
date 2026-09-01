@@ -129,10 +129,84 @@
     transition-timing-function: var(--ease-out-smooth);
     transition-duration: 240ms;
   }
+  /* Belohnungs-Shimmer auf dem Fortschrittsbalken nach jedem Abschluss. */
+  .animate-shimmer {
+    animation: shimmer 1.1s ease-out 0.15s both;
+  }
+  /* Fehler-Shake (einmalig, dezent). */
+  .animate-shake {
+    animation: shake 0.4s ease-in-out both;
+  }
+  /* Erfolgs-Haken poppt auf. */
+  .animate-check-pop {
+    animation: check-pop 0.3s var(--ease-out-smooth) both;
+  }
+  /* Konfetti-Partikel auf der Erfolgsseite. */
+  .animate-konfetti {
+    animation: konfetti-fall 2.8s cubic-bezier(0.2, 0.6, 0.4, 1) both;
+  }
+}
+
+/* Belohnungs-Shimmer (Lichtstreif ueber den Fortschrittsbalken). */
+@keyframes shimmer {
+  from {
+    transform: translateX(-100%);
+  }
+  to {
+    transform: translateX(220%);
+  }
+}
+
+@keyframes shake {
+  0%,
+  100% {
+    transform: translateX(0);
+  }
+  25% {
+    transform: translateX(-5px);
+  }
+  50% {
+    transform: translateX(4px);
+  }
+  75% {
+    transform: translateX(-2px);
+  }
+}
+
+@keyframes check-pop {
+  from {
+    opacity: 0;
+    transform: scale(0.4);
+  }
+  70% {
+    transform: scale(1.15);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes konfetti-fall {
+  0% {
+    opacity: 0;
+    transform: translate3d(0, -6vh, 0) rotate(0deg);
+  }
+  12% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+    transform: translate3d(var(--drift, 0px), 78vh, 0) rotate(var(--spin, 340deg));
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .animate-step-in {
+  .animate-step-in,
+  .animate-shimmer,
+  .animate-shake,
+  .animate-check-pop,
+  .animate-konfetti {
     animation: none;
   }
   * {

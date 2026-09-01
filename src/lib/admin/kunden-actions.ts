@@ -3,6 +3,7 @@
 import { revalidatePath } from 'next/cache'
 
 import { requireAdmin } from '@/lib/auth/guards'
+import { validiereUploadDatei } from '@/lib/admin/datei-upload'
 import { erlaubteZiele, istUebergangErlaubt } from '@/lib/admin/status'
 import { listeSystemkonzeptVorlagen, type SystemkonzeptVorlage } from '@/lib/admin/systemkonzept-actions'
 import { holeAngebot, loescheAngebot } from '@/lib/db/repositories/angebote'
@@ -10,10 +11,12 @@ import { holeKunde, type KundeDetail } from '@/lib/db/repositories/kunden'
 import { audit, erstelleJourneyToken, setzeAngebotStatus } from '@/lib/db/repositories/journey'
 import { fuegeNotizHinzu, loescheNotiz } from '@/lib/db/repositories/notizen'
 import { speichereRevision } from '@/lib/db/repositories/revisionen'
+import { supabaseServer } from '@/lib/db/server'
 import type { AngebotStatus } from '@/lib/db/types'
 import { portalUrl } from '@/lib/email/resend'
 import { sendeEinladung } from '@/lib/email/notify'
 import { ANGEBOT_STATUS_LABELS } from '@/lib/labels'
+import { ladeDokumentHoch } from '@/lib/storage/blob'
 
 export type KundeActionErgebnis = { ok: true; hinweis: string } | { ok: false; fehler: string }
 
@@ -211,6 +214,36 @@ export async function notizLoeschen(notizId: string, angebotId: string): Promise
     return { ok: true, hinweis: 'Notiz gelöscht.' }
   } catch (e) {
     return { ok: false, fehler: e instanceof Error ? e.message : 'Notiz konnte nicht gelöscht werden.' }
+  }
+}
+
+/**
+ * Generischer Dokumenten-Upload zur Fallakte (z. B. BAFA-Bescheid, Papier-
+ * Vollmacht, Verwendungsnachweis). Validierung via Magic-Bytes (datei-upload.ts),
+ * Ablage im Vercel Blob, Referenz als dokumente.typ 'upload'.
+ */
+export async function ladeDokumentHochAdmin(angebotId: string, formData: FormData): Promise<KundeActionErgebnis> {
+  const session = await requireAdmin()
+  const angebot = await holeAngebot(angebotId)
+  if (!angebot) return { ok: false, fehler: 'Vorgang nicht gefunden.' }
+
+  const datei = await validiereUploadDatei(formData)
+  if ('fehler' in datei) return { ok: false, fehler: datei.fehler }
+
+  try {
+    const pfad = `uploads/${angebotId}/${Date.now()}-${datei.name}`
+    const url = await ladeDokumentHoch(pfad, datei.bytes, datei.contentType)
+    if (!url) return { ok: false, fehler: 'Storage nicht konfiguriert (Blob-Token fehlt).' }
+
+    const db = supabaseServer()
+    const { error } = await db.from('dokumente').insert({ angebot_id: angebotId, typ: 'upload', storage_path: url })
+    if (error) throw new Error(error.message)
+
+    await audit(angebotId, `admin:${session.user.id}`, 'dokument_hochgeladen', { datei: datei.name })
+    revalidatePath('/admin/kunden')
+    return { ok: true, hinweis: `„${datei.name}“ wurde zur Fallakte hochgeladen.` }
+  } catch (e) {
+    return { ok: false, fehler: e instanceof Error ? e.message : 'Upload fehlgeschlagen.' }
   }
 }
 

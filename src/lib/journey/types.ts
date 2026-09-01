@@ -37,6 +37,10 @@ export interface FeldDef {
   pflicht?: boolean
   optionen?: FeldOption[]
   placeholder?: string
+  /** Vorbefuellter Standardwert (Smart Default) – wird beim Betreten des Schritts gesetzt, editierbar. */
+  standard?: string
+  /** Visuelle Gruppen-Ueberschrift (Chunking): beginnt eine neue Feldgruppe. */
+  gruppe?: string
   /** Bedingte Sichtbarkeit: Feld nur zeigen/validieren, wenn <feld> === <ist>. */
   sichtbarWenn?: { feld: string; ist: string }
 }

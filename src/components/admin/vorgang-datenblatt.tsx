@@ -1,6 +1,7 @@
 import type { ReactNode } from 'react'
 
 import { DatenKopierenButton } from '@/components/admin/daten-kopieren-button'
+import { DokumentUpload } from '@/components/admin/dokument-upload'
 import { SystemkonzeptAktionen } from '@/components/admin/systemkonzept-aktionen'
 import { VorgangAktionen } from '@/components/admin/vorgang-aktionen'
 import { VorgangBearbeiten } from '@/components/admin/vorgang-bearbeiten'
@@ -701,7 +702,8 @@ export function VorgangDatenblatt({
         ) : (
           <LeerHinweis>Noch keine Dokumente vorhanden.</LeerHinweis>
         )}
-        <div className="mt-4">
+        <div className="mt-4 flex flex-col gap-3">
+          <DokumentUpload angebotId={a.id} onGespeichert={onGespeichert} />
           <SystemkonzeptAktionen
             angebotId={a.id}
             aktuelleUrl={v.dokumente.find((d) => d.typ === 'systemkonzept')?.storage_path ?? null}
