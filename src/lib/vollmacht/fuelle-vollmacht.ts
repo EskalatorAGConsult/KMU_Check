@@ -3,7 +3,7 @@ import 'server-only'
 import { readFile } from 'node:fs/promises'
 import path from 'node:path'
 
-import { PDFDocument, StandardFonts } from 'pdf-lib'
+import { PDFDocument, StandardFonts, rgb } from 'pdf-lib'
 
 import { BEVOLLMAECHTIGTER } from '@/lib/vollmacht/bevollmaechtigter'
 
@@ -26,7 +26,16 @@ export interface VollmachtgeberDaten {
   plz: string
   ort: string
   vorgangsnummer: string
+  /** Getippter vollstaendiger Name (einfache elektronische Signatur). */
+  unterschriftName?: string | null
 }
+
+/**
+ * Position der Zeile „Ort, Datum | Stempel und Unterschrift" auf Seite 2
+ * (aus der Vorlage vermessen: Datum-Widget x 68–207, Unterschrifts-Label
+ * ab x 210,3; Zeilengrundlinie ~y 437, PDF-Koordinaten von unten).
+ */
+const SIGNATUR = { seite: 1, x: 214, y: 437, maxBreite: 340 } as const
 
 export async function fuelleVollmachtAus(geber: VollmachtgeberDaten): Promise<Uint8Array> {
   const vorlageBytes = await readFile(VORLAGE)
@@ -56,14 +65,31 @@ export async function fuelleVollmachtAus(geber: VollmachtgeberDaten): Promise<Ui
   setze('Postleitzahl2', BEVOLLMAECHTIGTER.plz)
   setze('Ort2', BEVOLLMAECHTIGTER.ort)
 
-  // 3 · Erklaerungsdatum (Unterschrift erfolgt physisch bzw. als einfache
-  // elektronische Signatur im Portal – hier nur das Datum der Erstellung)
-  setze('Datum', new Date().toLocaleDateString('de-DE'))
+  // 3 · Erklaerungszeile: „Ort, Datum" als kombiniertes Feld
+  const datum = new Date().toLocaleDateString('de-DE')
+  setze('Datum', geber.ort ? `${geber.ort}, ${datum}` : datum)
 
   // Erscheinungsbild mit eingebetteter Schrift neu rendern (Umlaute!), dann flachrechnen
   const schrift = await doc.embedFont(StandardFonts.Helvetica)
   form.updateFieldAppearances(schrift)
   form.flatten()
+
+  // 4 · Online-Unterschrift auf die Signaturzeile zeichnen (nach dem Flatten,
+  // damit sie Teil des Archiv-Inhalts wird). Kursiv + Dunkelblau als
+  // visueller Hinweis auf die elektronische Signatur.
+  const name = geber.unterschriftName?.trim()
+  if (name) {
+    const kursiv = await doc.embedFont(StandardFonts.HelveticaOblique)
+    let groesse = 14
+    while (groesse > 8 && kursiv.widthOfTextAtSize(name, groesse) > SIGNATUR.maxBreite) groesse -= 1
+    doc.getPage(SIGNATUR.seite).drawText(name, {
+      x: SIGNATUR.x,
+      y: SIGNATUR.y,
+      size: groesse,
+      font: kursiv,
+      color: rgb(0.08, 0.15, 0.4),
+    })
+  }
 
   doc.setTitle(`Vollmacht ${geber.vorgangsnummer}`)
   doc.setAuthor('MABE Förderportal / BAFA-Formular eew_vm_3')

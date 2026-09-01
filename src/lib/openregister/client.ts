@@ -1,12 +1,15 @@
 import 'server-only'
 
+import { mergeSuchTreffer, normalisiereSuchbegriff } from './mapping'
+
 /**
  * OpenRegister-API-Client (https://api.openregister.de, v1).
  * Liefert oeffentliche Handelsregister-/Bundesanzeiger-Daten:
  * Suche, Firmendetails inkl. Finanzkennzahlen, Gesellschafter (Owners)
  * und Beteiligungen (Holdings).
  *
- * Kostenmodell (Credits): Autocomplete 1, Details/Owners/Holdings je 10.
+ * Kostenmodell (Credits): Suche 2–4 (Autocomplete + Filtersuche, ggf. mit
+ * rechtsformbereinigter Query-Variante), Details/Owners/Holdings je 10.
  * Antworten werden daher in `openregister_cache` (30 Tage) zwischengespeichert.
  *
  * Best effort: Jeder Fehler (fehlender Key, Netzwerk, 4xx/5xx) -> null,
@@ -96,16 +99,63 @@ async function rufeApi<T>(pfad: string): Promise<T | null> {
   }
 }
 
+/** POST-Variante (Filtersuche). Kein Fetch-Cache: Suchbegriffe variieren stark. */
+async function rufeApiPost<T>(pfad: string, body: unknown): Promise<T | null> {
+  const key = apiKey()
+  if (!key) return null
+  try {
+    const res = await fetch(`${BASIS}${pfad}`, {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${key}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify(body),
+    })
+    if (!res.ok) {
+      console.error(`[openregister] POST ${pfad} -> HTTP ${res.status}`)
+      return null
+    }
+    return (await res.json()) as T
+  } catch (e) {
+    console.error(`[openregister] POST ${pfad} fehlgeschlagen:`, e)
+    return null
+  }
+}
+
 // ---------- Oeffentliche Funktionen ----------
 
-/** Autocomplete-Suche (1 Credit). Liefert leere Liste bei Fehler. */
+/** Autocomplete-Suche (1 Credit pro Aufruf). Liefert leere Liste bei Fehler. */
+async function autocomplete(query: string): Promise<OrSuchTreffer[]> {
+  const res = await rufeApi<{ results?: OrSuchTreffer[] }>(
+    `/v1/autocomplete/company?query=${encodeURIComponent(query)}`,
+  )
+  return res?.results ?? []
+}
+
+/** Strukturierte Filtersuche (1 Credit pro Aufruf). Matcht Name + fruehere Namen. */
+async function filtersuche(query: string): Promise<OrSuchTreffer[]> {
+  const res = await rufeApiPost<{ results?: OrSuchTreffer[] }>('/v1/search/company', {
+    query: { value: query },
+  })
+  return res?.results ?? []
+}
+
+/**
+ * Kombinierte Unternehmenssuche (2–4 Credits pro Suche):
+ * Autocomplete UND Filtersuche, jeweils mit dem Originalbegriff und – falls
+ * abweichend – mit der rechtsformbereinigten Variante. Ergebnisse werden
+ * gemergt und nach company_id dedupliziert.
+ *
+ * Grund: Beide Endpunkte ranken fuzzy und verlieren den richtigen Treffer,
+ * sobald die Rechtsform im Suchbegriff steht (Registername = Langform).
+ * Live-Befund 2026-09: „Maschinen- und Behälterbau GmbH" fand MABE Daaden
+ * weder per Autocomplete noch per Filtersuche; ohne „GmbH" an Position 2.
+ */
 export async function sucheUnternehmen(query: string): Promise<OrSuchTreffer[]> {
   const q = query.trim()
   if (q.length < 3) return []
-  const res = await rufeApi<{ results?: OrSuchTreffer[] }>(
-    `/v1/autocomplete/company?query=${encodeURIComponent(q)}`,
-  )
-  return res?.results ?? []
+  const normalisiert = normalisiereSuchbegriff(q)
+  const varianten = normalisiert.toLowerCase() !== q.toLowerCase() ? [q, normalisiert] : [q]
+  const ergebnisse = await Promise.all(varianten.flatMap((v) => [autocomplete(v), filtersuche(v)]))
+  return mergeSuchTreffer(ergebnisse)
 }
 
 /** Firmendetails inkl. Finanzkennzahlen der letzten Jahre (10 Credits). */

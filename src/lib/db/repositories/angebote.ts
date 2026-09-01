@@ -40,6 +40,8 @@ export interface NeuesAngebot {
   sensoren_prozessbezug?: number
   projektende?: string
   notiz?: string
+  /** Gemini-Rohextraktion aus dem Angebots-PDF (Nachweis + spaetere Auswertung). */
+  extraktion?: Record<string, unknown>
 }
 
 export async function erstelleAngebot(userId: string, eingabe: NeuesAngebot): Promise<string> {
@@ -62,6 +64,8 @@ export async function erstelleAngebot(userId: string, eingabe: NeuesAngebot): Pr
       sensoren_prozessbezug: eingabe.sensoren_prozessbezug ?? null,
       projektende: eingabe.projektende ?? null,
       notiz: eingabe.notiz ?? null,
+      extraktion: eingabe.extraktion ?? null,
+      extrahiert_am: eingabe.extraktion ? new Date().toISOString() : null,
     })
     .select('id')
     .single()

@@ -20,6 +20,18 @@ export function SchrittUebersicht({ angebot }: { angebot: Angebot }) {
 
   return (
     <div className="flex flex-col gap-6">
+      {/* Persoenliche Begruessung: der Link ist kundenindividuell */}
+      <div className="rounded-2xl border border-teal-600/25 bg-teal-50/50 px-6 py-5">
+        <p className="text-base/7 text-mabe-900">
+          <strong>Guten Tag{angebot.kunde_ansprechpartner ? ` ${angebot.kunde_ansprechpartner}` : ''},</strong>
+        </p>
+        <p className="mt-1 text-sm/6 text-olive-700">
+          für <strong className="text-mabe-900">{angebot.kunde_firma}</strong> ist alles vorbereitet: Dieses
+          Förderprojekt gehört zu Ihrem Angebot <strong>{angebot.angebot_nr}</strong>. Wir führen Sie jetzt durch
+          die wenigen Angaben, die wir für Ihren Förderantrag benötigen.
+        </p>
+      </div>
+
       <div className="overflow-hidden rounded-2xl border border-olive-200 bg-white">
         <div className="border-b border-olive-100 bg-olive-50/60 px-6 py-4">
           <p className="text-xs font-semibold tracking-wide text-olive-500 uppercase">Ihr Angebot</p>

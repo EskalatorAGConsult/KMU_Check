@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
 
 import { ermittleWebhookUrl } from '@/lib/db/repositories/einstellungen'
+import { sendeLeadBenachrichtigung } from '@/lib/email/notify'
+import type { LeadPayload } from '@/lib/email/lead-benachrichtigung'
 
 export const runtime = 'nodejs'
 
@@ -34,6 +36,14 @@ export async function POST(req: NextRequest) {
       city: req.headers.get('x-vercel-ip-city') || null,
       user_agent: req.headers.get('user-agent') || null,
     },
+  }
+
+  // Interne Benachrichtigung mit allen Angaben (kopierfähige Tabellen fuer
+  // das BAFA-Portal). Laueft unabhaengig vom Webhook und blockiert nie.
+  try {
+    await sendeLeadBenachrichtigung(enriched as unknown as LeadPayload)
+  } catch (e) {
+    console.error('[lead] E-Mail-Benachrichtigung fehlgeschlagen:', e)
   }
 
   if (!webhookUrl) {

@@ -88,6 +88,7 @@ export async function generiereDossier(d: DossierDaten): Promise<Uint8Array> {
   w.zeile('Personenart', s(sd.personenart))
   if (sd.personenart === 'juristisch') {
     w.zeile('Steuernummer', s(sd.steuernummer))
+    w.zeile('USt-IdNr.', s(sd.ust_id))
   } else {
     w.zeile('Steuer-ID', s(sd.steuer_id))
     w.zeile('Geburtsdatum', s(sd.geburtsdatum))

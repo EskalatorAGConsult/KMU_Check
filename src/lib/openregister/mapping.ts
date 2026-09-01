@@ -72,6 +72,8 @@ export interface VerbundErgebnis {
     plz: string | null
     ort: string | null
     wzCode: string | null
+    /** Rechtsform-Rohcode der API (z. B. 'gmbh', 'ek') – fuer Personenart-Prefill. */
+    rechtsform: string | null
   }
   /** Kennzahlen des eigenen Unternehmens, neuestes Jahr zuerst (max. 2). */
   jahre: VerbundJahr[]
@@ -104,6 +106,85 @@ export const KETTEN_LIMITS = { maxUnternehmen: 20, maxStufe: 8, maxIgnoriert: 10
 export function rechtsformLabel(form?: string | null): string | null {
   if (!form) return null
   return RECHTSFORMEN[form.toLowerCase()] ?? form.toUpperCase()
+}
+
+/**
+ * Rechtsform -> Personenart des Antragstellers (BAFA-Formular).
+ * Konservativ: nur eindeutige Faelle werden vorbefuellt (e. K. = natuerliche
+ * Person, kapital-/handelsrechtliche Gesellschaften = juristisch), sonst null.
+ */
+export function personenartAusRechtsform(form?: string | null): 'juristisch' | 'natuerlich' | null {
+  if (!form) return null
+  const f = form.toLowerCase()
+  if (f === 'ek') return 'natuerlich'
+  if (['gmbh', 'ug', 'ag', 'se', 'kgag', 'kg', 'ohg', 'ev', 'stiftung'].includes(f)) return 'juristisch'
+  return null
+}
+
+// ---------- Suche: Normalisierung & Merge ----------
+
+/**
+ * Rechtsform- und Fuellwoerter, die bei der Registersuche das Fuzzy-Ranking
+ * verschlechtern. Hintergrund: Registername ist oft die Langform
+ * („… Gesellschaft mit beschränkter Haftung"), Nutzer tippen aber „… GmbH" –
+ * das zusaetzliche Token draengt den richtigen Treffer aus der Ergebnisliste
+ * (live verifiziert an MABE Daaden, 2026-09).
+ */
+const RECHTSFORM_TOKENS = new Set([
+  'gmbh',
+  'mbh',
+  'ug',
+  'ag',
+  'se',
+  'kg',
+  'ohg',
+  'gbr',
+  'kgaa',
+  'ek',
+  'ev',
+  'e',
+  'k',
+  'v',
+  'co',
+  'haftungsbeschränkt',
+  'haftungsbeschraenkt',
+])
+
+/**
+ * Entfernt Rechtsform-Zusaetze aus einem Suchbegriff (wortgrenzengenau).
+ * Faellt auf den Originalbegriff zurueck, wenn nichts Sinnvolles uebrig bleibt
+ * (< 3 Zeichen), damit z. B. „CO AG" nicht zur Leersuche wird.
+ */
+export function normalisiereSuchbegriff(q: string): string {
+  const original = q.trim()
+  let s = original.toLowerCase().replace(/[.,]/g, ' ')
+  s = s.replace(/gesellschaft mit beschr(ä|ae)nkter haftung/g, ' ')
+  s = s.replace(/&/g, ' ')
+  const ergebnis = s
+    .split(/\s+/)
+    .filter((w) => w.length > 0 && !RECHTSFORM_TOKENS.has(w))
+    .join(' ')
+    .trim()
+  return ergebnis.length >= 3 ? ergebnis : original
+}
+
+/**
+ * Mergt Trefferlisten mehrerer Suchstrategien (Autocomplete, Filtersuche,
+ * Query-Varianten) in Aufrufreihenfolge und dedupliziert nach company_id.
+ * Kappt die Gesamtliste auf `max` Treffer.
+ */
+export function mergeSuchTreffer(listen: OrSuchTreffer[][], max = 20): OrSuchTreffer[] {
+  const gesehen = new Set<string>()
+  const ausgabe: OrSuchTreffer[] = []
+  for (const liste of listen) {
+    for (const t of liste) {
+      if (!t?.company_id || gesehen.has(t.company_id)) continue
+      gesehen.add(t.company_id)
+      ausgabe.push(t)
+      if (ausgabe.length >= max) return ausgabe
+    }
+  }
+  return ausgabe
 }
 
 /** Cent -> Euro (kaufmännisch gerundet). null/undefined bleibt leer. */
@@ -314,6 +395,7 @@ export function analysiereVerbundKette(graph: Record<string, Rohdaten>, startId:
         plz: start?.details?.address?.postal_code ?? null,
         ort: start?.details?.address?.city ?? null,
         wzCode: start?.details?.industry_codes?.WZ2025?.[0]?.code ?? null,
+        rechtsform: start?.details?.legal_form ?? null,
       },
       jahre: kennzahlenAusIndikatoren(start?.details?.indicators, 2),
       beteiligungen,

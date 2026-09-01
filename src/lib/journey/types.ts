@@ -41,4 +41,6 @@ export interface SchrittDef {
   erklaerung?: string
   komponente: SchrittKomponente
   felder?: FeldDef[]
+  /** Handelsregister-Suchfeld ueber dem Schritt anzeigen (Stammdaten-Prefill). */
+  registerSuche?: boolean
 }

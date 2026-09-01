@@ -45,37 +45,66 @@ export default async function AdminDashboard() {
           </Link>
         </div>
       ) : (
-        <div className="overflow-hidden rounded-2xl ring-1 ring-olive-200">
-          <table className="w-full border-collapse text-left text-sm">
+        <div className="overflow-x-auto rounded-2xl ring-1 ring-olive-200">
+          <table className="w-full min-w-[40rem] border-collapse text-left text-sm">
             <thead>
               <tr className="bg-olive-50 text-olive-500">
                 <th className="px-5 py-3.5 font-semibold">Status</th>
                 <th className="px-5 py-3.5 font-semibold">Kunde</th>
                 <th className="px-5 py-3.5 font-semibold">Angebot</th>
                 <th className="px-5 py-3.5 font-semibold">Angelegt</th>
+                <th className="px-5 py-3.5 text-right font-semibold">
+                  <span className="sr-only">Aktion</span>
+                </th>
               </tr>
             </thead>
             <tbody className="divide-y divide-olive-100 bg-white">
-              {angebote.map((a) => (
-                <tr key={a.id}>
-                  <td className="px-5 py-3.5">
-                    <span className={`rounded-full px-2.5 py-1 text-xs font-semibold ${STATUS_CLS[a.status]}`}>
-                      {STATUS_LABEL[a.status]}
-                    </span>
-                  </td>
-                  <td className="px-5 py-3.5">
-                    <div className="font-medium text-mabe-900">{a.kunde_firma}</div>
-                    <div className="text-xs text-olive-500">{a.kunde_email}</div>
-                  </td>
-                  <td className="px-5 py-3.5 text-olive-700">
-                    {a.angebot_nr}
-                    <span className="text-olive-400"> · {new Date(a.angebot_datum).toLocaleDateString('de-DE')}</span>
-                  </td>
-                  <td className="px-5 py-3.5 text-olive-500">
-                    {new Date(a.created_at).toLocaleDateString('de-DE')}
-                  </td>
-                </tr>
-              ))}
+              {angebote.map((a) => {
+                const href = `/admin/kunden/${encodeURIComponent(a.kunde_email)}`
+                const linkCls =
+                  'block px-5 py-3.5 outline-none focus-visible:bg-teal-50 focus-visible:ring-2 focus-visible:ring-teal-600 focus-visible:ring-inset'
+                return (
+                  <tr key={a.id} className="transition-colors hover:bg-olive-50">
+                    <td className="p-0">
+                      <Link href={href} className={linkCls} aria-label={`Vorgang ${a.angebot_nr} von ${a.kunde_firma} öffnen`}>
+                        <span className={`rounded-full px-2.5 py-1 text-xs font-semibold ${STATUS_CLS[a.status]}`}>
+                          {STATUS_LABEL[a.status]}
+                        </span>
+                      </Link>
+                    </td>
+                    <td className="p-0">
+                      <Link href={href} className={linkCls} tabIndex={-1} aria-hidden>
+                        <div className="font-medium text-mabe-900">{a.kunde_firma}</div>
+                        <div className="text-xs text-olive-500">{a.kunde_email}</div>
+                      </Link>
+                    </td>
+                    <td className="p-0">
+                      <Link href={href} className={`${linkCls} text-olive-700`} tabIndex={-1} aria-hidden>
+                        {a.angebot_nr}
+                        <span className="text-olive-400">
+                          {' '}
+                          · {new Date(a.angebot_datum).toLocaleDateString('de-DE')}
+                        </span>
+                      </Link>
+                    </td>
+                    <td className="p-0">
+                      <Link href={href} className={`${linkCls} text-olive-500`} tabIndex={-1} aria-hidden>
+                        {new Date(a.created_at).toLocaleDateString('de-DE')}
+                      </Link>
+                    </td>
+                    <td className="p-0">
+                      <Link
+                        href={href}
+                        className={`${linkCls} text-right font-semibold text-teal-700`}
+                        tabIndex={-1}
+                        aria-hidden
+                      >
+                        Details →
+                      </Link>
+                    </td>
+                  </tr>
+                )
+              })}
             </tbody>
           </table>
         </div>

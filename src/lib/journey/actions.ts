@@ -147,6 +147,7 @@ export async function schliesseJourneyAb(
         geburtsdatum: (unternehmen.geburtsdatum as string) ?? null,
         steuer_id: (unternehmen.steuer_id as string) ?? null,
         steuernummer: (unternehmen.steuernummer as string) ?? null,
+        ust_id: (unternehmen.ust_id as string) || null,
         ap_rolle: String(ansprechpartner.ap_rolle),
         ap_anrede: String(ansprechpartner.ap_anrede),
         ap_vorname: String(ansprechpartner.ap_vorname),
@@ -350,6 +351,7 @@ export async function schliesseJourneyAb(
         plz: String(unternehmen.plz),
         ort: String(unternehmen.ort),
         vorgangsnummer: angebot.angebot_nr,
+        unterschriftName: vollmacht.unterschrift_name ?? null,
       })
       const url = await ladeDokumentHoch(`vollmacht/${angebot.angebot_nr}.pdf`, vollmachtPdf)
       if (url) {

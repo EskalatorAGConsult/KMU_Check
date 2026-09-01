@@ -36,12 +36,15 @@ export function SchrittKmu({
   fehler,
   investSumme,
   token,
+  registerId,
   onChange,
 }: {
   daten: Record<string, unknown>
   fehler: Record<string, string>
   investSumme: number | null
   token: string
+  /** Firmenwahl aus dem Schritt „Ihr Unternehmen" (OpenRegister company_id). */
+  registerId?: string
   onChange: (name: string, wert: unknown) => void
 }) {
   const beteiligungen = (daten.beteiligungen as Beteiligung[] | undefined) ?? KEINE_BETEILIGUNGEN
@@ -133,7 +136,7 @@ export function SchrittKmu({
   return (
     <div className="flex flex-col gap-8">
       {/* Schnellstart: Handelsregister-Vorbefuellung (best effort, optional) */}
-      <VerbundSuche token={token} onUebernehmen={uebernehmeVerbund} />
+      <VerbundSuche token={token} initialRegisterId={registerId} onUebernehmen={uebernehmeVerbund} />
       {/* Eigene Kennzahlen: letzte zwei abgeschlossene Geschaeftsjahre (dynamisch) */}
       <div className="flex flex-col gap-5">
         <div className="rounded-2xl border border-olive-200 bg-olive-50/60 p-5">
