@@ -42,6 +42,7 @@ export function SignaturPad({
   const letzterPunktRef = useRef<Punkt | null>(null)
   const [bearbeite, setBearbeite] = useState(false)
   const [hatStriche, setHatStriche] = useState(false)
+  const [zuGross, setZuGross] = useState(false)
 
   const zeigtVorschau = !!wert && !bearbeite
 
@@ -71,7 +72,12 @@ export function SignaturPad({
     const canvas = canvasRef.current
     if (!canvas) return
     const dataUrl = canvas.toDataURL('image/png')
-    onChange(dataUrl.length <= MAX_DATA_URL ? dataUrl : null)
+    // Zu grosse Data-URL: KEIN stummes null – der Kunde muss wissen, dass
+    // seine Zeichnung nicht uebernommen wurde (sonst Raetselraten beim
+    // Absenden: „gezeichnet, aber Fehlermeldung").
+    const ok = dataUrl.length <= MAX_DATA_URL
+    setZuGross(!ok)
+    onChange(ok ? dataUrl : null)
   }
 
   const punktAus = (e: React.PointerEvent<HTMLCanvasElement>): Punkt => {
@@ -131,6 +137,7 @@ export function SignaturPad({
     stricheRef.current = 0
     setHatStriche(false)
     setBearbeite(true)
+    setZuGross(false)
     onChange(null)
   }
 
@@ -196,6 +203,12 @@ export function SignaturPad({
           </button>
         )}
       </div>
+      {zuGross && (
+        <p className="text-xs/5 font-medium text-red-700" role="alert">
+          Ihre Unterschrift ist zu aufwendig für die Übertragung. Bitte „Zurücksetzen“ wählen und sie etwas
+          großzügiger (weniger, kürzere Striche) neu zeichnen.
+        </p>
+      )}
       {fehler && (
         <p className="text-xs/5 font-medium text-red-700" role="alert">
           {fehler}
