@@ -74,6 +74,38 @@ export function SchrittVollmacht({
       </div>
       {fehler.beantragungsweg && <p className="text-xs/5 font-medium text-red-700">{fehler.beantragungsweg}</p>}
 
+      {/* Vergleich auf einen Blick: informierte statt „verkaufte" Entscheidung */}
+      <div className="overflow-x-auto rounded-2xl border border-olive-200 bg-white">
+        <table className="w-full min-w-[30rem] border-collapse text-left text-sm">
+          <thead>
+            <tr className="bg-olive-50 text-xs text-olive-500">
+              <th className="px-4 py-2.5 font-semibold"></th>
+              <th className="px-4 py-2.5 font-semibold text-teal-800">Eskalator-Concierge ⭐</th>
+              <th className="px-4 py-2.5 font-semibold text-olive-600">Selbst beantragen</th>
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-olive-100 text-sm">
+            {(
+              [
+                ['Wer stellt den Antrag im BAFA-Portal?', 'Wir – komplett für Sie', 'Sie selbst (ELSTER-Zertifikat nötig)'],
+                ['Wer beantwortet Rückfragen der Behörde?', 'Wir – bis zur Bewilligung', 'Sie selbst'],
+                ['Kosten für Sie', '0 € (kostenlos)', '0 €, aber Ihr Zeitaufwand'],
+                ['Ihr Aufwand', 'Unterschrift – fertig', 'Portal-Anmeldung + komplette Antragstellung'],
+              ] as const
+            ).map(([frage, eskalator, selbst]) => (
+              <tr key={frage}>
+                <th className="px-4 py-2.5 font-medium text-mabe-900">{frage}</th>
+                <td className="px-4 py-2.5 text-teal-800">
+                  <span className="mr-1.5 text-teal-600" aria-hidden>✓</span>
+                  {eskalator}
+                </td>
+                <td className="px-4 py-2.5 text-olive-600">{selbst}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+
       {weg === 'eskalator' && (
         <div className="flex flex-col gap-4">
           <EskalatorBlock />
@@ -117,6 +149,11 @@ export function SchrittVollmacht({
             <span className="text-sm font-semibold text-mabe-900">
               Unterschrift zeichnen <span className="text-teal-700">*</span>
             </span>
+            <p className="text-xs/5 text-olive-600">
+              Unterschreiben Sie mit dem Finger oder der Maus – so wie auf Ihrem Ausweis. Ihre Unterschrift wird
+              zusammen mit Name und Datum an der vorgesehenen Stelle des BAFA-Formulars eingefügt (Vorschau im
+              Dokument oben).
+            </p>
             <SignaturPad
               wert={(daten.signatur_png as string | null) ?? null}
               fehler={fehler.signatur_png}

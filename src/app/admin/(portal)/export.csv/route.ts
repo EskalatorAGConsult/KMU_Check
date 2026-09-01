@@ -3,6 +3,7 @@ import { NextResponse } from 'next/server'
 import { requireAdmin } from '@/lib/auth/guards'
 import { baueCsv, type CsvWert } from '@/lib/csv'
 import { supabaseServer } from '@/lib/db/server'
+import { loggeFehler } from '@/lib/fehler'
 import { ANGEBOT_STATUS_LABELS, TECHNOLOGIE_LABELS } from '@/lib/labels'
 import { CATEGORY_LABELS } from '@/lib/kmu'
 import type { Angebot, AngebotStatus, KmuBewertungRow, Technologie } from '@/lib/db/types'
@@ -19,14 +20,15 @@ export async function GET() {
   await requireAdmin()
   const db = supabaseServer()
 
-  const { data: angebote, error } = await db
-    .from('angebote')
-    .select('*')
-    .order('created_at', { ascending: false })
-    // Begrenzung bewusst dokumentiert: Der Export ist fuer die operative
-    // Pflege gedacht, nicht fuer Massenexporte – stiller Abbruch ab 10 000.
-    .limit(10_000)
-  if (error) return NextResponse.json({ ok: false, fehler: error.message }, { status: 500 })
+  try {
+    const { data: angebote, error } = await db
+      .from('angebote')
+      .select('*')
+      .order('created_at', { ascending: false })
+      // Begrenzung bewusst dokumentiert: Der Export ist fuer die operative
+      // Pflege gedacht, nicht fuer Massenexporte – stiller Abbruch ab 10 000.
+      .limit(10_000)
+    if (error) throw new Error(error.message)
 
   const alle = (angebote ?? []) as Angebot[]
   const ids = alle.map((a) => a.id)
@@ -79,14 +81,21 @@ export async function GET() {
     ]
   })
 
-  const csv = baueCsv(kopf, zeilen)
-  const datum = new Date().toISOString().slice(0, 10)
+    const csv = baueCsv(kopf, zeilen)
+    const datum = new Date().toISOString().slice(0, 10)
 
-  return new NextResponse(csv, {
-    headers: {
-      'Content-Type': 'text/csv; charset=utf-8',
-      'Content-Disposition': `attachment; filename="vorgaenge-${datum}.csv"`,
-      'Cache-Control': 'private, no-store',
-    },
-  })
+    return new NextResponse(csv, {
+      headers: {
+        'Content-Type': 'text/csv; charset=utf-8',
+        'Content-Disposition': `attachment; filename="vorgaenge-${datum}.csv"`,
+        'Cache-Control': 'private, no-store',
+      },
+    })
+  } catch (e) {
+    loggeFehler('admin', e, { route: 'export_csv' })
+    return NextResponse.json(
+      { ok: false, fehler: 'Der CSV-Export konnte nicht erstellt werden. Bitte erneut versuchen.' },
+      { status: 500 },
+    )
+  }
 }

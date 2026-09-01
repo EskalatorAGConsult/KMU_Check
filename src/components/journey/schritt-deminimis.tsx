@@ -66,19 +66,26 @@ export function SchrittDeminimis({
 
       {beihilfen.map((b, i) => (
         <div key={i} className="rounded-2xl border border-olive-200 bg-white p-4">
+          <p className="mb-3 text-xs font-semibold tracking-wide text-olive-500 uppercase">Beihilfe {i + 1}</p>
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-            <input
-              className={inputCls}
-              placeholder="Beihilfegeber (z. B. BAFA, Land, Kommune)"
-              value={b.beihilfegeber ?? ''}
-              onChange={(e) => setBeihilfe(i, { beihilfegeber: e.target.value })}
-            />
-            <input
-              className={inputCls}
-              placeholder="Aktenzeichen / Kontonummer (optional)"
-              value={b.aktenzeichen ?? ''}
-              onChange={(e) => setBeihilfe(i, { aktenzeichen: e.target.value })}
-            />
+            <label className="flex flex-col gap-1 text-xs font-medium text-olive-600">
+              Beihilfegeber (z. B. BAFA, Land, Kommune)
+              <input
+                className={inputCls}
+                placeholder="z. B. BAFA"
+                value={b.beihilfegeber ?? ''}
+                onChange={(e) => setBeihilfe(i, { beihilfegeber: e.target.value })}
+              />
+            </label>
+            <label className="flex flex-col gap-1 text-xs font-medium text-olive-600">
+              Aktenzeichen / Kontonummer (optional)
+              <input
+                className={inputCls}
+                placeholder="Steht auf dem Bewilligungsbescheid"
+                value={b.aktenzeichen ?? ''}
+                onChange={(e) => setBeihilfe(i, { aktenzeichen: e.target.value })}
+              />
+            </label>
             <label className="flex flex-col gap-1 text-xs font-medium text-olive-600">
               Datum der Bewilligung / Zusage
               <input
@@ -98,32 +105,41 @@ export function SchrittDeminimis({
                 onChange={(e) => setBeihilfe(i, { betrag: e.target.value as unknown as number })}
               />
             </label>
-            <select
-              className={inputCls}
-              value={b.form ?? 'zuschuss'}
-              onChange={(e) => setBeihilfe(i, { form: e.target.value as Beihilfe['form'] })}
-            >
-              <option value="zuschuss">Zuschuss</option>
-              <option value="darlehen">Darlehen</option>
-              <option value="buergschaft">Bürgschaft</option>
-            </select>
-            <select
-              className={inputCls}
-              value={b.kategorie ?? 'allgemein'}
-              onChange={(e) => setBeihilfe(i, { kategorie: e.target.value as Beihilfe['kategorie'] })}
-            >
-              <option value="allgemein">Allgemeine De-minimis-Beihilfe</option>
-              <option value="agrar">Agrar</option>
-              <option value="fisch">Fischerei</option>
-            </select>
-            <select
-              className={inputCls}
-              value={b.status ?? 'gewaehrt'}
-              onChange={(e) => setBeihilfe(i, { status: e.target.value as Beihilfe['status'] })}
-            >
-              <option value="gewaehrt">Gewährt / bewilligt</option>
-              <option value="beantragt">Beantragt, noch nicht bewilligt</option>
-            </select>
+            <label className="flex flex-col gap-1 text-xs font-medium text-olive-600">
+              Förderform
+              <select
+                className={inputCls}
+                value={b.form ?? 'zuschuss'}
+                onChange={(e) => setBeihilfe(i, { form: e.target.value as Beihilfe['form'] })}
+              >
+                <option value="zuschuss">Zuschuss</option>
+                <option value="darlehen">Darlehen</option>
+                <option value="buergschaft">Bürgschaft</option>
+              </select>
+            </label>
+            <label className="flex flex-col gap-1 text-xs font-medium text-olive-600">
+              Kategorie
+              <select
+                className={inputCls}
+                value={b.kategorie ?? 'allgemein'}
+                onChange={(e) => setBeihilfe(i, { kategorie: e.target.value as Beihilfe['kategorie'] })}
+              >
+                <option value="allgemein">Allgemeine De-minimis-Beihilfe</option>
+                <option value="agrar">Agrar</option>
+                <option value="fisch">Fischerei</option>
+              </select>
+            </label>
+            <label className="flex flex-col gap-1 text-xs font-medium text-olive-600">
+              Status
+              <select
+                className={inputCls}
+                value={b.status ?? 'gewaehrt'}
+                onChange={(e) => setBeihilfe(i, { status: e.target.value as Beihilfe['status'] })}
+              >
+                <option value="gewaehrt">Gewährt / bewilligt</option>
+                <option value="beantragt">Beantragt, noch nicht bewilligt</option>
+              </select>
+            </label>
             <div className="flex items-end justify-end">
               <button
                 type="button"
@@ -145,17 +161,60 @@ export function SchrittDeminimis({
         + Beihilfe hinzufügen
       </button>
 
-      {/* Live-Summe */}
-      <div
-        className={`rounded-2xl p-5 text-sm font-semibold ${
-          ueberschritten ? 'bg-red-50 text-red-800 ring-1 ring-red-200' : 'bg-teal-50 text-teal-900 ring-1 ring-teal-600/20'
-        }`}
-      >
-        Summe der angegebenen Beihilfen: {formatEUR(summe)} von {formatEUR(HOECHSTBETRAG)}
-        {ueberschritten
-          ? ' – Höchstbetrag überschritten. Bitte kontaktieren Sie uns vor dem Absenden.'
-          : ` – verbleibend: ${formatEUR(HOECHSTBETRAG - summe)}`}
-      </div>
+      {/* Live-Budget: Auslastung des De-minimis-Hoechstbetrags als Balken */}
+      {(() => {
+        const quote = Math.min(100, (summe / HOECHSTBETRAG) * 100)
+        const zone = ueberschritten ? 'rot' : quote > 66 ? 'amber' : 'teal'
+        return (
+          <div
+            className={`rounded-2xl p-5 ring-1 ${
+              zone === 'rot'
+                ? 'bg-red-50 ring-red-200'
+                : zone === 'amber'
+                  ? 'bg-amber-50 ring-amber-300'
+                  : 'bg-teal-50 ring-teal-600/20'
+            }`}
+          >
+            <div className="flex flex-wrap items-baseline justify-between gap-2">
+              <p
+                className={`text-sm font-semibold ${
+                  zone === 'rot' ? 'text-red-800' : zone === 'amber' ? 'text-amber-900' : 'text-teal-900'
+                }`}
+              >
+                {formatEUR(summe)} von {formatEUR(HOECHSTBETRAG)} ausgeschöpft
+              </p>
+              <p
+                className={`text-xs font-semibold tabular-nums ${
+                  zone === 'rot' ? 'text-red-700' : zone === 'amber' ? 'text-amber-800' : 'text-teal-700'
+                }`}
+              >
+                {ueberschritten ? 'Höchstbetrag überschritten' : `${Math.round(quote)} % · verbleibend: ${formatEUR(HOECHSTBETRAG - summe)}`}
+              </p>
+            </div>
+            <div
+              className="mt-3 h-2.5 w-full overflow-hidden rounded-full bg-white/80 ring-1 ring-black/5"
+              role="progressbar"
+              aria-valuenow={Math.round(quote)}
+              aria-valuemin={0}
+              aria-valuemax={100}
+              aria-label="Auslastung des De-minimis-Höchstbetrags"
+            >
+              <div
+                className={`h-full rounded-full transition-[width] duration-500 ease-out ${
+                  zone === 'rot' ? 'bg-red-500' : zone === 'amber' ? 'bg-amber-500' : 'bg-teal-600'
+                }`}
+                style={{ width: `${ueberschritten ? 100 : quote}%` }}
+              />
+            </div>
+            {ueberschritten && (
+              <p className="mt-2 text-xs/5 font-medium text-red-700">
+                Der Höchstbetrag ist überschritten – bitte kontaktieren Sie uns vor dem Absenden, wir prüfen
+                Alternativen (z. B. GBER-Beihilfen).
+              </p>
+            )}
+          </div>
+        )
+      })()}
 
       <div className="flex flex-col gap-3">
         <p className="text-sm font-semibold text-mabe-900">

@@ -1,13 +1,16 @@
 'use client'
 
-import { useState, useTransition } from 'react'
+import { useEffect, useMemo, useState, useTransition } from 'react'
 
 import type { Angebot } from '@/lib/db/types'
 import { schliesseJourneyAb, speichereSchritt } from '@/lib/journey/actions'
 import { SCHRITTE } from '@/lib/journey/schritte'
 import { schemaFuerSchritt } from '@/lib/journey/schemas'
+import { evaluateKmu, formatEUR, type Holding } from '@/lib/kmu'
+import { CountUp } from './count-up'
 import { Fortschritt } from './fortschritt'
 import { KmuZusammenfassung } from './kmu-zusammenfassung'
+import { Konfetti } from './konfetti'
 import { SchrittDeminimis } from './schritt-deminimis'
 import { SchrittKmu } from './schritt-kmu'
 import { SchrittUebersicht } from './schritt-uebersicht'
@@ -47,6 +50,7 @@ export function Wizard({
   const [fehler, setFehler] = useState<Record<string, string>>({})
   const [hinweis, setHinweis] = useState<string | null>(null)
   const [gespeichert, setGespeichert] = useState(false)
+  const [gespeichertAm, setGespeichertAm] = useState<Date | null>(null)
   const [abgeschlossen, setAbgeschlossen] = useState(false)
   const [busy, startTransition] = useTransition()
 
@@ -55,6 +59,67 @@ export function Wizard({
   const istLetzter = idx === SCHRITTE.length - 1
   const investSumme =
     (angebot.invest_software ?? 0) + (angebot.invest_messtechnik ?? 0) + (angebot.invest_steuerung ?? 0) || null
+
+  // Smart Defaults (feld.standard in schritte.ts): beim Betreten des Schritts
+  // nur Luecken fuellen – vorhandene Eingaben (auch alte Entwuerfe) gewinnen
+  // immer. Kein Datenverlust: der Nutzer sieht und kann alles aendern.
+  // Verzoegert hinter die Hydration (kein setState direkt im Effekt).
+  useEffect(() => {
+    const seeds = (schritt.felder ?? []).filter((f) => f.standard !== undefined)
+    if (seeds.length === 0) return
+    const frame = requestAnimationFrame(() => {
+      setDaten((d) => {
+        const aktuell = d[schritt.id] ?? {}
+        const fehlend = seeds.filter((f) => aktuell[f.name] === undefined || aktuell[f.name] === '')
+        if (fehlend.length === 0) return d
+        return { ...d, [schritt.id]: { ...aktuell, ...Object.fromEntries(fehlend.map((f) => [f.name, f.standard])) } }
+      })
+    })
+    return () => cancelAnimationFrame(frame)
+    // Nur beim Schrittwechsel ausloesen – setDaten arbeitet funktional auf dem
+    // frischen State, daher sind weitere Abhaengigkeiten nicht noetig.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [schritt.id])
+
+  /**
+   * Sticky-Zuschuss-Chip (Loss Aversion): solange der KMU-Schritt keine
+   * Zahlen hat, zeigen wir das Maximum („bis zu 45 %"); danach die Quote
+   * aus den Live-Eingaben – dieselbe Engine wie die Ampel (src/lib/kmu.ts).
+   */
+  const zuschussChip = useMemo(() => {
+    if (investSumme == null || investSumme <= 0) return null
+    const kmu = daten['kmu'] as
+      | { jahre?: { jae?: unknown; umsatz?: unknown; bilanzsumme?: unknown }[]; hat_beteiligungen?: boolean; beteiligungen?: { name?: string; anteil_pct?: unknown; jae?: unknown; umsatz?: unknown; bilanzsumme?: unknown; bezug?: string }[] }
+      | undefined
+    const jahr0 = kmu?.jahre?.[0]
+    const zahl = (v: unknown) => {
+      const n = typeof v === 'string' ? Number(v.replace(',', '.')) : typeof v === 'number' ? v : NaN
+      return isFinite(n) && n >= 0 ? n : 0
+    }
+    if (jahr0 === undefined || (jahr0.jae === undefined && jahr0.umsatz === undefined)) {
+      return { betrag: (investSumme * 45) / 100, bisZu: true }
+    }
+    const wirksam = kmu?.hat_beteiligungen === false ? [] : (kmu?.beteiligungen ?? [])
+    const holdings: Holding[] = wirksam
+      .filter((b) => b?.name && zahl(b.anteil_pct) > 0)
+      .map((b, i) => ({
+        id: `b${i}`,
+        name: b.name!,
+        sharePct: zahl(b.anteil_pct),
+        employees: zahl(b.jae),
+        turnover: zahl(b.umsatz),
+        balanceSheet: zahl(b.bilanzsumme),
+        bezug: b.bezug || undefined,
+      }))
+    const erg = evaluateKmu({
+      companyName: '',
+      employees: zahl(jahr0.jae),
+      turnover: zahl(jahr0.umsatz),
+      balanceSheet: zahl(jahr0.bilanzsumme),
+      holdings,
+    })
+    return { betrag: (investSumme * erg.fundingRatePct) / 100, bisZu: false }
+  }, [daten, investSumme])
 
   const setze = (name: string, wert: unknown) => {
     setDaten((d) => ({ ...d, [schritt.id]: { ...d[schritt.id], [name]: wert } }))
@@ -97,6 +162,7 @@ export function Wizard({
       const res = await speichereSchritt(token, schritt.id, schrittDaten)
       if (res.ok) {
         setGespeichert(true)
+        setGespeichertAm(new Date())
         weiter()
       } else setHinweis(res.fehler)
     })
@@ -145,11 +211,22 @@ export function Wizard({
     })
   }
 
-  if (abgeschlossen) return <Erfolg angebot={angebot} />
+  // Motivations-Zeile (Halbzeit + Zielgerade mit persoenlicher Ansprache)
+  const vorname = (daten['ansprechpartner']?.ap_vorname as string | undefined)?.trim()
+  const restSchritte = SCHRITTE.length - idx
+  const motivation =
+    idx >= SCHRITTE.length - 2
+      ? `Fast geschafft${vorname ? `, ${vorname}` : ''} – nur noch ${restSchritte === 1 ? 'ein Schritt' : `${restSchritte} Schritte`}!`
+      : idx === Math.floor(SCHRITTE.length / 2)
+        ? `Halbzeit${vorname ? `, ${vorname}` : ''} – stark! Ihre Angaben sind sicher gespeichert.`
+        : null
+
+  if (abgeschlossen)
+    return <Erfolg angebot={angebot} token={token} zuschuss={zuschussChip?.bisZu === false ? zuschussChip.betrag : null} />
 
   return (
     <div>
-      <Fortschritt idx={idx} onSprung={onSprung} />
+      <Fortschritt idx={idx} onSprung={onSprung} zuschuss={zuschussChip} />
 
       {/* zusaetzlicher Platz unten, damit die mobile Sticky-Actionbar nichts verdeckt */}
       <div className="flex flex-col gap-6 pt-6 pb-32 sm:gap-8 sm:pt-8 md:pb-8">
@@ -176,9 +253,15 @@ export function Wizard({
               <p className="text-sm/6 text-teal-900">{schritt.erklaerung}</p>
             </div>
           )}
+          {motivation && (
+            <p className="rounded-xl bg-mabe-900 px-4 py-2.5 text-sm font-semibold text-white motion-safe:animate-check-pop">
+              💪 {motivation}
+            </p>
+          )}
         </header>
 
-        {/* Schritt-Inhalt (Registry ueber komponente) */}
+        {/* Schritt-Inhalt (Registry ueber komponente) – animierter Uebergang */}
+        <div key={schritt.id} className="flex flex-col gap-6 motion-safe:animate-step-in sm:gap-8">
         {schritt.komponente === 'uebersicht' && <SchrittUebersicht angebot={angebot} />}
         {schritt.registerSuche && (
           <UnternehmenSuche
@@ -215,6 +298,7 @@ export function Wizard({
             <SchrittVollmacht daten={schrittDaten} fehler={fehler} onChange={setze} />
           </>
         )}
+        </div>
 
         {hinweis && (
           <p
@@ -226,14 +310,17 @@ export function Wizard({
         )}
         {gespeichert && !hinweis && (
           <p className="flex items-center gap-2 text-xs/5 text-olive-500" role="status">
-            <svg viewBox="0 0 20 20" fill="currentColor" className="size-4 text-teal-600" aria-hidden>
-              <path
-                fillRule="evenodd"
-                d="M16.704 4.153a.75.75 0 0 1 .143 1.052l-8 10.5a.75.75 0 0 1-1.127.075l-4.5-4.5a.75.75 0 0 1 1.06-1.06l3.894 3.893 7.48-9.817a.75.75 0 0 1 1.05-.143Z"
-                clipRule="evenodd"
-              />
-            </svg>
-            Zwischengespeichert – Sie können den Link jederzeit wieder öffnen und fortsetzen.
+            <span className="animate-check-pop flex size-5 items-center justify-center rounded-full bg-teal-600 text-white">
+              <svg viewBox="0 0 20 20" fill="currentColor" className="size-3" aria-hidden>
+                <path
+                  fillRule="evenodd"
+                  d="M16.704 4.153a.75.75 0 0 1 .143 1.052l-8 10.5a.75.75 0 0 1-1.127.075l-4.5-4.5a.75.75 0 0 1 1.06-1.06l3.894 3.893 7.48-9.817a.75.75 0 0 1 1.05-.143Z"
+                  clipRule="evenodd"
+                />
+              </svg>
+            </span>
+            Automatisch gespeichert{gespeichertAm ? ` · ${gespeichertAm.toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' })} Uhr` : ''}{' '}
+            – Sie können den Link jederzeit wieder öffnen und fortsetzen.
           </p>
         )}
 
@@ -275,7 +362,9 @@ export function Wizard({
                 disabled={busy}
                 className="min-h-12 flex-1 rounded-xl bg-mabe-900 px-6 py-3 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-mabe-800 focus:outline-none focus-visible:ring-2 focus-visible:ring-mabe-900/40 focus-visible:ring-offset-2 disabled:opacity-50 md:flex-none"
               >
-                {busy ? 'Speichert …' : 'Speichern & weiter →'}
+                {busy
+                  ? 'Speichert …'
+                  : `Weiter: ${SCHRITTE[idx + 1]?.kurz ?? SCHRITTE[idx + 1]?.titel ?? ''} →`}
               </button>
             )}
           </div>
@@ -285,7 +374,7 @@ export function Wizard({
   )
 }
 
-function Erfolg({ angebot }: { angebot: Angebot }) {
+function Erfolg({ angebot, token, zuschuss }: { angebot: Angebot; token: string; zuschuss: number | null }) {
   const schritte = [
     {
       titel: 'Prüfung Ihrer Angaben',
@@ -306,7 +395,8 @@ function Erfolg({ angebot }: { angebot: Angebot }) {
 
   return (
     <div className="mx-auto flex max-w-2xl flex-col items-center gap-8 px-4 py-10 text-center sm:py-14">
-      <span className="flex size-16 items-center justify-center rounded-full bg-teal-50 text-teal-700 ring-1 ring-teal-600/20 sm:size-20">
+      <Konfetti />
+      <span className="animate-check-pop flex size-16 items-center justify-center rounded-full bg-teal-50 text-teal-700 ring-1 ring-teal-600/20 sm:size-20">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} className="size-8 sm:size-10">
           <path strokeLinecap="round" strokeLinejoin="round" d="m4.5 12.75 6 6 9-13.5" />
         </svg>
@@ -323,6 +413,27 @@ function Erfolg({ angebot }: { angebot: Angebot }) {
           und das Fördermittel-Team kümmern sich jetzt um alles Weitere.
         </p>
       </div>
+
+      {/* Hero-Zahl: der emotionale Abschluss-Moment (Count-up) */}
+      {zuschuss != null && zuschuss > 0 && (
+        <div className="flex w-full flex-col items-center gap-1.5 rounded-2xl bg-mabe-900 px-6 py-7 text-white shadow-lg">
+          <p className="text-xs font-semibold tracking-wide text-olive-300 uppercase">
+            Ihre voraussichtliche Förderung
+          </p>
+          <p className="font-display font-semibold text-teal-300" style={{ fontSize: 'clamp(2rem, 7vw, 3.2rem)', lineHeight: 1.1 }}>
+            <CountUp ziel={zuschuss} format={(v) => `bis zu ${formatEUR(Math.round(v))}`} />
+          </p>
+          <p className="text-xs/5 text-olive-400">Unverbindliche Orientierung – verbindlich prüft das BAFA.</p>
+        </div>
+      )}
+
+      {/* Sofort-Download: die eigene Zusammenfassung „in der Hand" (Besitz-Effekt) */}
+      <a
+        href={`/v/${token}/zusammenfassung.pdf`}
+        className="flex min-h-12 w-full items-center justify-center gap-2 rounded-xl border-2 border-teal-600 bg-white px-6 py-3 text-sm font-semibold text-teal-700 transition-colors hover:bg-teal-50 sm:w-auto"
+      >
+        📄 Meine Antrags-Zusammenfassung als PDF herunterladen
+      </a>
 
       {/* Wie geht es weiter? */}
       <ol className="flex w-full flex-col gap-3 text-left">

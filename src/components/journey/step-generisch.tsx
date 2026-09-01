@@ -110,13 +110,35 @@ export function StepGenerisch({
     return wert !== undefined && wert !== null && String(wert).trim() !== '' && !ungueltig.has(name) && !fehler[name]
   }
 
-  let letzteGruppe: string | undefined
+  // Gruppenkoepfe im Voraus berechnen (kein Mutieren in der JSX-Map):
+  // Beginnt ein Feld eine neue feld.gruppe, wird eine Ueberschrift eingeschoben.
+  type Eintrag = { art: 'gruppe'; label: string } | { art: 'feld'; feld: FeldDef }
+  const eintraege: Eintrag[] = []
+  {
+    let letzteGruppe: string | undefined
+    for (const feld of (schritt.felder ?? []).filter(sichtbar)) {
+      if (feld.gruppe && feld.gruppe !== letzteGruppe) {
+        eintraege.push({ art: 'gruppe', label: feld.gruppe })
+        letzteGruppe = feld.gruppe
+      }
+      eintraege.push({ art: 'feld', feld })
+    }
+  }
 
   return (
     <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
-      {(schritt.felder ?? [])
-        .filter(sichtbar)
-        .map((feld) => {
+      {eintraege.map((eintrag) => {
+        if (eintrag.art === 'gruppe') {
+          return (
+            <p
+              key={`gruppe-${eintrag.label}`}
+              className="col-span-full mt-2 -mb-1 border-t border-olive-100 pt-4 text-xs font-semibold tracking-wide text-olive-500 uppercase first:mt-0 first:border-0 first:pt-0"
+            >
+              {eintrag.label}
+            </p>
+          )
+        }
+        const feld = eintrag.feld
           const wert = (daten[feld.name] as string | number | undefined) ?? ''
           const gueltig = istGueltig(feld.name)
           const common = {
@@ -129,21 +151,14 @@ export function StepGenerisch({
             onChange: (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) =>
               onChange(feld.name, bereinige(feld, e.target.value)),
           }
-          const gruppenKopf =
-            feld.gruppe && feld.gruppe !== letzteGruppe ? (letzteGruppe = feld.gruppe) : undefined
           return (
-            <div key={feld.name} className="contents">
-              {gruppenKopf && (
-                <p className="col-span-full mt-2 -mb-1 border-t border-olive-100 pt-4 text-xs font-semibold tracking-wide text-olive-500 uppercase first:mt-0 first:border-0 first:pt-0">
-                  {gruppenKopf}
-                </p>
-              )}
-              <div
-                className={`${feld.typ === 'iban' || feld.name === 'strasse' ? 'sm:col-span-2' : ''} ${
-                  fehler[feld.name] ? 'motion-safe:animate-shake' : ''
-                }`}
-              >
-                <Feld label={feld.label} hilfe={feld.hilfe} tooltip={feld.tooltip} fehler={fehler[feld.name]} pflicht={feld.pflicht}>
+            <div
+              key={feld.name}
+              className={`${feld.typ === 'iban' || feld.name === 'strasse' ? 'sm:col-span-2' : ''} ${
+                fehler[feld.name] ? 'motion-safe:animate-shake' : ''
+              }`}
+            >
+              <Feld label={feld.label} hilfe={feld.hilfe} tooltip={feld.tooltip} fehler={fehler[feld.name]} pflicht={feld.pflicht}>
                   <div className="relative">
                     {feld.typ === 'auswahl' ? (
                       <select {...common}>
@@ -182,8 +197,7 @@ export function StepGenerisch({
                     )}
                     {gueltig && <CheckIcon />}
                   </div>
-                </Feld>
-              </div>
+              </Feld>
             </div>
           )
         })}

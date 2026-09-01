@@ -3,6 +3,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { ermittleWebhookUrl } from '@/lib/db/repositories/einstellungen'
 import { sendeLeadBenachrichtigung } from '@/lib/email/notify'
 import type { LeadPayload } from '@/lib/email/lead-benachrichtigung'
+import { loggeFehler } from '@/lib/fehler'
 
 export const runtime = 'nodejs'
 
@@ -20,7 +21,16 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ ok: false, error: 'invalid_json' }, { status: 400 })
   }
 
-  const { url: webhookUrl } = await ermittleWebhookUrl()
+  // Webhook-Aufloesung kann bei DB-Stoerung werfen – der Lead wird trotzdem
+  // angenommen (kein Datenverlust fuer den Nutzer), nur nicht weitergeleitet.
+  let webhookUrl: string | null | undefined
+  try {
+    const aufloesung = await ermittleWebhookUrl()
+    webhookUrl = aufloesung.url
+  } catch (e) {
+    loggeFehler('lead', e, { schritt: 'webhook_aufloesung' })
+    return NextResponse.json({ ok: true, forwarded: false, reason: 'webhook_lookup_failed' })
+  }
 
   // Server-seitige Anreicherung (IP, Geo-Header, Eingangszeit).
   const enriched = {

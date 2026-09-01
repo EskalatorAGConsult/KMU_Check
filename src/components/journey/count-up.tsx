@@ -19,11 +19,12 @@ export function CountUp({
   const startRef = useRef<number | null>(null)
 
   useEffect(() => {
-    if (typeof window !== 'undefined' && window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
-      setWert(ziel)
-      return
-    }
     let raf = 0
+    if (typeof window !== 'undefined' && window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+      // Reduced Motion: Endwert direkt setzen (verzoegert hinter die Hydration)
+      raf = requestAnimationFrame(() => setWert(ziel))
+      return () => cancelAnimationFrame(raf)
+    }
     const schritt = (t: number) => {
       if (startRef.current === null) startRef.current = t
       const p = Math.min(1, (t - startRef.current) / dauerMs)

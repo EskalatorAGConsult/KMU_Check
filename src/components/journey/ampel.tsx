@@ -73,8 +73,8 @@ export function KmuAmpel({ ergebnis, investSumme }: { ergebnis: KmuResult; inves
           })}
         </div>
 
-        {/* Ergebnis */}
-        <div className="min-w-0 flex-1">
+        {/* Ergebnis – poppt dezent bei jedem Kategorie-Wechsel (Aufmerksamkeits-Reward) */}
+        <div key={ergebnis.category} className="min-w-0 flex-1 motion-safe:animate-check-pop">
           <p className="text-xs font-semibold tracking-wide text-olive-300 uppercase">
             Live-Auswertung · {ergebnis.categoryLabel}
           </p>

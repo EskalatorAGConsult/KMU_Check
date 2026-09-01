@@ -43,13 +43,13 @@ export function VerbundBaum({ firmenname, holdings }: { firmenname: string; hold
             Antragsteller
           </span>
         </li>
-        {zeilen.map((z) => {
+        {zeilen.map((z, i) => {
           const einzug = Math.min(z.tiefe, 6) * 14
           return (
             <li
               key={`${z.bezug}-${z.name}`}
-              className="flex min-w-0 items-start gap-2 border-l-2 border-olive-200 py-1 pl-2"
-              style={{ marginLeft: einzug }}
+              className="flex min-w-0 items-start gap-2 border-l-2 border-olive-200 py-1 pl-2 motion-safe:animate-step-in"
+              style={{ marginLeft: einzug, animationDelay: `${Math.min(i * 70, 420)}ms` }}
             >
               <div className="min-w-0 flex-1">
                 <p className="truncate text-sm font-medium text-mabe-900">{z.name}</p>
