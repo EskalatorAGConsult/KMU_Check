@@ -4,6 +4,7 @@ import { useMemo } from 'react'
 
 import type { KmuJahrDaten, KmuSchrittDaten } from '@/lib/journey/schemas'
 import { analysiereVerbund, evaluateKmu, type Holding } from '@/lib/kmu'
+import { SKALA } from '@/lib/slider-skala'
 import type { VerbundErgebnis } from '@/lib/openregister/mapping'
 import { VerbundBaum } from '@/components/kmu/verbund-baum'
 import { KmuAbleitung } from './kmu-ableitung'
@@ -438,10 +439,37 @@ export function SchrittKmu({
                     onChange={(e) => setBeteiligung(i, { anteil_pct: Number(e.target.value) })}
                     className="w-full accent-teal-600"
                   />
-                  <div className="mt-1 flex justify-between text-[11px] text-olive-500">
-                    <span>25 % (anteilig)</span>
-                    <span>50 %</span>
-                    <span>100 % (voll)</span>
+                  {/* Skala positionsgenau zur Schiene (Vertrag: slider-skala.ts):
+                      Wert 50 liegt bei 33,3 % der Schienenlänge, nicht in der
+                      Mitte – sonst tauscht die Mitte 62,5 % als „50 %" vor.
+                      Darunter die EU-Zonen mit Kipppunkt > 50 %. */}
+                  <div className="relative mt-1.5 h-4 text-[11px] text-olive-500 tabular-nums" aria-hidden>
+                    <span className="absolute left-0">25 %</span>
+                    <span className="absolute" style={{ left: `${SKALA.kipppunkt50}%`, transform: 'translateX(-50%)' }}>
+                      50 %
+                    </span>
+                    <span className="absolute right-0">100 %</span>
+                  </div>
+                  <div className="relative h-2" aria-hidden>
+                    <span
+                      className="absolute top-0 h-2 w-0.5 rounded bg-mabe-400"
+                      style={{ left: `${SKALA.kipppunkt50}%` }}
+                      title="EU-Kipppunkt: über 50 % = verbundenes Unternehmen (volle Zurechnung)"
+                    />
+                  </div>
+                  <div className="relative h-4 text-[10px]" aria-hidden>
+                    <span
+                      className="absolute font-medium text-teal-700"
+                      style={{ left: `${SKALA.zonePartner}%`, transform: 'translateX(-50%)' }}
+                    >
+                      anteilig (Partner)
+                    </span>
+                    <span
+                      className="absolute font-medium text-mabe-800"
+                      style={{ left: `${SKALA.zoneVerbunden}%`, transform: 'translateX(-50%)' }}
+                    >
+                      voll (verbunden)
+                    </span>
                   </div>
                 </div>
 

@@ -119,6 +119,7 @@ export async function listeVorgaengeFuerUser(userId: string): Promise<VorgangUeb
 }
 
 export interface VorgangDokument {
+  id: string
   typ: string
   storage_path: string
   created_at: string
@@ -188,7 +189,7 @@ export async function holeVorgangFuerUser(userId: string, angebotId: string): Pr
       db.from('deminimis_erklaerungen').select('summe_eur').eq('angebot_id', angebotId).maybeSingle(),
       db
         .from('dokumente')
-        .select('typ, storage_path, created_at')
+        .select('id, typ, storage_path, created_at')
         .eq('angebot_id', angebotId)
         .order('created_at', { ascending: false }),
     ])

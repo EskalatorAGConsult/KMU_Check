@@ -7,6 +7,7 @@ import type { CompanyInput, Holding, KmuResult, VerbundZeile } from '@/lib/kmu'
 import { analysiereVerbund, evaluateKmu } from '@/lib/kmu'
 import { CONSENT_EVENT, hatEinwilligung } from '@/lib/consent'
 import type { VerbundErgebnis } from '@/lib/openregister/mapping'
+import { SKALA } from '@/lib/slider-skala'
 import { generateKmuPdf, downloadBlob, type LeadInfo } from '@/lib/pdf'
 import { collectTracking, enrichWithFingerprint, type TrackingData } from '@/lib/tracking'
 import { Field, NumberField, inputClass } from './field'
@@ -1016,10 +1017,35 @@ function HoldingCard({
           onChange={(e) => onChange({ sharePct: Number(e.target.value) })}
           className="w-full accent-teal-600"
         />
-        <div className="mt-1 flex justify-between text-[11px] text-olive-500">
-          <span>25 % (anteilig)</span>
-          <span>50 %</span>
-          <span>100 % (voll)</span>
+        {/* Skala positionsgenau zur Schiene (Vertrag: slider-skala.ts):
+            Wert 50 liegt bei 33,3 % der Schienenlänge, nicht in der Mitte. */}
+        <div className="relative mt-1.5 h-4 text-[11px] text-olive-500 tabular-nums" aria-hidden>
+          <span className="absolute left-0">25 %</span>
+          <span className="absolute" style={{ left: `${SKALA.kipppunkt50}%`, transform: 'translateX(-50%)' }}>
+            50 %
+          </span>
+          <span className="absolute right-0">100 %</span>
+        </div>
+        <div className="relative h-2" aria-hidden>
+          <span
+            className="absolute top-0 h-2 w-0.5 rounded bg-mabe-400"
+            style={{ left: `${SKALA.kipppunkt50}%` }}
+            title="EU-Kipppunkt: über 50 % = verbundenes Unternehmen (volle Zurechnung)"
+          />
+        </div>
+        <div className="relative h-4 text-[10px]" aria-hidden>
+          <span
+            className="absolute font-medium text-teal-700"
+            style={{ left: `${SKALA.zonePartner}%`, transform: 'translateX(-50%)' }}
+          >
+            anteilig (Partner)
+          </span>
+          <span
+            className="absolute font-medium text-mabe-800"
+            style={{ left: `${SKALA.zoneVerbunden}%`, transform: 'translateX(-50%)' }}
+          >
+            voll (verbunden)
+          </span>
         </div>
       </div>
 

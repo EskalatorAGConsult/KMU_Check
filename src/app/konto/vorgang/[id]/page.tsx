@@ -155,9 +155,9 @@ export default async function VorgangPage({ params }: { params: Promise<{ id: st
                 {vollmacht.signatur_bild_path && (
                   <div className="py-2">
                     <p className="text-sm text-olive-600">Ihre gezeichnete Unterschrift</p>
-                    {/* eslint-disable-next-line @next/next/no-img-element -- Blob-URL, kein optimierbares Asset */}
+                    {/* eslint-disable-next-line @next/next/no-img-element -- authentifizierter Proxy, kein optimierbares Asset */}
                     <img
-                      src={vollmacht.signatur_bild_path}
+                      src={`/konto/vorgang/${angebot.id}/signatur`}
                       alt="Ihre gezeichnete Unterschrift auf der Vollmacht"
                       className="mt-1 max-h-20 max-w-full rounded-lg border border-olive-200 bg-white object-contain p-1"
                     />
@@ -212,12 +212,10 @@ export default async function VorgangPage({ params }: { params: Promise<{ id: st
                 <p className="text-sm font-medium break-words text-mabe-900">Systemkonzept (MABE smart control)</p>
                 {systemkonzept ? (
                   <a
-                    href={systemkonzept.storage_path}
-                    target="_blank"
-                    rel="noopener noreferrer"
+                    href={`/konto/vorgang/${angebot.id}/dokument/${systemkonzept.id}`}
                     className="text-xs font-semibold text-teal-700 hover:underline"
                   >
-                    PDF herunterladen ↗
+                    PDF herunterladen ↓
                   </a>
                 ) : (
                   <p className="text-xs/5 text-olive-500">wird derzeit erstellt</p>
@@ -240,12 +238,10 @@ export default async function VorgangPage({ params }: { params: Promise<{ id: st
                   </p>
                   {vollmachtDokument ? (
                     <a
-                      href={vollmachtDokument.storage_path}
-                      target="_blank"
-                      rel="noopener noreferrer"
+                      href={`/konto/vorgang/${angebot.id}/dokument/${vollmachtDokument.id}`}
                       className="text-xs font-semibold text-teal-700 hover:underline"
                     >
-                      Ausgefülltes PDF herunterladen ↗
+                      Ausgefülltes PDF herunterladen ↓
                     </a>
                   ) : (
                     <p className="text-xs/5 text-olive-500">elektronisch erteilt · PDF wird derzeit erstellt</p>

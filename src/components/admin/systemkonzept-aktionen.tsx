@@ -1,5 +1,6 @@
 'use client'
 
+import { useRouter } from 'next/navigation'
 import { useRef, useState, useTransition } from 'react'
 
 import {
@@ -12,7 +13,9 @@ import {
  * Systemkonzept-Aktionen pro Vorgang (BAFA Modul 3, „Systemkonzept mit
  * Datenerfassungsplan"): eigenes PDF hochladen ODER Standard-Vorlage aus
  * dem Blob-Ordner vorlagen/systemkonzept/ zuordnen. Ersetzt ein evtl.
- * automatisch generiertes Dokument.
+ * automatisch generiertes Dokument. Der Ansehen-Link laeuft ueber den
+ * authentifizierten Proxy (privater Blob-Store) – nach jeder Aenderung
+ * wird die Fallakte serverseitig neu gerendert.
  */
 export function SystemkonzeptAktionen({
   angebotId,
@@ -23,21 +26,18 @@ export function SystemkonzeptAktionen({
   aktuelleUrl: string | null
   vorlagen: SystemkonzeptVorlage[]
 }) {
+  const router = useRouter()
   const dateiInput = useRef<HTMLInputElement>(null)
-  const [url, setUrl] = useState(aktuelleUrl)
   const [vorlage, setVorlage] = useState('')
   const [meldung, setMeldung] = useState<{ art: 'ok' | 'fehler'; text: string } | null>(null)
   const [pending, startTransition] = useTransition()
 
-  const ausfuehren = (
-    aktion: () => Promise<{ ok: true; hinweis: string } | { ok: false; fehler: string }>,
-    neueUrl?: string,
-  ) => {
+  const ausfuehren = (aktion: () => Promise<{ ok: true; hinweis: string } | { ok: false; fehler: string }>) => {
     setMeldung(null)
     startTransition(async () => {
       const res = await aktion()
       setMeldung(res.ok ? { art: 'ok', text: res.hinweis } : { art: 'fehler', text: res.fehler })
-      if (res.ok && neueUrl) setUrl(neueUrl)
+      if (res.ok) router.refresh() // Proxy-Link (aktuelleUrl) serverseitig neu ziehen
     })
   }
 
@@ -47,9 +47,9 @@ export function SystemkonzeptAktionen({
         <p className="text-xs font-semibold tracking-wide text-olive-600 uppercase">
           Systemkonzept (Datenerfassungsplan)
         </p>
-        {url ? (
+        {aktuelleUrl ? (
           <a
-            href={url}
+            href={aktuelleUrl}
             target="_blank"
             rel="noopener noreferrer"
             className="text-xs font-semibold text-teal-700 hover:underline"
@@ -105,7 +105,7 @@ export function SystemkonzeptAktionen({
             <button
               type="button"
               disabled={pending || !vorlage}
-              onClick={() => ausfuehren(() => waehleSystemkonzeptVorlage(angebotId, vorlage), vorlage)}
+              onClick={() => ausfuehren(() => waehleSystemkonzeptVorlage(angebotId, vorlage))}
               className="rounded-lg border border-teal-600 bg-white px-3.5 py-2 text-xs font-semibold text-teal-700 hover:bg-teal-50 disabled:opacity-50"
             >
               Zuordnen

@@ -207,7 +207,22 @@ export async function bearbeiteAngebot(angebotId: string, eingabe: AngebotBearbe
     const update: Record<string, unknown> = {}
     for (const feld of Object.keys(diff)) update[feld] = patch[feld]
     await aktualisiereAngebotFelder(angebotId, update)
-    await speichereRevision(angebotId, session.user.id, 'angebot', diff)
+    try {
+      await speichereRevision(angebotId, session.user.id, 'angebot', diff)
+    } catch (revErr) {
+      // Teilerfolg explizit machen: die Daten sind geaendert, die Historie
+      // nicht – das darf niemals wie „nichts passiert" aussehen.
+      const grund = revErr instanceof Error ? revErr.message : String(revErr)
+      await audit(angebotId, `admin:${session.user.id}`, 'revision_fehlgeschlagen', {
+        bereich: 'angebot',
+        felder: Object.keys(diff),
+        fehler: grund,
+      })
+      return {
+        ok: false,
+        fehler: `Die Änderung wurde gespeichert, aber die Historie konnte nicht protokolliert werden (${grund}). Bitte Datenbank-Migration 19 (vorgang_revisionen) prüfen.`,
+      }
+    }
     await audit(angebotId, `admin:${session.user.id}`, 'angebot_bearbeitet', {
       felder: Object.keys(diff),
     })
@@ -337,7 +352,22 @@ export async function bearbeiteStammdaten(
     } else {
       await aktualisiereStammdatenFelder(angebotId, update)
     }
-    await speichereRevision(angebotId, session.user.id, 'stammdaten', diff)
+    try {
+      await speichereRevision(angebotId, session.user.id, 'stammdaten', diff)
+    } catch (revErr) {
+      // Teilerfolg explizit machen: die Daten sind geaendert, die Historie
+      // nicht – das darf niemals wie „nichts passiert" aussehen.
+      const grund = revErr instanceof Error ? revErr.message : String(revErr)
+      await audit(angebotId, `admin:${session.user.id}`, 'revision_fehlgeschlagen', {
+        bereich: 'stammdaten',
+        felder: Object.keys(diff),
+        fehler: grund,
+      })
+      return {
+        ok: false,
+        fehler: `Die Änderung wurde gespeichert, aber die Historie konnte nicht protokolliert werden (${grund}). Bitte Datenbank-Migration 19 (vorgang_revisionen) prüfen.`,
+      }
+    }
     await audit(angebotId, `admin:${session.user.id}`, istNeuanlage ? 'stammdaten_angelegt' : 'stammdaten_bearbeitet', {
       felder: Object.keys(diff),
     })

@@ -421,6 +421,15 @@ export async function schliesseJourneyAb(
         })
         if (e8) throw new Error(`Dokumente: ${e8.message}`)
 
+        // Persistenz-Vertrag: die ausgefuellte Vollmacht gehoert auch in die
+        // vollmachten-Zeile (pdf_path) – Grundlage des Vollstaendigkeits-
+        // Checks und der Akten-Zuordnung.
+        const { error: e8b } = await db
+          .from('vollmachten')
+          .update({ pdf_path: url })
+          .eq('angebot_id', angebot.id)
+        if (e8b) throw new Error(`Vollmacht pdf_path: ${e8b.message}`)
+
         // Unterschriebenes PDF an die Admins senden (Empfaenger im Admin-Menue
         // konfigurierbar); best effort – die Datei bleibt im Blob/Download.
         const vollmachtGesendet = await sendeVollmachtAnAdmins({

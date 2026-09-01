@@ -662,9 +662,9 @@ export function VorgangDatenblatt({
                 {v.vollmacht.signatur_bild_path && (
                   <div className="py-2">
                     <p className="text-sm text-olive-600">Gezeichnete Unterschrift</p>
-                    {/* eslint-disable-next-line @next/next/no-img-element -- Blob-URL, kein optimierbares Asset */}
+                    {/* eslint-disable-next-line @next/next/no-img-element -- authentifizierter Proxy, kein optimierbares Asset */}
                     <img
-                      src={v.vollmacht.signatur_bild_path}
+                      src={`/admin/vorgang/${a.id}/signatur`}
                       alt={`Unterschrift von ${v.vollmacht.unterzeichnet_von ?? 'Unterzeichner/in'}`}
                       className="mt-1 max-h-24 max-w-full rounded-lg border border-olive-200 bg-white object-contain p-1"
                     />
@@ -689,7 +689,7 @@ export function VorgangDatenblatt({
                   <p className="text-xs text-olive-500">{fmtZeit(d.created_at)}</p>
                 </div>
                 <a
-                  href={d.storage_path}
+                  href={`/admin/dokument/${d.id}`}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="rounded-lg border border-teal-600 px-3 py-1.5 text-xs font-semibold text-teal-700 hover:bg-teal-50"
@@ -706,7 +706,10 @@ export function VorgangDatenblatt({
           <DokumentUpload angebotId={a.id} onGespeichert={onGespeichert} />
           <SystemkonzeptAktionen
             angebotId={a.id}
-            aktuelleUrl={v.dokumente.find((d) => d.typ === 'systemkonzept')?.storage_path ?? null}
+            aktuelleUrl={(() => {
+              const sk = v.dokumente.find((d) => d.typ === 'systemkonzept')
+              return sk ? `/admin/dokument/${sk.id}` : null
+            })()}
             vorlagen={vorlagen}
           />
         </div>
