@@ -1,13 +1,15 @@
 'use client'
 
 import { EskalatorBlock } from './eskalator-block'
+import { SignaturPad } from './signatur-pad'
 import { Checkbox, Feld, inputCls } from './ui'
 
 /**
  * Vollmacht & Beantragungsweg. Eskalator-Concierge ist die empfohlene
- * (visuell hervorgehobene) Option; die Online-Unterschrift erfolgt v1 als
- * getippter vollstaendiger Name (einfache elektronische Signatur, eIDAS),
- * mit Nachweis ueber Zeitpunkt/IP/User-Agent serverseitig.
+ * (visuell hervorgehobene) Option; die Online-Unterschrift erfolgt als
+ * gezeichnete Signatur (Canvas, eIDAS einfache elektronische Signatur)
+ * zusaetzlich zum getippten Namen als Unterzeichner-Nachweis – Zeitpunkt,
+ * IP und User-Agent werden serverseitig protokolliert.
  */
 export function SchrittVollmacht({
   daten,
@@ -104,15 +106,27 @@ export function SchrittVollmacht({
               „Das reichen wir für Sie ein“.
             </p>
 
+          <div className="flex flex-col gap-2">
+            <span className="text-sm font-semibold text-mabe-900">
+              Unterschrift zeichnen <span className="text-teal-700">*</span>
+            </span>
+            <SignaturPad
+              wert={(daten.signatur_png as string | null) ?? null}
+              fehler={fehler.signatur_png}
+              onChange={(dataUrl) => onChange('signatur_png', dataUrl ?? undefined)}
+            />
+          </div>
+
           <Feld
-            label="Online-Unterschrift (vollständiger Name)"
-            hilfe="Rechtswirksam als einfache elektronische Signatur. Zeitpunkt und technische Daten werden protokolliert."
+            label="Unterzeichner/in (vollständiger Name)"
+            hilfe="Name der zeichnungsberechtigten Person – ergänzt die gezeichnete Unterschrift als Nachweis. Zeitpunkt und technische Daten werden protokolliert."
             fehler={fehler.unterschrift_name}
             pflicht
           >
             <input
               className={inputCls}
               placeholder="Vorname Nachname"
+              autoComplete="name"
               value={(daten.unterschrift_name as string) ?? ''}
               onChange={(e) => onChange('unterschrift_name', e.target.value)}
             />

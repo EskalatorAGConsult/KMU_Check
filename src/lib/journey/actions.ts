@@ -130,6 +130,22 @@ export async function schliesseJourneyAb(
   const ua = hdrs.get('user-agent') ?? null
   const db = supabaseServer()
 
+  // Gezeichnete Signatur: Dekodierung + Blob-Archiv ausserhalb des try,
+  // damit die Bytes spaeter auch der PDF-Generierung (Schritt 12) zur
+  // Verfuegung stehen.
+  let signaturBytes: Uint8Array | null = null
+  let signaturPfad: string | null = null
+  if (vollmacht.beantragungsweg === 'eskalator' && vollmacht.signatur_png) {
+    try {
+      const base64 = vollmacht.signatur_png.split(',')[1] ?? ''
+      signaturBytes = Uint8Array.from(Buffer.from(base64, 'base64'))
+      signaturPfad = await ladeDokumentHoch(`signatur/${angebot.angebot_nr}.png`, signaturBytes, 'image/png')
+    } catch (e) {
+      console.error('[journey] Signatur-Upload fehlgeschlagen:', e)
+      await audit(angebot.id, 'system', 'signatur_upload', { ok: false })
+    }
+  }
+
   try {
     // 3 · Stammdaten (Abschnitte 1–5 des Zielformulars)
     const { error: e1 } = await db.from('stammdaten').upsert(
@@ -230,12 +246,13 @@ export async function schliesseJourneyAb(
     )
     if (e5) throw new Error(`De-minimis-Erklärung: ${e5.message}`)
 
-    // 7 · Vollmacht / Beantragungsweg
+    // 7 · Vollmacht / Beantragungsweg (Signatur-Upload erfolgte oben)
     const { error: e6 } = await db.from('vollmachten').upsert(
       {
         angebot_id: angebot.id,
         beantragungsweg: vollmacht.beantragungsweg,
         signatur_modus: vollmacht.beantragungsweg === 'eskalator' ? 'canvas' : null,
+        signatur_bild_path: vollmacht.beantragungsweg === 'eskalator' ? signaturPfad : null,
         unterzeichnet_at: vollmacht.beantragungsweg === 'eskalator' ? new Date().toISOString() : null,
         unterzeichnet_von: vollmacht.unterschrift_name ?? null,
         unterschrift_ip: ip,
@@ -364,6 +381,7 @@ export async function schliesseJourneyAb(
         ort: String(unternehmen.ort),
         vorgangsnummer: angebot.angebot_nr,
         unterschriftName: vollmacht.unterschrift_name ?? null,
+        signaturPng: signaturBytes,
       })
       const url = await ladeDokumentHoch(`vollmacht/${angebot.angebot_nr}.pdf`, vollmachtPdf)
       if (url) {

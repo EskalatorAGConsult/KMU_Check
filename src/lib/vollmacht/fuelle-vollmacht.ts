@@ -26,8 +26,10 @@ export interface VollmachtgeberDaten {
   plz: string
   ort: string
   vorgangsnummer: string
-  /** Getippter vollstaendiger Name (einfache elektronische Signatur). */
+  /** Getippter vollstaendiger Name (Nachweis des Unterzeichners). */
   unterschriftName?: string | null
+  /** Gezeichnete Unterschrift als PNG (transparent) – wird an der Signaturzeile eingezeichnet. */
+  signaturPng?: Uint8Array | null
 }
 
 /**
@@ -35,7 +37,22 @@ export interface VollmachtgeberDaten {
  * (aus der Vorlage vermessen: Datum-Widget x 68–207, Unterschrifts-Label
  * ab x 210,3; Zeilengrundlinie ~y 437, PDF-Koordinaten von unten).
  */
-const SIGNATUR = { seite: 1, x: 214, y: 437, maxBreite: 340 } as const
+const SIGNATUR = { seite: 1, x: 214, y: 437, maxBreite: 340, maxHoehe: 52 } as const
+
+/** Fallback: getippter Name in Kursiv/Dunkelblau als einfache elektronische Signatur. */
+async function zeichneNamenssignatur(doc: PDFDocument, name: string | undefined) {
+  if (!name) return
+  const kursiv = await doc.embedFont(StandardFonts.HelveticaOblique)
+  let groesse = 14
+  while (groesse > 8 && kursiv.widthOfTextAtSize(name, groesse) > SIGNATUR.maxBreite) groesse -= 1
+  doc.getPage(SIGNATUR.seite).drawText(name, {
+    x: SIGNATUR.x,
+    y: SIGNATUR.y,
+    size: groesse,
+    font: kursiv,
+    color: rgb(0.08, 0.15, 0.4),
+  })
+}
 
 export async function fuelleVollmachtAus(geber: VollmachtgeberDaten): Promise<Uint8Array> {
   const vorlageBytes = await readFile(VORLAGE)
@@ -75,20 +92,38 @@ export async function fuelleVollmachtAus(geber: VollmachtgeberDaten): Promise<Ui
   form.flatten()
 
   // 4 · Online-Unterschrift auf die Signaturzeile zeichnen (nach dem Flatten,
-  // damit sie Teil des Archiv-Inhalts wird). Kursiv + Dunkelblau als
-  // visueller Hinweis auf die elektronische Signatur.
+  // damit sie Teil des Archiv-Inhalts wird). Bevorzugt die GEZEICHNETE
+  // Signatur (PNG, aspect-fit in die Signaturzeile); der getippte Name dient
+  // als Fallback und zusaetzlich als kleine Bildunterschrift.
   const name = geber.unterschriftName?.trim()
-  if (name) {
-    const kursiv = await doc.embedFont(StandardFonts.HelveticaOblique)
-    let groesse = 14
-    while (groesse > 8 && kursiv.widthOfTextAtSize(name, groesse) > SIGNATUR.maxBreite) groesse -= 1
-    doc.getPage(SIGNATUR.seite).drawText(name, {
-      x: SIGNATUR.x,
-      y: SIGNATUR.y,
-      size: groesse,
-      font: kursiv,
-      color: rgb(0.08, 0.15, 0.4),
-    })
+  const seite = doc.getPage(SIGNATUR.seite)
+  if (geber.signaturPng && geber.signaturPng.length > 0) {
+    try {
+      const bild = await doc.embedPng(geber.signaturPng)
+      const skalierung = Math.min(SIGNATUR.maxBreite / bild.width, SIGNATUR.maxHoehe / bild.height)
+      seite.drawImage(bild, {
+        x: SIGNATUR.x,
+        y: SIGNATUR.y + 2, // Unterkante knapp auf der Grundlinie
+        width: bild.width * skalierung,
+        height: bild.height * skalierung,
+      })
+      if (name) {
+        const schriftKlein = await doc.embedFont(StandardFonts.Helvetica)
+        seite.drawText(name, {
+          x: SIGNATUR.x,
+          y: SIGNATUR.y - 11,
+          size: 7.5,
+          font: schriftKlein,
+          color: rgb(0.35, 0.4, 0.45),
+        })
+      }
+    } catch (e) {
+      // Bild defekt -> auf getippten Namen zurueckfallen (Signatur nicht verlieren)
+      console.error('[vollmacht] Signaturbild konnte nicht eingebettet werden:', e)
+      await zeichneNamenssignatur(doc, name)
+    }
+  } else {
+    await zeichneNamenssignatur(doc, name)
   }
 
   doc.setTitle(`Vollmacht ${geber.vorgangsnummer}`)

@@ -14,10 +14,18 @@ export interface LeadHolding {
   name: string
   direction: 'we_hold' | 'holds_us'
   sharePct: number
-  relationship: 'linked' | 'partner'
+  /** 'linked'/'partner' = alt; 'verbunden'/'ignoriert' = neue Kettenanalyse. */
+  relationship: 'linked' | 'partner' | 'verbunden' | 'ignoriert'
   employees: number
   turnover: number
   balanceSheet: number
+  /** Effektive Verrechnungsquote aus der EU-Kettenanalyse (optional). */
+  effektivPct?: number
+  /** Bezugsunternehmen der Kante (Folgestufen). */
+  bezug?: string | null
+  stufe?: number | null
+  pfad?: string | null
+  quelle?: string
 }
 
 export interface LeadPayload {
@@ -99,9 +107,19 @@ const RICHTUNG_LABEL: Record<LeadHolding['direction'], string> = {
   holds_us: 'Gesellschafter (hält an uns)',
 }
 
-const ART_LABEL: Record<LeadHolding['relationship'], string> = {
+const ART_LABEL: Record<string, string> = {
   linked: 'Verbunden (> 50 % – 100 % Verrechnung)',
+  verbunden: 'Verbunden (> 50 % – 100 % Verrechnung)',
   partner: 'Partner (25–50 % – anteilige Verrechnung)',
+  ignoriert: 'Nicht verrechnungspflichtig (< 25 % oder nur mittelbar)',
+}
+
+/** Anzeige der EU-Einstufung je Zeile (nutzt die effektive Quote, falls vorhanden). */
+function artLabel(h: LeadHolding): string {
+  if (h.relationship === 'partner' && h.effektivPct !== undefined && Math.round(h.effektivPct) !== Math.round(h.sharePct)) {
+    return `Partner (25–50 % – anteilige Verrechnung zu ${zahl(h.effektivPct)} %)`
+  }
+  return ART_LABEL[h.relationship] ?? esc(h.relationship)
 }
 
 /** Komplettes HTML der Lead-Benachrichtigung (Inhalt ohne Basis-Layout). */
@@ -124,10 +142,20 @@ export function baueLeadBenachrichtigungHtml(p: LeadPayload): string {
             .map(
               (h, i) => `
             <tr>
-              <td style="padding:7px 10px;border:1px solid ${LINE};background:${i % 2 ? '#ffffff' : '#f8fafc'};font-size:13px;font-weight:600;color:${NAVY};">${esc(h.name)}</td>
+              <td style="padding:7px 10px;border:1px solid ${LINE};background:${i % 2 ? '#ffffff' : '#f8fafc'};font-size:13px;font-weight:600;color:${NAVY};">${esc(h.name)}${
+                h.pfad || (h.stufe != null && h.stufe > 1) || h.bezug
+                  ? `<br><span style="font-size:11px;font-weight:400;color:${OLIVE};">${[
+                      h.stufe != null && h.stufe > 1 ? `Kette · Stufe ${h.stufe}` : '',
+                      h.bezug ? `Kante an ${esc(h.bezug)}` : '',
+                      h.pfad ? esc(h.pfad) : '',
+                    ]
+                      .filter(Boolean)
+                      .join(' · ')}</span>`
+                  : ''
+              }</td>
               <td style="padding:7px 10px;border:1px solid ${LINE};background:${i % 2 ? '#ffffff' : '#f8fafc'};font-size:12px;color:#33404d;">${RICHTUNG_LABEL[h.direction] ?? esc(h.direction)}</td>
               <td style="padding:7px 10px;border:1px solid ${LINE};background:${i % 2 ? '#ffffff' : '#f8fafc'};font-size:13px;color:${NAVY};">${zahl(h.sharePct)} %</td>
-              <td style="padding:7px 10px;border:1px solid ${LINE};background:${i % 2 ? '#ffffff' : '#f8fafc'};font-size:12px;color:#33404d;">${ART_LABEL[h.relationship] ?? esc(h.relationship)}</td>
+              <td style="padding:7px 10px;border:1px solid ${LINE};background:${i % 2 ? '#ffffff' : '#f8fafc'};font-size:12px;color:#33404d;">${artLabel(h)}</td>
               <td style="padding:7px 10px;border:1px solid ${LINE};background:${i % 2 ? '#ffffff' : '#f8fafc'};font-size:13px;color:${NAVY};text-align:right;">${zahl(h.employees)}</td>
               <td style="padding:7px 10px;border:1px solid ${LINE};background:${i % 2 ? '#ffffff' : '#f8fafc'};font-size:13px;color:${NAVY};text-align:right;">${eur(h.turnover)}</td>
               <td style="padding:7px 10px;border:1px solid ${LINE};background:${i % 2 ? '#ffffff' : '#f8fafc'};font-size:13px;color:${NAVY};text-align:right;">${eur(h.balanceSheet)}</td>

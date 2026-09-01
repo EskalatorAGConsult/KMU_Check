@@ -20,7 +20,7 @@ export async function listeAngebote(): Promise<AngebotListeItem[]> {
     .from('angebote')
     .select('id, status, kunde_firma, kunde_email, angebot_nr, angebot_datum, created_at')
     .order('created_at', { ascending: false })
-    .limit(200)
+    .limit(1000) // clientseitige Blätterfunktion im Admin-Dashboard (Filter/Suche lokal)
   if (error) throw new Error(`Angebote konnten nicht geladen werden: ${error.message}`)
   return data ?? []
 }

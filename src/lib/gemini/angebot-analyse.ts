@@ -8,13 +8,13 @@ export type { AngebotAnalyse } from './parser'
  * Gemini-API-Client (server-only): liest das MABE-Angebots-PDF multimodal
  * (OCR) und extrahiert die Felder fuer das Angebotsformular.
  *
- * API: generativelanguage.googleapis.com, Modell gemini-2.5-flash,
+ * API: generativelanguage.googleapis.com, Modell gemini-3.6-flash,
  * PDF inline als base64 (inline_data), Antwort erzwungen als JSON.
- * Key aus GEMINI_API_KEY (nie an den Client). Best effort: Fehler -> null.
+ * Key aus GEMINI_API_KEY (nie an den Client). Fehler -> konkreter Grund.
  */
 
-// gemini-2.5-flash wurde von Google abgeschaltet (HTTP 404, Stand 2026-09);
-// die API selbst empfiehlt gemini-3.6-flash – live gegen den Endpoint verifiziert.
+// Modell live gegen /v1beta/models verifiziert (Stand 2026-09): gelistet,
+// OCR-Durchlauf mit Muster-Angebot liefert korrektes JSON (200 OK).
 const MODELL = 'gemini-3.6-flash'
 const ENDPUNKT = `https://generativelanguage.googleapis.com/v1beta/models/${MODELL}:generateContent`
 const MAX_PDF_BYTES = 15 * 1024 * 1024 // 15 MB inline-Limit weit unter API-Grenze

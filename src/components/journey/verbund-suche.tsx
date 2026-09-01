@@ -198,8 +198,8 @@ export function VerbundSuche({
                           {b.stufe > 1
                             ? `Über Ihre Beteiligungskette: ${b.pfad}`
                             : b.richtung === 'aufwaerts'
-                              ? `hält ${fmtZahl.format(b.anteil_direkt_pct)} % an Ihrem Unternehmen`
-                              : `Ihr Unternehmen hält ${fmtZahl.format(b.anteil_direkt_pct)} % daran`}
+                              ? `hält ${fmtZahl.format(b.anteil_pct)} % an Ihrem Unternehmen`
+                              : `Ihr Unternehmen hält ${fmtZahl.format(b.anteil_pct)} % daran`}
                         </p>
                       </div>
                       <span className={`shrink-0 rounded-full px-2.5 py-1 text-[11px] font-semibold ring-1 ${klasse.cls}`}>

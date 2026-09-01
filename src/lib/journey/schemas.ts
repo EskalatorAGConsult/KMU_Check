@@ -137,6 +137,15 @@ export const vollmachtSchema = z
   .object({
     beantragungsweg: z.enum(['selbst', 'eskalator']),
     unterschrift_name: z.string().trim().optional(),
+    /**
+     * Gezeichnete Unterschrift als PNG-Data-URL (Signatur-Pad). Wird in das
+     * BAFA-Formular eingezeichnet und zusaetzlich als Bild im Blob archiviert.
+     */
+    signatur_png: z
+      .string()
+      .startsWith('data:image/png;base64,', 'Unterschrift konnte nicht gelesen werden.')
+      .max(400_000, 'Unterschrift ist zu groß – bitte erneut zeichnen.')
+      .optional(),
     vorhaben_nicht_begonnen: z
       .boolean()
       .refine((v) => v === true, 'Ohne diese Bestätigung ist eine Förderung nicht möglich.'),
@@ -146,11 +155,19 @@ export const vollmachtSchema = z
     dsgvo: z.boolean().refine((v) => v === true, 'Die Datenschutz-Einwilligung ist erforderlich.'),
   })
   .superRefine((daten, ctx) => {
-    if (daten.beantragungsweg === 'eskalator' && (!daten.unterschrift_name || daten.unterschrift_name.length < 5)) {
+    if (daten.beantragungsweg !== 'eskalator') return
+    if (!daten.unterschrift_name || daten.unterschrift_name.length < 5) {
       ctx.addIssue({
         code: 'custom',
         path: ['unterschrift_name'],
-        message: 'Bitte unterschreiben Sie die Vollmacht mit Ihrem vollständigen Namen.',
+        message: 'Bitte geben Sie Ihren vollständigen Namen als Unterzeichner/in an.',
+      })
+    }
+    if (!daten.signatur_png) {
+      ctx.addIssue({
+        code: 'custom',
+        path: ['signatur_png'],
+        message: 'Bitte zeichnen Sie Ihre Unterschrift in das Unterschriftsfeld.',
       })
     }
   })

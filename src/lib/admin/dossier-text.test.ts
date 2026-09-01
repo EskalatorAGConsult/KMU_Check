@@ -80,6 +80,7 @@ const vollstaendig: DossierTextEingabe = {
       quelle: 'openregister',
       stufe: 2,
       pfad: 'Top Holding SE hält 100 % an Holding AG',
+      bezug: null,
       created_at: '2026-02-01T09:00:00Z',
     },
   ],

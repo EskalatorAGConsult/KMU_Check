@@ -25,19 +25,24 @@ export function RegisterSuche({ onUebernehmen }: { onUebernehmen: (ergebnis: Ver
   const boxRef = useRef<HTMLDivElement>(null)
   const laufRef = useRef(0)
 
+  // Eingabe-Handler: Resets gehoeren in den Event-Handler, nicht in den Effekt
+  function aendereQuery(v: string) {
+    setQuery(v)
+    setKeinTreffer(false)
+    setFehler(null)
+    if (v.trim().length < 3) {
+      setTreffer([])
+      setOffen(false)
+    }
+  }
+
   // Debounced Suche (400 ms), ab 3 Zeichen
   useEffect(() => {
     const q = query.trim()
-    setKeinTreffer(false)
-    if (q.length < 3) {
-      setTreffer([])
-      setOffen(false)
-      return
-    }
+    if (q.length < 3) return
     const lauf = ++laufRef.current
     const timer = setTimeout(async () => {
       setSucht(true)
-      setFehler(null)
       try {
         const antwort = await openregisterSucheOeffentlich(q)
         if (lauf !== laufRef.current) return // veraltete Antwort verwerfen
@@ -101,7 +106,7 @@ export function RegisterSuche({ onUebernehmen }: { onUebernehmen: (ergebnis: Ver
           className={inputClass}
           placeholder="Firmenname eingeben, z. B. Muster Maschinenbau"
           value={query}
-          onChange={(e) => setQuery(e.target.value)}
+          onChange={(e) => aendereQuery(e.target.value)}
           onFocus={() => treffer.length > 0 && setOffen(true)}
           autoComplete="off"
           role="combobox"

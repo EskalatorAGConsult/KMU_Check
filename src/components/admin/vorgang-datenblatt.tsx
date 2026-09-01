@@ -8,7 +8,7 @@ import type { SystemkonzeptVorlage } from '@/lib/admin/systemkonzept-actions'
 import type { KundeVorgang } from '@/lib/db/repositories/kunden'
 import type { AngebotStatus } from '@/lib/db/types'
 import { SCHRITTE } from '@/lib/journey/schritte'
-import { CATEGORY_LABELS, formatEUR, type Category, type KmuResult } from '@/lib/kmu'
+import { analysiereVerbund, CATEGORY_LABELS, formatEUR, type Category, type KmuResult } from '@/lib/kmu'
 import {
   ANGEBOT_STATUS_LABELS,
   BEANTRAGUNGSWEG_LABELS,
@@ -100,6 +100,7 @@ const ENTWURF_LABELS: Record<string, string> = (() => {
     quelle: 'Quelle',
     stufe: 'Kettentiefe',
     pfad: 'Beteiligungskette',
+    bezug: 'Bezugsunternehmen',
     beihilfen: 'De-minimis-Beihilfen',
     beihilfegeber: 'Beihilfegeber',
     aktenzeichen: 'Aktenzeichen',
@@ -158,6 +159,21 @@ export function VorgangDatenblatt({
   const sd = v.stammdaten
   const kmuAktuell = v.kmuBewertungen[0] ?? null
   const berechnung = (kmuAktuell?.berechnung ?? null) as KmuResult | null
+  // EU-Kettenanalyse fuer die Zurechnungs-Spalte (statt 50-%-Kantenheuristik):
+  // beruecksichtigt Folgestufen ueber das Bezugsunternehmen je Kante.
+  const verbundZeilen = analysiereVerbund(
+    sd?.unternehmensname ?? '',
+    v.beteiligungen.map((b, i) => ({
+      id: b.id ?? `b${i}`,
+      name: b.name,
+      sharePct: b.anteil_pct,
+      employees: b.jae ?? 0,
+      turnover: b.umsatz ?? 0,
+      balanceSheet: b.bilanzsumme ?? 0,
+      bezug: b.bezug ?? undefined,
+    })),
+  )
+  const verbundZeileZu = (name: string) => verbundZeilen.find((z) => z.name === name.trim())
   const invest = (a.invest_software ?? 0) + (a.invest_messtechnik ?? 0) + (a.invest_steuerung ?? 0)
   const zuschuss = kmuAktuell?.foerderquote_pct ? (invest * kmuAktuell.foerderquote_pct) / 100 : null
   const eingereicht = !!sd
@@ -444,6 +460,7 @@ export function VorgangDatenblatt({
                   <tr className="bg-olive-50 text-olive-500">
                     <th className="px-4 py-2.5 font-semibold">Unternehmen</th>
                     <th className="px-4 py-2.5 font-semibold">Richtung</th>
+                    <th className="px-4 py-2.5 font-semibold">Bezug</th>
                     <th className="px-4 py-2.5 font-semibold">Anteil</th>
                     <th className="px-4 py-2.5 font-semibold">Zurechnung</th>
                     <th className="px-4 py-2.5 font-semibold">JAE</th>
@@ -470,9 +487,16 @@ export function VorgangDatenblatt({
                       <td className="px-4 py-2.5 text-olive-600">
                         {b.richtung === 'aufwaerts' ? 'an uns beteiligt' : 'unsere Beteiligung'}
                       </td>
+                      <td className="px-4 py-2.5 text-olive-600">{b.bezug ?? sd?.unternehmensname ?? fehlt}</td>
                       <td className="px-4 py-2.5 tabular-nums">{b.anteil_pct} %</td>
                       <td className="px-4 py-2.5 text-olive-600">
-                        {b.anteil_pct > 50 ? '100 % (verbunden)' : `anteilig (Partner)`}
+                        {(() => {
+                          const z = verbundZeileZu(b.name)
+                          if (!z) return fehlt
+                          if (z.art === 'verbunden') return z.tiefe > 1 ? '100 % (verbunden über Kette)' : '100 % (verbunden)'
+                          if (z.art === 'partner') return `${Math.round(z.effektivPct)} % (Partner)`
+                          return 'keine (nicht verrechnungspflichtig)'
+                        })()}
                       </td>
                       <td className="px-4 py-2.5 tabular-nums">{b.jae ?? fehlt}</td>
                       <td className="px-4 py-2.5 tabular-nums">{eur(b.umsatz)}</td>
@@ -557,6 +581,17 @@ export function VorgangDatenblatt({
                 <Zeile label="Vollmacht unterzeichnet von" wert={v.vollmacht.unterzeichnet_von ?? fehlt} />
                 <Zeile label="Unterzeichnet am" wert={fmtZeit(v.vollmacht.unterzeichnet_at)} />
                 <Zeile label="Nachweis (IP)" wert={v.vollmacht.unterschrift_ip ?? fehlt} mono />
+                {v.vollmacht.signatur_bild_path && (
+                  <div className="py-2">
+                    <p className="text-sm text-olive-600">Gezeichnete Unterschrift</p>
+                    {/* eslint-disable-next-line @next/next/no-img-element -- Blob-URL, kein optimierbares Asset */}
+                    <img
+                      src={v.vollmacht.signatur_bild_path}
+                      alt={`Unterschrift von ${v.vollmacht.unterzeichnet_von ?? 'Unterzeichner/in'}`}
+                      className="mt-1 max-h-24 max-w-full rounded-lg border border-olive-200 bg-white object-contain p-1"
+                    />
+                  </div>
+                )}
               </>
             )}
           </dl>

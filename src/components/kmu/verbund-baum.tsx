@@ -27,8 +27,8 @@ export function VerbundBaum({ firmenname, holdings }: { firmenname: string; hold
         Unternehmens in Ihre KMU-Berechnung einfließen (EU-Empfehlung 2003/361/EG).
       </p>
 
-      <ol className="mt-4 flex flex-col gap-1.5" role="tree" aria-label="Beteiligungskette">
-        <li role="treeitem" aria-level={1} className="flex items-center gap-2">
+      <ol className="mt-4 flex flex-col gap-1.5" aria-label="Beteiligungskette">
+        <li className="flex items-center gap-2">
           <span className="flex size-6 shrink-0 items-center justify-center rounded-full bg-mabe-900 text-white" aria-hidden>
             <svg viewBox="0 0 20 20" fill="currentColor" className="size-3.5">
               <path
@@ -48,8 +48,6 @@ export function VerbundBaum({ firmenname, holdings }: { firmenname: string; hold
           return (
             <li
               key={`${z.bezug}-${z.name}`}
-              role="treeitem"
-              aria-level={Math.min(z.tiefe + 1, 7)}
               className="flex min-w-0 items-start gap-2 border-l-2 border-olive-200 py-1 pl-2"
               style={{ marginLeft: einzug }}
             >

@@ -152,6 +152,17 @@ export default async function VorgangPage({ params }: { params: Promise<{ id: st
                     }`}
                   />
                 )}
+                {vollmacht.signatur_bild_path && (
+                  <div className="py-2">
+                    <p className="text-sm text-olive-600">Ihre gezeichnete Unterschrift</p>
+                    {/* eslint-disable-next-line @next/next/no-img-element -- Blob-URL, kein optimierbares Asset */}
+                    <img
+                      src={vollmacht.signatur_bild_path}
+                      alt="Ihre gezeichnete Unterschrift auf der Vollmacht"
+                      className="mt-1 max-h-20 max-w-full rounded-lg border border-olive-200 bg-white object-contain p-1"
+                    />
+                  </div>
+                )}
               </>
             )}
             {deminimisSumme != null && (

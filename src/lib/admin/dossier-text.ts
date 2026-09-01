@@ -7,7 +7,7 @@ import type {
   StammdatenRow,
   VollmachtRow,
 } from '@/lib/db/types'
-import { CATEGORY_LABELS, formatEUR, type Category, type KmuResult } from '@/lib/kmu'
+import { analysiereVerbund, CATEGORY_LABELS, formatEUR, type Category, type KmuResult } from '@/lib/kmu'
 import {
   BEANTRAGUNGSWEG_LABELS,
   BEIHILFE_FORM_LABELS,
@@ -155,12 +155,37 @@ export function baueDossierText(e: DossierTextEingabe): string {
     z.push(fehlt)
   }
   if (e.beteiligungen.length > 0) {
+    // EU-Kettenanalyse: effektive Verrechnungsquote (Folgestufen via Bezugsunternehmen)
+    const zeilen = analysiereVerbund(
+      sd?.unternehmensname ?? '',
+      e.beteiligungen.map((b) => ({
+        id: b.id,
+        name: b.name,
+        sharePct: b.anteil_pct,
+        employees: b.jae ?? 0,
+        turnover: b.umsatz ?? 0,
+        balanceSheet: b.bilanzsumme ?? 0,
+        bezug: b.bezug ?? undefined,
+      })),
+    )
     z.push('Partner-/verbundene Unternehmen:')
     for (const b of e.beteiligungen) {
-      const zurechnung = b.anteil_pct > 50 ? '100 % Zurechnung (verbunden)' : `anteilig ${b.anteil_pct} % (Partner)`
+      const zl = zeilen.find((x) => x.name === b.name.trim())
+      const zurechnung = zl
+        ? zl.art === 'verbunden'
+          ? zl.tiefe > 1
+            ? '100 % Zurechnung (verbunden über Kette)'
+            : '100 % Zurechnung (verbunden)'
+          : zl.art === 'partner'
+            ? `anteilig ${Math.round(zl.effektivPct)} % (Partner)`
+            : 'keine Zurechnung (nicht verrechnungspflichtig)'
+        : b.anteil_pct > 50
+          ? '100 % Zurechnung (verbunden)'
+          : `anteilig ${b.anteil_pct} % (Partner)`
       const kette = b.stufe && b.stufe > 1 ? ` · Kette Stufe ${b.stufe}${b.pfad ? ` (${b.pfad})` : ''}` : ''
+      const kante = b.bezug ? ` · Kante an ${b.bezug}` : ''
       z.push(
-        `  - ${b.name} · ${BETEILIGUNG_RICHTUNG_LABELS[b.richtung]} · ${b.anteil_pct} % · ${zurechnung} · ` +
+        `  - ${b.name} · ${BETEILIGUNG_RICHTUNG_LABELS[b.richtung]} · ${b.anteil_pct} %${kante} · ${zurechnung} · ` +
           `${b.jae ?? fehlt} JAE · Umsatz ${eur(b.umsatz)} · Bilanz ${eur(b.bilanzsumme)} · Quelle: ${b.quelle}${kette}`,
       )
     }

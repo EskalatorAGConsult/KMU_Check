@@ -3,11 +3,39 @@
 import { revalidatePath } from 'next/cache'
 
 import { requireAdmin } from '@/lib/auth/guards'
+import { listeSystemkonzeptVorlagen, type SystemkonzeptVorlage } from '@/lib/admin/systemkonzept-actions'
 import { holeAngebot } from '@/lib/db/repositories/angebote'
+import { holeKunde, type KundeDetail } from '@/lib/db/repositories/kunden'
 import { audit, erstelleJourneyToken, setzeAngebotStatus } from '@/lib/db/repositories/journey'
 import { sendeEinladung } from '@/lib/email/notify'
 
 export type KundeActionErgebnis = { ok: true; hinweis: string } | { ok: false; fehler: string }
+
+/**
+ * Laedt die vollstaendige Fallakte eines Kunden (alle Vorgaenge mit
+ * Stammdaten, Verbund, KMU-Bewertungen, De-minimis, Vollmacht, Dokumenten,
+ * Entwuerfen, Uebergaben und Audit-Trail) fuer die aufklappbare
+ * Kundenuebersicht. Admin-guarded; Ergebnis ist JSON-serialisierbar.
+ */
+export async function ladeFallakte(
+  email: string,
+): Promise<
+  | { ok: true; kunde: KundeDetail; vorlagen: SystemkonzeptVorlage[] }
+  | { ok: false; fehler: string }
+> {
+  await requireAdmin()
+  const bereinigt = email.trim().toLowerCase()
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(bereinigt)) {
+    return { ok: false, fehler: 'Ungültige E-Mail-Adresse.' }
+  }
+  try {
+    const [kunde, vorlagen] = await Promise.all([holeKunde(bereinigt), listeSystemkonzeptVorlagen()])
+    if (!kunde) return { ok: false, fehler: 'Kunde nicht gefunden.' }
+    return { ok: true, kunde, vorlagen }
+  } catch (e) {
+    return { ok: false, fehler: e instanceof Error ? e.message : 'Fallakte konnte nicht geladen werden.' }
+  }
+}
 
 /**
  * Erzeugt einen neuen Journey-Link und sendet die Einladung erneut

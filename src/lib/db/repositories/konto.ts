@@ -52,7 +52,7 @@ export async function holeVorgangDossier(userId: string, angebotId: string) {
       .eq('angebot_id', angebotId),
     db
       .from('vollmachten')
-      .select('beantragungsweg, unterzeichnet_von, unterzeichnet_at')
+      .select('beantragungsweg, unterzeichnet_von, unterzeichnet_at, signatur_bild_path')
       .eq('angebot_id', angebotId)
       .maybeSingle(),
   ])
@@ -129,7 +129,12 @@ export interface VorgangDetail {
   fortschrittProzent: number
   stammdaten: Record<string, unknown> | null
   kmu: { kategorie: string; foerderquote_pct: number; geschaeftsjahr: number } | null
-  vollmacht: { beantragungsweg: string; unterzeichnet_von: string | null; unterzeichnet_at: string | null } | null
+  vollmacht: {
+    beantragungsweg: string
+    unterzeichnet_von: string | null
+    unterzeichnet_at: string | null
+    signatur_bild_path: string | null
+  } | null
   deminimisSumme: number | null
   dokumente: VorgangDokument[]
 }
@@ -177,7 +182,7 @@ export async function holeVorgangFuerUser(userId: string, angebotId: string): Pr
         .maybeSingle(),
       db
         .from('vollmachten')
-        .select('beantragungsweg, unterzeichnet_von, unterzeichnet_at')
+        .select('beantragungsweg, unterzeichnet_von, unterzeichnet_at, signatur_bild_path')
         .eq('angebot_id', angebotId)
         .maybeSingle(),
       db.from('deminimis_erklaerungen').select('summe_eur').eq('angebot_id', angebotId).maybeSingle(),

@@ -1,5 +1,5 @@
 import type { CompanyInput, KmuResult } from './kmu'
-import { CATEGORY_LABELS, formatEUR, formatNumber } from './kmu'
+import { analysiereVerbund, CATEGORY_LABELS, formatEUR, formatNumber } from './kmu'
 
 export interface LeadInfo {
   salutation: string
@@ -123,8 +123,9 @@ export async function generateKmuPdf(input: CompanyInput, result: KmuResult, lea
   doc.line(M, y, W - M, y)
   y += 26
 
-  // Beteiligungen
+  // Beteiligungen (EU-Kettenanalyse: effektive Verrechnungsquote, nicht Kantenheuristik)
   if (input.holdings.length > 0) {
+    const zeilen = analysiereVerbund(input.companyName, input.holdings)
     doc.setFont('helvetica', 'bold')
     doc.setFontSize(12)
     doc.setTextColor(...NAVY)
@@ -134,7 +135,18 @@ export async function generateKmuPdf(input: CompanyInput, result: KmuResult, lea
     doc.setFontSize(9)
     doc.setTextColor(...GREY)
     for (const h of input.holdings) {
-      const type = h.sharePct > 50 ? 'verbunden (100 %)' : `Partner (anteilig ${formatNumber(h.sharePct, 0)} %)`
+      const zeile = zeilen.find((z) => z.name === h.name.trim())
+      const type = zeile
+        ? zeile.art === 'verbunden'
+          ? zeile.tiefe > 1
+            ? `verbunden über Kette (100 %)`
+            : 'verbunden (100 %)'
+          : zeile.art === 'partner'
+            ? `Partner (anteilig ${formatNumber(zeile.effektivPct, 0)} %)`
+            : 'nicht verrechnungspflichtig'
+        : h.sharePct > 50
+          ? 'verbunden (100 %)'
+          : `Partner (anteilig ${formatNumber(h.sharePct, 0)} %)`
       doc.text(
         `• ${h.name || 'Beteiligung'} – ${type}, ${formatNumber(h.employees, 1)} JAE, ${formatEUR(h.turnover)} Umsatz`,
         M,
