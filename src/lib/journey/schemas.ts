@@ -1,15 +1,43 @@
 import { z } from 'zod'
 
-import type { FeldDef, SchrittDef } from './types'
+import { pruefeIban, pruefeSteuerId, pruefeSteuernummer, pruefeUstId, pruefeWzCode } from '@/lib/validierung'
+import type { FeldDef, FeldTyp, SchrittDef } from './types'
 
 /**
  * Zod-Schemas der Journey. Generische Schritte bekommen ihr Schema automatisch
  * aus den Felddefinitionen (Single Source of Truth = schritte.ts); fachliche
  * Schritte (kmu, deminimis, vollmacht) haben ein eigenes, handgepflegtes Schema.
  * Dieselben Schemas validieren client- UND serverseitig.
+ *
+ * Formatpruefungen (IBAN, Steuer-ID, USt-IdNr., WZ-Code, Steuernummer) laufen
+ * sichtbarkeitsbewusst in der superRefine: Ausgeblendete Felder (sichtbarWenn)
+ * blockieren nie, sichtbare Felder werden erst geprueft, wenn sie gefuellt sind.
  */
 
 const PFLICHT = 'Bitte ausfüllen.'
+
+/** Feldtypen mit fachlicher Formatpruefung (src/lib/validierung.ts). */
+const FORMAT_TYPEN = new Set<FeldTyp>(['iban', 'steuer_id', 'ust_id', 'wz_code', 'steuernummer'])
+
+/** Liefert die verstaendliche Fehlermeldung einer Formatpruefung oder null. */
+function formatFehler(typ: FeldTyp, wert: unknown): string | null {
+  if (wert === undefined || wert === null || String(wert).trim() === '') return null
+  const s = String(wert).trim()
+  switch (typ) {
+    case 'iban':
+      return pruefeIban(s).fehler ?? null
+    case 'steuer_id':
+      return pruefeSteuerId(s).fehler ?? null
+    case 'ust_id':
+      return pruefeUstId(s).fehler ?? null
+    case 'wz_code':
+      return pruefeWzCode(s).fehler ?? null
+    case 'steuernummer':
+      return pruefeSteuernummer(s).fehler ?? null
+    default:
+      return null
+  }
+}
 
 function feldSchema(feld: FeldDef): z.ZodTypeAny {
   switch (feld.typ) {
@@ -21,19 +49,23 @@ function feldSchema(feld: FeldDef): z.ZodTypeAny {
       return z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'Bitte ein Datum wählen.')
     case 'plz':
       return z.string().trim().regex(/^\d{5}$/, 'Bitte eine 5-stellige PLZ eingeben.')
-    case 'iban':
-      return z
-        .string()
-        .trim()
-        .min(1, PFLICHT)
-        .refine((v) => {
-          const norm = v.replace(/\s+/g, '').toUpperCase()
-          return /^[A-Z]{2}\d{2}[A-Z0-9]{11,30}$/.test(norm)
-        }, 'Bitte eine gültige IBAN eingeben (z. B. DE02 …).')
-    case 'auswahl':
-      return z.string().min(1, 'Bitte auswählen.')
+    case 'auswahl': {
+      // Serverseitige Integritaet: nur definierte Optionswerte sind erlaubt
+      // (Schutz vor manipulierten Payloads, z. B. land != „Deutschland").
+      const werte = (feld.optionen ?? []).map((o) => o.wert)
+      return werte.length > 0
+        ? z.enum(werte as [string, ...string[]], 'Bitte einen gültigen Wert auswählen.')
+        : z.string().min(1, 'Bitte auswählen.')
+    }
     case 'checkbox':
       return z.boolean()
+    // IBAN & Co.: Basisschema ist Text; die Formatpruefung (inkl. Pruefziffern)
+    // laeuft sichtbarkeitsbewusst in der superRefine unten.
+    case 'iban':
+    case 'steuer_id':
+    case 'ust_id':
+    case 'wz_code':
+    case 'steuernummer':
     case 'text':
     default:
       return z.string().trim()
@@ -48,19 +80,34 @@ export function schemaFuerGenerischenSchritt(schritt: SchrittDef) {
     // Optional wenn nicht pflicht ODER nur bedingt sichtbar (sichtbarWenn);
     // die bedingte Pflicht erzwingt die superRefine unten.
     if (!feld.pflicht || feld.sichtbarWenn) s = s.optional().or(z.literal('').transform(() => undefined))
-    else if (feld.typ === 'text') s = (s as z.ZodString).min(1, PFLICHT)
+    else if (
+      feld.typ === 'text' ||
+      feld.typ === 'iban' ||
+      feld.typ === 'steuer_id' ||
+      feld.typ === 'ust_id' ||
+      feld.typ === 'wz_code' ||
+      feld.typ === 'steuernummer'
+    )
+      s = (s as z.ZodString).min(1, PFLICHT)
     shape[feld.name] = s
   }
   return z
     .object(shape)
     .superRefine((daten, ctx) => {
-      // Bedingte Pflicht: sichtbarWenn-Felder nur validieren, wenn sichtbar.
+      const werte = daten as Record<string, unknown>
       for (const feld of schritt.felder ?? []) {
-        if (!feld.sichtbarWenn || !feld.pflicht) continue
-        const sichtbar = (daten as Record<string, unknown>)[feld.sichtbarWenn.feld] === feld.sichtbarWenn.ist
-        const wert = (daten as Record<string, unknown>)[feld.name]
-        if (sichtbar && (wert === undefined || wert === null || wert === '')) {
+        const sichtbar = !feld.sichtbarWenn || werte[feld.sichtbarWenn.feld] === feld.sichtbarWenn.ist
+        if (!sichtbar) continue
+        const wert = werte[feld.name]
+        // Bedingte Pflicht: sichtbarWenn-Felder nur validieren, wenn sichtbar.
+        if (feld.sichtbarWenn && feld.pflicht && (wert === undefined || wert === null || wert === '')) {
           ctx.addIssue({ code: 'custom', path: [feld.name], message: PFLICHT })
+          continue
+        }
+        // Formatpruefung (IBAN-Pruefziffer, Steuer-ID, …) fuer sichtbare, gefuellte Felder.
+        if (FORMAT_TYPEN.has(feld.typ)) {
+          const fehler = formatFehler(feld.typ, wert)
+          if (fehler) ctx.addIssue({ code: 'custom', path: [feld.name], message: fehler })
         }
       }
     })

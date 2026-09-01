@@ -1,6 +1,7 @@
 import 'server-only'
 
 import { supabaseServer } from '@/lib/db/server'
+import { listeNotizen } from '@/lib/db/repositories/notizen'
 import { listeRevisionen } from '@/lib/db/repositories/revisionen'
 import type {
   Angebot,
@@ -11,9 +12,11 @@ import type {
   DeminimisErklaerungRow,
   DokumentRow,
   KmuBewertungRow,
+  KundenZugriffRow,
   StammdatenRow,
   UebergabeRow,
   VollmachtRow,
+  VorgangNotizRow,
   VorgangRevisionRow,
 } from '@/lib/db/types'
 
@@ -103,6 +106,12 @@ export interface KundeVorgang {
   audit: AuditEventRow[]
   /** Admin-Aenderungshistorie (Migration 19), neueste zuerst. */
   revisionen: VorgangRevisionRow[]
+  /** Aufloesung bearbeitet_von/autor (User-ID) -> „Name (E-Mail)" fuer den Audit-Report. */
+  bearbeiter: Record<string, string>
+  /** Zugriffsprotokoll des Kunden (Migration 20): Gesamtzahl + letzte Aufrufe. */
+  zugriffe: { anzahl: number; liste: KundenZugriffRow[] }
+  /** Interne Berater-Notizen inkl. Wiedervorlage (Migration 21), neueste zuerst. */
+  notizen: VorgangNotizRow[]
 }
 
 export interface KundeDetail {
@@ -127,8 +136,39 @@ export async function holeKunde(email: string): Promise<KundeDetail | null> {
   if (error) throw new Error(`Kunde konnte nicht geladen werden: ${error.message}`)
   if (!angebote || angebote.length === 0) return null
 
-  const ids = angebote.map((a) => a.id as string)
-  const [stammRes, betRes, kmuRes, demRes, behRes, vollRes, dokRes, fortRes, uebRes, audRes, userRes] =
+  const { data: konto } = await db
+    .from('user')
+    .select('name, email')
+    .ilike('email', email)
+    .eq('role', 'kunde')
+    .maybeSingle()
+
+  const vorgaenge = await holeVorgaenge(angebote as Angebot[])
+  const juengster = angebote[0] as Angebot
+  return {
+    email: juengster.kunde_email,
+    firma: juengster.kunde_firma,
+    registriert: !!konto,
+    kontoName: (konto?.name as string | undefined) ?? null,
+    vorgaenge,
+  }
+}
+
+/** Laedt einen einzelnen Vorgang vollstaendig (Fallakte-PDF, Admin-Download). */
+export async function holeVorgang(angebotId: string): Promise<KundeVorgang | null> {
+  const db = supabaseServer()
+  const { data: angebot, error } = await db.from('angebote').select('*').eq('id', angebotId).maybeSingle()
+  if (error) throw new Error(`Vorgang konnte nicht geladen werden: ${error.message}`)
+  if (!angebot) return null
+  const vorgaenge = await holeVorgaenge([angebot as Angebot])
+  return vorgaenge[0] ?? null
+}
+
+/** Aggregiert alle abhaengigen Tabellen je Vorgang (inkl. Revisionen + Bearbeiter-Namen). */
+async function holeVorgaenge(angebote: Angebot[]): Promise<KundeVorgang[]> {
+  const db = supabaseServer()
+  const ids = angebote.map((a) => a.id)
+  const [stammRes, betRes, kmuRes, demRes, behRes, vollRes, dokRes, fortRes, uebRes, audRes] =
     await Promise.all([
       db.from('stammdaten').select('*').in('angebot_id', ids),
       db.from('beteiligungen').select('*').in('angebot_id', ids).order('created_at', { ascending: true }),
@@ -157,7 +197,6 @@ export async function holeKunde(email: string): Promise<KundeDetail | null> {
         .in('angebot_id', ids)
         .order('created_at', { ascending: false })
         .limit(ids.length * MAX_AUDIT * 2),
-      db.from('user').select('name, email').ilike('email', email).eq('role', 'kunde').maybeSingle(),
     ])
 
   const stammNachAngebot = new Map((stammRes.data ?? []).map((s) => [s.angebot_id as string, s as StammdatenRow]))
@@ -193,29 +232,62 @@ export async function holeKunde(email: string): Promise<KundeDetail | null> {
   const uebNachAngebot = gruppiere((uebRes.data ?? []) as UebergabeRow[], MAX_UEBERGABEN)
   const audNachAngebot = gruppiere((audRes.data ?? []) as AuditEventRow[], MAX_AUDIT)
 
-  // Revisionshistorie (Migration 19) separat laden und je Vorgang gruppieren
-  const revisionen = await listeRevisionen(ids)
+  // Revisionshistorie (Migration 19) + Notizen (Migration 21) laden und gruppieren
+  const [revisionen, notizen] = await Promise.all([listeRevisionen(ids), listeNotizen(ids)])
   const revNachAngebot = gruppiere(revisionen)
+  const notizNachAngebot = gruppiere(notizen)
 
-  const juengster = angebote[0] as Angebot
-  return {
-    email: juengster.kunde_email,
-    firma: juengster.kunde_firma,
-    registriert: !!userRes.data,
-    kontoName: (userRes.data?.name as string | undefined) ?? null,
-    vorgaenge: (angebote as Angebot[]).map((a) => ({
-      angebot: a,
-      stammdaten: stammNachAngebot.get(a.id) ?? null,
-      beteiligungen: betNachAngebot.get(a.id) ?? [],
-      kmuBewertungen: kmuNachAngebot.get(a.id) ?? [],
-      deminimis: demNachAngebot.get(a.id) ?? null,
-      beihilfen: behNachAngebot.get(a.id) ?? [],
-      vollmacht: vollNachAngebot.get(a.id) ?? null,
-      dokumente: dokNachAngebot.get(a.id) ?? [],
-      entwurf: entwurfNachAngebot.get(a.id) ?? null,
-      uebergaben: uebNachAngebot.get(a.id) ?? [],
-      audit: audNachAngebot.get(a.id) ?? [],
-      revisionen: revNachAngebot.get(a.id) ?? [],
-    })),
+  // Autoren-IDs (Revisionen + Notizen) auf Namen/E-Mails aufloesen (Audit-Report „wer")
+  const bearbeiterIds = [...new Set([...revisionen.map((r) => r.bearbeitet_von), ...notizen.map((n) => n.autor)])]
+  const bearbeiter: Record<string, string> = {}
+  if (bearbeiterIds.length > 0) {
+    const { data: nutzer } = await db.from('user').select('id, name, email').in('id', bearbeiterIds)
+    for (const u of nutzer ?? []) {
+      const id = u.id as string
+      const email = u.email as string
+      const name = u.name as string | null
+      bearbeiter[id] = name ? `${name} (${email})` : email
+    }
   }
+
+  // Zugriffsprotokoll (Migration 20): letzte Aufrufe je Vorgang + exakte Gesamtzahl
+  const MAX_ZUGRIFFE = 15
+  const { data: zugriffZeilen } = await db
+    .from('kunden_zugriffe')
+    .select('*')
+    .in('angebot_id', ids)
+    .order('created_at', { ascending: false })
+    .limit(ids.length * MAX_ZUGRIFFE)
+  const zugNachAngebot = gruppiere((zugriffZeilen ?? []) as KundenZugriffRow[], MAX_ZUGRIFFE)
+  const zugriffAnzahl = new Map<string, number>()
+  await Promise.all(
+    ids.map(async (id) => {
+      const { count } = await db
+        .from('kunden_zugriffe')
+        .select('id', { count: 'exact', head: true })
+        .eq('angebot_id', id)
+      zugriffAnzahl.set(id, count ?? 0)
+    }),
+  )
+
+  return angebote.map((a) => ({
+    angebot: a,
+    stammdaten: stammNachAngebot.get(a.id) ?? null,
+    beteiligungen: betNachAngebot.get(a.id) ?? [],
+    kmuBewertungen: kmuNachAngebot.get(a.id) ?? [],
+    deminimis: demNachAngebot.get(a.id) ?? null,
+    beihilfen: behNachAngebot.get(a.id) ?? [],
+    vollmacht: vollNachAngebot.get(a.id) ?? null,
+    dokumente: dokNachAngebot.get(a.id) ?? [],
+    entwurf: entwurfNachAngebot.get(a.id) ?? null,
+    uebergaben: uebNachAngebot.get(a.id) ?? [],
+    audit: audNachAngebot.get(a.id) ?? [],
+    revisionen: revNachAngebot.get(a.id) ?? [],
+    bearbeiter,
+    zugriffe: {
+      anzahl: zugriffAnzahl.get(a.id) ?? 0,
+      liste: zugNachAngebot.get(a.id) ?? [],
+    },
+    notizen: notizNachAngebot.get(a.id) ?? [],
+  }))
 }

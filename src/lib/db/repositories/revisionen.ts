@@ -38,6 +38,14 @@ export async function holeStammdaten(angebotId: string): Promise<StammdatenRow |
   return data ?? null
 }
 
+/** Legt Stammdaten erstmalig an (Admin/Fördermittelberater im Namen des Kunden). */
+export async function legeStammdatenAn(angebotId: string, werte: Record<string, unknown>): Promise<void> {
+  const { error } = await supabaseServer()
+    .from('stammdaten')
+    .insert({ ...werte, angebot_id: angebotId, updated_at: new Date().toISOString() })
+  if (error) throw new Error(`Stammdaten konnten nicht angelegt werden: ${error.message}`)
+}
+
 /** Haengt eine Revision an (append-only). */
 export async function speichereRevision(
   angebotId: string,

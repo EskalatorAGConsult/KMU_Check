@@ -217,6 +217,16 @@ export interface AuditEventRow {
   created_at: string
 }
 
+/** Zugriffsprotokoll eines Kunden auf den Journey-Link (Migration 20). */
+export interface KundenZugriffRow {
+  id: string
+  angebot_id: string
+  token_id: string | null
+  ip: string | null
+  user_agent: string | null
+  created_at: string
+}
+
 /** Feldgenaue Admin-Aenderungshistorie (Migration 19). */
 export interface VorgangRevisionRow {
   id: string
@@ -225,5 +235,17 @@ export interface VorgangRevisionRow {
   bereich: 'angebot' | 'stammdaten'
   /** { feld: { alt, neu } } – nur geaenderte Felder. */
   aenderungen: Record<string, { alt: unknown; neu: unknown }>
+  created_at: string
+}
+
+/** Interne Berater-Notiz mit optionaler Wiedervorlage (Migration 21). */
+export interface VorgangNotizRow {
+  id: string
+  angebot_id: string
+  /** Better-Auth-User-ID des Verfassers (Admin). */
+  autor: string
+  text: string
+  /** ISO-Datum JJJJ-MM-TT oder null. */
+  wiedervorlage_am: string | null
   created_at: string
 }

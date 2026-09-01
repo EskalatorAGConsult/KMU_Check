@@ -1,9 +1,10 @@
 import type { Metadata } from 'next'
+import { headers } from 'next/headers'
 import Link from 'next/link'
 
 import { Wizard } from '@/components/journey/wizard'
 import { holeSession } from '@/lib/auth/guards'
-import { holeFortschritt, validiereToken } from '@/lib/db/repositories/journey'
+import { holeFortschritt, protokolliereZugriff, validiereToken } from '@/lib/db/repositories/journey'
 import { verknuepfeZugriff } from '@/lib/db/repositories/konto'
 import { formatEUR } from '@/lib/kmu'
 
@@ -34,6 +35,16 @@ export default async function JourneyPage({ params }: { params: Promise<{ token:
   }
 
   const { angebot } = kontext
+
+  // Zugriffsprotokoll (Migration 20): jeder Aufruf des persoenlichen Links
+  // wird mit Zeit, IP und Geraet festgehalten – best effort, blockiert nie.
+  try {
+    const h = await headers()
+    const ip = h.get('x-forwarded-for')?.split(',')[0]?.trim() ?? h.get('x-real-ip')
+    await protokolliereZugriff(angebot.id, kontext.token.id, ip ?? null, h.get('user-agent'))
+  } catch (e) {
+    console.error('[journey] Zugriffsprotokoll fehlgeschlagen:', e)
+  }
 
   // Auto-Claim: Ist der Kunde eingeloggt, wird der Vorgang still seinem
   // Konto zugeordnet – er sieht ihn dann unter /konto.

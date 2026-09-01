@@ -2,17 +2,18 @@
  * Stammdaten der bevollmaechtigten Organisation fuer die BAFA-Vollmacht
  * (Formular eew_vm_3, Abschnitt 2). Einzige Pflegestelle.
  *
- * TODO(fachlich): Adresse/Telefon der Eskalator AG final bestaetigen lassen –
- * leere Felder werden im ausgefuellten PDF frei gelassen.
+ * Eskalator AG (Schweiz) – Vollmachtnehmer nach § 14 VwVfG.
+ * Die operative Abwicklung erfolgt durch die WissensReich Academy GmbH,
+ * Muelheim an der Ruhr (Hinweis im Journey-UI, nicht Teil des BAFA-Formulars).
  */
 export const BEVOLLMAECHTIGTER = {
   name: 'Eskalator AG',
   anrede: '',
   vorname: '',
   nachname: '',
-  strasse: '',
-  plz: '',
-  ort: '',
+  strasse: 'Churerstrasse 135',
+  plz: '8808',
+  ort: 'Freienbach (Schweiz)',
   telefon: '',
   beraternummer: '',
 } as const

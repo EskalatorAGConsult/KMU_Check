@@ -15,8 +15,10 @@ import { SCHRITTE, schrittNach } from '@/lib/journey/schritte'
 import { schemaFuerSchritt, type DeminimisSchrittDaten, type KmuSchrittDaten, type VollmachtSchrittDaten } from '@/lib/journey/schemas'
 import { evaluateKmu } from '@/lib/kmu'
 import { sendeEingangsbestaetigung, sendeVollmachtAnAdmins } from '@/lib/email/notify'
+import { TECHNOLOGIE_LABELS } from '@/lib/labels'
 import { generiereSystemkonzept } from '@/lib/systemkonzept/generate'
 import { ladeDokumentHoch } from '@/lib/storage/blob'
+import { normalisiereIban, normalisiereSteuerId } from '@/lib/validierung'
 import { fuelleVollmachtAus } from '@/lib/vollmacht/fuelle-vollmacht'
 
 /**
@@ -52,10 +54,6 @@ export async function speichereSchritt(
   } catch (e) {
     return { ok: false, fehler: e instanceof Error ? e.message : 'Speichern fehlgeschlagen.' }
   }
-}
-
-function normalisiereIban(iban: string): string {
-  return iban.replace(/\s+/g, '').toUpperCase()
 }
 
 function jaNeinZuBoolean(v: unknown): boolean {
@@ -161,9 +159,18 @@ export async function schliesseJourneyAb(
         unternehmensart: String(unternehmen.unternehmensart),
         vorsteuerabzug: jaNeinZuBoolean(unternehmen.vorsteuerabzug),
         personenart: String(unternehmen.personenart),
-        geburtsdatum: (unternehmen.geburtsdatum as string) ?? null,
-        steuer_id: (unternehmen.steuer_id as string) ?? null,
-        steuernummer: (unternehmen.steuernummer as string) ?? null,
+        // Datenkonsistenz: versteckte Felder koennen Restwerte enthalten (das
+        // Schema prueft sie bewusst nicht) – personenart-fremde Werte werden
+        // vor dem Insert geloescht, sonst scheitert die DB-CHECK-Constraint
+        // (steuer_id ~ ^\d{11}$ bzw. bedingte Pflicht natuerlich/juristisch).
+        geburtsdatum:
+          String(unternehmen.personenart) === 'natuerlich' ? ((unternehmen.geburtsdatum as string) || null) : null,
+        steuer_id:
+          String(unternehmen.personenart) === 'natuerlich'
+            ? normalisiereSteuerId(String(unternehmen.steuer_id ?? '')) || null
+            : null,
+        steuernummer:
+          String(unternehmen.personenart) === 'natuerlich' ? null : ((unternehmen.steuernummer as string) || null),
         ust_id: (unternehmen.ust_id as string) || null,
         ap_rolle: String(ansprechpartner.ap_rolle),
         ap_anrede: String(ansprechpartner.ap_anrede),
@@ -309,14 +316,35 @@ export async function schliesseJourneyAb(
     console.error('[journey] Webhook-Uebergabe fehlgeschlagen:', e)
   }
 
-  // 10 · Eingangsbestaetigung per E-Mail (best effort)
+  // 10 · Eingangsbestaetigung mit vollstaendiger Antrags-Zusammenfassung per E-Mail (best effort)
+  const invest =
+    (angebot.invest_software ?? 0) + (angebot.invest_messtechnik ?? 0) + (angebot.invest_steuerung ?? 0)
+  // `summe` aus dem try-Block ist hier ausserhalb des Scopes – lokal neu bilden
+  const deminimisSumme = deminimis.beihilfen.reduce((s, b) => s + b.betrag, 0)
   const mailGesendet = await sendeEingangsbestaetigung({
     an: angebot.kunde_email,
-    kundeFirma: angebot.kunde_firma,
-    angebotNr: angebot.angebot_nr,
-    beantragungsweg: vollmacht.beantragungsweg,
-    kategorieLabel: kmuErgebnis.categoryLabel,
-    foerderquotePct: kmuErgebnis.fundingRatePct,
+    zusammenfassung: {
+      kundeFirma: angebot.kunde_firma,
+      angebotNr: angebot.angebot_nr,
+      strasse: String(unternehmen.strasse),
+      plz: String(unternehmen.plz),
+      ort: String(unternehmen.ort),
+      email: String(unternehmen.email),
+      wzCode: String(unternehmen.wz_code),
+      ustId: (unternehmen.ust_id as string) || null,
+      apName: [ansprechpartner.ap_vorname, ansprechpartner.ap_nachname].filter(Boolean).join(' '),
+      apRolle: (ansprechpartner.ap_rolle as string) || null,
+      apEmail: String(ansprechpartner.ap_email),
+      kmu: kmuErgebnis,
+      geschaeftsjahr: jahreSortiert[0].geschaeftsjahr,
+      kmuSchaetzung: !jahreSortiert[0].abgeschlossen,
+      technologien: angebot.technologien.map((t) => TECHNOLOGIE_LABELS[t] ?? t),
+      investSumme: invest > 0 ? invest : null,
+      sensorenGesamt: angebot.sensoren_gesamt,
+      projektende: angebot.projektende,
+      beantragungsweg: vollmacht.beantragungsweg,
+      deminimisSumme,
+    },
   })
   await audit(angebot.id, 'system', 'bestaetigung_email', { gesendet: mailGesendet })
 

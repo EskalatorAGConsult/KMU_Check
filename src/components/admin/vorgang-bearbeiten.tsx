@@ -9,6 +9,7 @@ import {
   type AngebotBearbeitenEingabe,
   type StammdatenBearbeitenEingabe,
 } from '@/lib/admin/bearbeiten-actions'
+import { FELD_LABEL } from '@/lib/admin/feld-labels'
 import { formatiereWert } from '@/lib/admin/revision-diff'
 import type { KundeVorgang } from '@/lib/db/repositories/kunden'
 import type {
@@ -22,59 +23,16 @@ import type {
 
 /**
  * Admin-Bearbeitung eines Vorgangs (Migration 19): korrigiert Angebots- und
- * Stammdaten direkt in der Fallakte. Jede Speicherung wird serverseitig als
- * feldgenauer Diff in vorgang_revisionen protokolliert – die Historie unten
- * zeigt wer wann welches Feld von alt auf neu gesetzt hat.
+ * Stammdaten direkt in der Fallakte – als Fördermittelberater auch komplett
+ * im Namen des Kunden. Jede Speicherung wird serverseitig als feldgenauer
+ * Diff in vorgang_revisionen protokolliert – die Historie unten zeigt,
+ * WER wann welches Feld von alt auf neu gesetzt hat.
  */
 
 const inputCls =
   'w-full rounded-lg border border-olive-300 bg-white px-3 py-2 text-sm text-mabe-900 placeholder:text-olive-400 ' +
   'focus:border-teal-600 focus:outline-none focus:ring-2 focus:ring-teal-600/30'
 const labelCls = 'mb-1 block text-xs font-semibold text-mabe-900'
-
-/** Deutsche Feldnamen fuer Formular + Historie. */
-const FELD_LABEL: Record<string, string> = {
-  kunde_firma: 'Kundenfirma',
-  kunde_ansprechpartner: 'Ansprechpartner (Kunde)',
-  kunde_email: 'E-Mail (Kunde)',
-  angebot_nr: 'Angebotsnummer',
-  angebot_datum: 'Angebotsdatum',
-  technologien: 'Technologien',
-  software_variante: 'Software-Variante',
-  invest_software: 'Invest Software (€)',
-  invest_messtechnik: 'Invest Messtechnik (€)',
-  invest_steuerung: 'Invest Steuerung (€)',
-  sensoren_gesamt: 'Sensoren gesamt',
-  sensoren_prozessbezug: 'Sensoren mit Prozessbezug',
-  projektende: 'Projektende',
-  notiz: 'Interne Notiz',
-  unternehmensname: 'Unternehmensname',
-  land: 'Land',
-  plz: 'PLZ',
-  ort: 'Ort',
-  strasse: 'Straße + Hausnr.',
-  email: 'E-Mail (Unternehmen)',
-  wz_code: 'WZ-Code',
-  ust_id: 'USt-IdNr.',
-  steuernummer: 'Steuernummer',
-  steuer_id: 'Steuer-ID',
-  geburtsdatum: 'Geburtsdatum',
-  unternehmensart: 'Unternehmensart',
-  personenart: 'Personenart',
-  vorsteuerabzug: 'Vorsteuerabzug',
-  gruppenzugehoerigkeit: 'Gruppenzugehörigkeit',
-  wirtschaftlich_taetig: 'Wirtschaftlich tätig',
-  ap_rolle: 'AP-Rolle',
-  ap_anrede: 'AP-Anrede',
-  ap_vorname: 'AP-Vorname',
-  ap_nachname: 'AP-Nachname',
-  ap_email: 'AP-E-Mail',
-  kontoinhaber: 'Kontoinhaber',
-  iban: 'IBAN',
-  standort_plz: 'Standort-PLZ',
-  standort_ort: 'Standort-Ort',
-  standort_strasse: 'Standort-Straße',
-}
 
 function Feld({ label, children }: { label: string; children: ReactNode }) {
   return (
@@ -99,7 +57,13 @@ const TECHNOLOGIEN: { wert: Technologie; label: string }[] = [
   { wert: 'steuerung', label: 'Steuerungs- und Regelungstechnik' },
 ]
 
-function Historie({ revisionen }: { revisionen: VorgangRevisionRow[] }) {
+function Historie({
+  revisionen,
+  bearbeiter,
+}: {
+  revisionen: VorgangRevisionRow[]
+  bearbeiter: Record<string, string>
+}) {
   if (revisionen.length === 0) {
     return <p className="text-xs text-olive-500">Noch keine Korrekturen protokolliert.</p>
   }
@@ -108,8 +72,9 @@ function Historie({ revisionen }: { revisionen: VorgangRevisionRow[] }) {
       {revisionen.map((r) => (
         <li key={r.id} className="rounded-xl bg-olive-50 px-4 py-3 ring-1 ring-olive-200">
           <p className="text-xs text-olive-500">
-            {new Date(r.created_at).toLocaleString('de-DE')} · Bereich:{' '}
-            <span className="font-semibold">{r.bereich === 'angebot' ? 'Angebot' : 'Stammdaten'}</span>
+            {new Date(r.created_at).toLocaleString('de-DE')} ·{' '}
+            <span className="font-semibold text-mabe-900">{bearbeiter[r.bearbeitet_von] ?? 'Unbekannt'}</span> ·
+            Bereich: <span className="font-semibold">{r.bereich === 'angebot' ? 'Angebot' : 'Stammdaten'}</span>
           </p>
           <ul className="mt-2 flex flex-col gap-1">
             {Object.entries(r.aenderungen).map(([feld, a]) => (
@@ -247,16 +212,19 @@ export function VorgangBearbeiten({
         <button
           type="button"
           onClick={() => umschalten('stammdaten')}
-          disabled={!sd}
           aria-expanded={bereich === 'stammdaten'}
-          title={sd ? undefined : 'Der Kunde hat die Journey noch nicht abgeschlossen.'}
-          className={`rounded-lg px-3.5 py-2 text-xs font-semibold disabled:cursor-not-allowed disabled:opacity-50 ${
+          title={
+            sd
+              ? undefined
+              : 'Der Kunde hat noch nichts eingereicht – als Fördermittelberater können Sie die Stammdaten komplett im Namen des Kunden anlegen.'
+          }
+          className={`rounded-lg px-3.5 py-2 text-xs font-semibold ${
             bereich === 'stammdaten'
               ? 'bg-mabe-900 text-white'
               : 'border border-olive-300 bg-white text-mabe-900 hover:bg-olive-50'
           }`}
         >
-          ✏️ Stammdaten bearbeiten
+          {sd ? '✏️ Stammdaten bearbeiten' : '➕ Stammdaten für den Kunden anlegen'}
         </button>
       </div>
 
@@ -331,41 +299,52 @@ export function VorgangBearbeiten({
         </form>
       )}
 
-      {bereich === 'stammdaten' && sd && (
+      {bereich === 'stammdaten' && (
         <form onSubmit={speichernStammdaten} className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2">
+          {!sd && (
+            <p className="rounded-lg border border-teal-600/30 bg-teal-50 px-3 py-2 text-xs/5 text-teal-900 sm:col-span-2">
+              Der Kunde hat noch keine Daten eingereicht. Sie legen die Stammdaten hier als Fördermittelberater im
+              Namen des Kunden an – die Anlage wird wie eine Korrektur mit Ihrem Namen in der Historie
+              protokolliert. Pflichtfelder bitte vollständig ausfüllen.
+            </p>
+          )}
           <p className="text-xs font-semibold tracking-wide text-olive-500 uppercase sm:col-span-2">Unternehmen</p>
-          <TextFeld feld="unternehmensname" wert={sd.unternehmensname} />
-          <TextFeld feld="land" wert={sd.land} />
-          <TextFeld feld="strasse" wert={sd.strasse} />
-          <TextFeld feld="plz" wert={sd.plz} />
-          <TextFeld feld="ort" wert={sd.ort} />
-          <TextFeld feld="email" wert={sd.email} typ="email" />
-          <TextFeld feld="wz_code" wert={sd.wz_code} />
-          <TextFeld feld="ust_id" wert={sd.ust_id} />
-          <TextFeld feld="steuernummer" wert={sd.steuernummer} />
-          <TextFeld feld="steuer_id" wert={sd.steuer_id} />
-          <TextFeld feld="geburtsdatum" wert={sd.geburtsdatum} typ="date" />
+          <TextFeld feld="unternehmensname" wert={sd?.unternehmensname} />
+          <Feld label={FELD_LABEL.land}>
+            <select name="land" className={inputCls} defaultValue={sd?.land ?? 'Deutschland'}>
+              <option value="Deutschland">Deutschland</option>
+            </select>
+          </Feld>
+          <TextFeld feld="strasse" wert={sd?.strasse} />
+          <TextFeld feld="plz" wert={sd?.plz} />
+          <TextFeld feld="ort" wert={sd?.ort} />
+          <TextFeld feld="email" wert={sd?.email} typ="email" />
+          <TextFeld feld="wz_code" wert={sd?.wz_code} />
+          <TextFeld feld="ust_id" wert={sd?.ust_id} />
+          <TextFeld feld="steuernummer" wert={sd?.steuernummer} />
+          <TextFeld feld="steuer_id" wert={sd?.steuer_id} />
+          <TextFeld feld="geburtsdatum" wert={sd?.geburtsdatum} typ="date" />
           <Feld label={FELD_LABEL.unternehmensart}>
-            <select name="unternehmensart" className={inputCls} defaultValue={sd.unternehmensart}>
+            <select name="unternehmensart" className={inputCls} defaultValue={sd?.unternehmensart ?? 'eigenstaendig'}>
               <option value="eigenstaendig">Eigenständig</option>
               <option value="partner">Partnerunternehmen</option>
               <option value="verbunden">Verbundenes Unternehmen</option>
             </select>
           </Feld>
           <Feld label={FELD_LABEL.personenart}>
-            <select name="personenart" className={inputCls} defaultValue={sd.personenart}>
+            <select name="personenart" className={inputCls} defaultValue={sd?.personenart ?? 'juristisch'}>
               <option value="juristisch">Juristische Person</option>
               <option value="natuerlich">Natürliche Person</option>
             </select>
           </Feld>
           <Feld label={FELD_LABEL.vorsteuerabzug}>
-            <select name="vorsteuerabzug" className={inputCls} defaultValue={String(sd.vorsteuerabzug)}>
+            <select name="vorsteuerabzug" className={inputCls} defaultValue={String(sd?.vorsteuerabzug ?? true)}>
               <option value="true">Ja</option>
               <option value="false">Nein</option>
             </select>
           </Feld>
           <Feld label={FELD_LABEL.gruppenzugehoerigkeit}>
-            <select name="gruppenzugehoerigkeit" className={inputCls} defaultValue={sd.gruppenzugehoerigkeit}>
+            <select name="gruppenzugehoerigkeit" className={inputCls} defaultValue={sd?.gruppenzugehoerigkeit ?? 'privat'}>
               <option value="privat">Privatwirtschaftlich</option>
               <option value="kommunal">Kommunal</option>
               <option value="land">Land / öffentlich</option>
@@ -374,7 +353,7 @@ export function VorgangBearbeiten({
             </select>
           </Feld>
           <Feld label={FELD_LABEL.wirtschaftlich_taetig}>
-            <select name="wirtschaftlich_taetig" className={inputCls} defaultValue={String(sd.wirtschaftlich_taetig)}>
+            <select name="wirtschaftlich_taetig" className={inputCls} defaultValue={String(sd?.wirtschaftlich_taetig ?? true)}>
               <option value="true">Ja</option>
               <option value="false">Nein</option>
             </select>
@@ -383,20 +362,20 @@ export function VorgangBearbeiten({
           <p className="mt-2 text-xs font-semibold tracking-wide text-olive-500 uppercase sm:col-span-2">
             Ansprechpartner
           </p>
-          <TextFeld feld="ap_rolle" wert={sd.ap_rolle} />
-          <TextFeld feld="ap_anrede" wert={sd.ap_anrede} />
-          <TextFeld feld="ap_vorname" wert={sd.ap_vorname} />
-          <TextFeld feld="ap_nachname" wert={sd.ap_nachname} />
-          <TextFeld feld="ap_email" wert={sd.ap_email} typ="email" />
+          <TextFeld feld="ap_rolle" wert={sd?.ap_rolle} />
+          <TextFeld feld="ap_anrede" wert={sd?.ap_anrede} />
+          <TextFeld feld="ap_vorname" wert={sd?.ap_vorname} />
+          <TextFeld feld="ap_nachname" wert={sd?.ap_nachname} />
+          <TextFeld feld="ap_email" wert={sd?.ap_email} typ="email" />
 
           <p className="mt-2 text-xs font-semibold tracking-wide text-olive-500 uppercase sm:col-span-2">
             Bank & Standort der Maßnahme
           </p>
-          <TextFeld feld="kontoinhaber" wert={sd.kontoinhaber} />
-          <TextFeld feld="iban" wert={sd.iban} />
-          <TextFeld feld="standort_strasse" wert={sd.standort_strasse} />
-          <TextFeld feld="standort_plz" wert={sd.standort_plz} />
-          <TextFeld feld="standort_ort" wert={sd.standort_ort} />
+          <TextFeld feld="kontoinhaber" wert={sd?.kontoinhaber} />
+          <TextFeld feld="iban" wert={sd?.iban} />
+          <TextFeld feld="standort_strasse" wert={sd?.standort_strasse} />
+          <TextFeld feld="standort_plz" wert={sd?.standort_plz} />
+          <TextFeld feld="standort_ort" wert={sd?.standort_ort} />
 
           <div className="sm:col-span-2">
             <button
@@ -404,7 +383,11 @@ export function VorgangBearbeiten({
               disabled={pending}
               className="rounded-xl bg-teal-600 px-5 py-2.5 text-sm font-semibold text-white hover:bg-teal-500 disabled:opacity-50"
             >
-              {pending ? 'Wird gespeichert …' : 'Stammdaten speichern (mit Historie)'}
+              {pending
+                ? 'Wird gespeichert …'
+                : sd
+                  ? 'Stammdaten speichern (mit Historie)'
+                  : 'Stammdaten anlegen (mit Historie)'}
             </button>
           </div>
         </form>
@@ -414,7 +397,7 @@ export function VorgangBearbeiten({
         <p className="mb-2 text-xs font-semibold tracking-wide text-olive-500 uppercase">
           Änderungshistorie ({vorgang.revisionen.length})
         </p>
-        <Historie revisionen={vorgang.revisionen} />
+        <Historie revisionen={vorgang.revisionen} bearbeiter={vorgang.bearbeiter} />
       </div>
     </section>
   )

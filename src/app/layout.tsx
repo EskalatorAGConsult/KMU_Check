@@ -1,5 +1,7 @@
 import type { Metadata, Viewport } from 'next'
 
+import { ConsentBanner } from '@/components/consent/consent-banner'
+import { CookieEinstellungenLink } from '@/components/consent/cookie-einstellungen-link'
 import { ButtonLink, PlainButtonLink } from '@/components/elements/button'
 import { Main } from '@/components/elements/main'
 import { MabeLogo } from '@/components/kmu/mabe-logo'
@@ -85,6 +87,7 @@ export default function RootLayout({
               <FooterLink href="#faq">FAQ</FooterLink>
               <FooterLink href="https://www.mabe.de/datenschutz">Datenschutz</FooterLink>
               <FooterLink href="https://www.mabe.de/impressum">Impressum</FooterLink>
+              <CookieEinstellungenLink />
             </>
           }
           socialLinks={
@@ -102,6 +105,9 @@ export default function RootLayout({
             </div>
           }
         />
+
+        {/* DSGVO-Consent (Opt-in): Tracking startet erst nach Einwilligung */}
+        <ConsentBanner />
       </body>
     </html>
   )

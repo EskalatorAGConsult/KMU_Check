@@ -7,6 +7,7 @@ import { schliesseJourneyAb, speichereSchritt } from '@/lib/journey/actions'
 import { SCHRITTE } from '@/lib/journey/schritte'
 import { schemaFuerSchritt } from '@/lib/journey/schemas'
 import { Fortschritt } from './fortschritt'
+import { KmuZusammenfassung } from './kmu-zusammenfassung'
 import { SchrittDeminimis } from './schritt-deminimis'
 import { SchrittKmu } from './schritt-kmu'
 import { SchrittUebersicht } from './schritt-uebersicht'
@@ -74,6 +75,20 @@ export function Wizard({
     }
     setFehler(fehlerAusZod(res.error))
     return false
+  }
+
+  /**
+   * Live-Validierung beim Verlassen eines Feldes: nur gefuellte Felder
+   * pruefen (leere Pflichtfelder faengt „Weiter" ab), Fehler direkt am
+   * Feld anzeigen, damit Zahlendreher sofort auffallen.
+   */
+  const validiereFeldLive = (name: string) => {
+    const wert = schrittDaten[name]
+    if (wert === undefined || wert === null || String(wert).trim() === '') return
+    const res = schemaFuerSchritt(schritt).safeParse(schrittDaten)
+    if (res.success) return
+    const issue = res.error.issues.find((i) => String(i.path[0]) === name)
+    if (issue) setFehler((f) => ({ ...f, [name]: issue.message }))
   }
 
   const speichern = (weiter: () => void) => {
@@ -173,7 +188,7 @@ export function Wizard({
           />
         )}
         {schritt.komponente === 'generisch' && (
-          <StepGenerisch schritt={schritt} daten={schrittDaten} fehler={fehler} onChange={setze} />
+          <StepGenerisch schritt={schritt} daten={schrittDaten} fehler={fehler} onChange={setze} onBlurFeld={validiereFeldLive} />
         )}
         {schritt.komponente === 'kmu' && (
           <SchrittKmu
@@ -190,7 +205,15 @@ export function Wizard({
           <SchrittDeminimis daten={schrittDaten} fehler={fehler} onChange={setze} />
         )}
         {schritt.komponente === 'vollmacht' && (
-          <SchrittVollmacht daten={schrittDaten} fehler={fehler} onChange={setze} />
+          <>
+            {/* KMU-Ergebnis am Ende noch einmal visualisieren + Verbund-Groesse erklaeren */}
+            <KmuZusammenfassung
+              kmuDaten={daten['kmu']}
+              investSumme={investSumme}
+              firmenname={(daten['unternehmen']?.unternehmensname as string | undefined) ?? undefined}
+            />
+            <SchrittVollmacht daten={schrittDaten} fehler={fehler} onChange={setze} />
+          </>
         )}
 
         {hinweis && (

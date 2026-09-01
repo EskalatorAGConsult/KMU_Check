@@ -79,6 +79,24 @@ export async function validiereToken(klartext: string): Promise<TokenKontext | n
   return { token, angebot }
 }
 
+// ---------- Kunden-Zugriffsprotokoll (Migration 20) ----------
+
+/**
+ * Protokolliert einen Aufruf des Journey-Links (Zeit, IP, User-Agent).
+ * Best effort: Fehler werden nur geloggt, der Fachprozess blockiert nie.
+ */
+export async function protokolliereZugriff(
+  angebotId: string,
+  tokenId: string,
+  ip: string | null,
+  userAgent: string | null,
+): Promise<void> {
+  const { error } = await supabaseServer()
+    .from('kunden_zugriffe')
+    .insert({ angebot_id: angebotId, token_id: tokenId, ip, user_agent: userAgent?.slice(0, 300) ?? null })
+  if (error) console.error('[zugriff] Protokollierung fehlgeschlagen:', error.message)
+}
+
 // ---------- Journey-Fortschritt (Draft) ----------
 
 export async function holeFortschritt(angebotId: string): Promise<JourneyFortschritt | null> {

@@ -1,5 +1,6 @@
 import 'server-only'
 
+import { baueAntragZusammenfassungHtml, type AntragZusammenfassung } from './antrag-zusammenfassung'
 import { istTestAdresse } from './guard'
 import { baueLeadBenachrichtigungHtml, type LeadPayload } from './lead-benachrichtigung'
 import { absender, portalUrl, resendClient } from './resend'
@@ -90,39 +91,20 @@ export async function sendeEinladung(daten: {
   return sendeMail(daten.an, `Ihr Förderprojekt ${daten.angebotNr} – persönlicher Zugang`, html)
 }
 
-/** 2 · Eingangsbestätigung: Kunde hat die Journey vollständig abgeschlossen. */
+/** 2 · Eingangsbestätigung + vollständige Antrags-Zusammenfassung an den Kunden. */
 export async function sendeEingangsbestaetigung(daten: {
   an: string
-  kundeFirma: string
-  angebotNr: string
-  beantragungsweg: 'eskalator' | 'selbst'
-  kategorieLabel: string
-  foerderquotePct: number
+  zusammenfassung: AntragZusammenfassung
 }): Promise<boolean> {
   const html = layout(
-    `Eingangsbestätigung ${daten.angebotNr}`,
-    [
-      h1('Vielen Dank – Ihre Angaben sind vollständig'),
-      p(
-        `wir haben alle Angaben zum Förderprojekt <strong>${esc(daten.angebotNr)}</strong> für ` +
-          `<strong>${esc(daten.kundeFirma)}</strong> erhalten.`,
-      ),
-      infoBox(
-        `<strong>Ihre Auswertung:</strong> ${esc(daten.kategorieLabel)} · Förderquote <strong>${daten.foerderquotePct} %</strong><br>` +
-          (daten.beantragungsweg === 'eskalator'
-            ? `<strong>Beantragung:</strong> durch den Fördermittel-Concierge der Eskalator AG (operative Abwicklung: WissensReich Academy GmbH, Mülheim an der Ruhr). Sie müssen nichts weiter tun – wir melden uns.`
-            : `<strong>Beantragung:</strong> durch Ihr Unternehmen selbst. Ihr Antrags-Dossier wird vorbereitet und Ihnen zugesendet.`),
-      ),
-      p(`<strong>Wie geht es weiter?</strong>`),
-      p(
-        `1. Prüfung Ihrer Angaben auf Vollständigkeit<br>` +
-          `2. Antragstellung beim BAFA<br>` +
-          `3. Bewilligung – danach kann die Maßnahme starten`,
-      ),
-      p(`Bei Rückfragen genügt die Angabe der Angebotsnummer <strong>${esc(daten.angebotNr)}</strong>.`),
-    ].join(''),
+    `Ihre Antragsdaten ${daten.zusammenfassung.angebotNr}`,
+    baueAntragZusammenfassungHtml(daten.zusammenfassung),
   )
-  return sendeMail(daten.an, `Eingangsbestätigung – Förderprojekt ${daten.angebotNr}`, html)
+  return sendeMail(
+    daten.an,
+    `Ihre Antragsdaten im Überblick – Förderprojekt ${daten.zusammenfassung.angebotNr}`,
+    html,
+  )
 }
 
 /** 3 · Passwort zurücksetzen (wird von Better Auth aufgerufen). */

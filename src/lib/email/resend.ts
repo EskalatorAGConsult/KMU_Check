@@ -8,8 +8,10 @@ import { Resend } from 'resend'
  * Ohne Key liefert resendClient() null -> Aufrufer ueberspringen den Versand
  * dann still (best effort, niemals den Fachprozess blockieren).
  *
- * Absender via EMAIL_FROM konfigurierbar; die Domain muss in Resend
- * verifiziert sein (sonst Zustellfehler, wird nur geloggt).
+ * Absender ist einheitlich „MaBe Förderportal <noreply@foerderportal.mabe.de>"
+ * (via EMAIL_FROM ueberschreibbar). WICHTIG: Die Domain foerderportal.mabe.de
+ * muss in Resend verifiziert sein (DNS: SPF/DKIM), sonst schlaegt die
+ * Zustellung fehl (wird nur geloggt).
  */
 
 let cached: Resend | null = null
@@ -21,8 +23,9 @@ export function resendClient(): Resend | null {
   return cached
 }
 
+/** Einheitlicher Absender aller Portal-E-Mails (Einladung, Reset, Vollmacht, Zusammenfassung, Lead). */
 export function absender(): string {
-  return process.env.EMAIL_FROM ?? 'MABE Förderportal <mabe@automatisieren.io>'
+  return process.env.EMAIL_FROM ?? 'MaBe Förderportal <noreply@foerderportal.mabe.de>'
 }
 
 /** Oeffentliche Basis-URL des Portals (fuer Links in E-Mails). */

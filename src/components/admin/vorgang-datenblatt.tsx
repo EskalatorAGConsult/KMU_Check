@@ -4,12 +4,14 @@ import { DatenKopierenButton } from '@/components/admin/daten-kopieren-button'
 import { SystemkonzeptAktionen } from '@/components/admin/systemkonzept-aktionen'
 import { VorgangAktionen } from '@/components/admin/vorgang-aktionen'
 import { VorgangBearbeiten } from '@/components/admin/vorgang-bearbeiten'
+import { VorgangNotizen } from '@/components/admin/vorgang-notizen'
 import { baueDossierText } from '@/lib/admin/dossier-text'
 import type { SystemkonzeptVorlage } from '@/lib/admin/systemkonzept-actions'
 import type { KundeVorgang } from '@/lib/db/repositories/kunden'
 import type { AngebotStatus } from '@/lib/db/types'
 import { SCHRITTE } from '@/lib/journey/schritte'
 import { analysiereVerbund, CATEGORY_LABELS, formatEUR, type Category, type KmuResult } from '@/lib/kmu'
+import { pruefeVollstaendigkeit } from '@/lib/vollstaendigkeit'
 import {
   ANGEBOT_STATUS_LABELS,
   BEANTRAGUNGSWEG_LABELS,
@@ -181,6 +183,14 @@ export function VorgangDatenblatt({
   const invest = (a.invest_software ?? 0) + (a.invest_messtechnik ?? 0) + (a.invest_steuerung ?? 0)
   const zuschuss = kmuAktuell?.foerderquote_pct ? (invest * kmuAktuell.foerderquote_pct) / 100 : null
   const eingereicht = !!sd
+  // Einreichungsreife (Vertrag: src/lib/vollstaendigkeit.ts) – Badge + Checkliste
+  const check = pruefeVollstaendigkeit({
+    stammdaten: sd,
+    kmuBewertungen: v.kmuBewertungen,
+    deminimis: v.deminimis,
+    vollmacht: v.vollmacht,
+    dokumente: v.dokumente,
+  })
 
   return (
     <article className="flex flex-col gap-5">
@@ -193,12 +203,29 @@ export function VorgangDatenblatt({
               <span className={`rounded-full px-2.5 py-1 text-xs font-semibold ${STATUS_CLS[a.status]}`}>
                 {ANGEBOT_STATUS_LABELS[a.status]}
               </span>
+              <span
+                className={`rounded-full px-2.5 py-1 text-xs font-semibold ${
+                  check.vollstaendig ? 'bg-teal-600 text-white' : 'bg-amber-100 text-amber-800'
+                }`}
+                title={check.vollstaendig ? 'Alle BAFA-Bausteine liegen vor.' : `Noch offen: ${check.offen.join(', ')}`}
+              >
+                {check.vollstaendig ? '✓ Einreichungsreif' : `${check.offen.length} Baustein(e) offen`}
+              </span>
             </div>
             <p className="mt-1 text-sm text-olive-600">
               Angebot vom {fmtDatum(a.angebot_datum)} · angelegt am {fmtDatum(a.created_at)}
             </p>
           </div>
-          <DatenKopierenButton text={baueDossierText(v)} />
+          <div className="flex shrink-0 flex-wrap items-center gap-2">
+            <a
+              href={`/admin/vorgang/${a.id}/fallakte`}
+              className="rounded-xl bg-mabe-900 px-4 py-2 text-xs font-semibold text-white shadow-sm transition-colors hover:bg-mabe-800"
+              title="Vollständige Fallakte als PDF herunterladen (BAFA-Reihenfolge, inkl. Verbundrechnung und Änderungshistorie)"
+            >
+              ⬇ Fallakte als PDF
+            </a>
+            <DatenKopierenButton text={baueDossierText(v)} />
+          </div>
         </div>
 
         <div className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-4">
@@ -231,8 +258,51 @@ export function VorgangDatenblatt({
         </div>
       </section>
 
+      {/* Vollstaendigkeits-Check: Was fehlt zur BAFA-Einreichung? */}
+      <Sektion
+        titel="Vollständigkeits-Check (Einreichungsreife BAFA Modul 3)"
+        hinweis="Prüft automatisch, ob alle Pflichtbausteine für die Antragstellung vorliegen."
+      >
+        <ul className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+          {check.bausteine.map((b) => (
+            <li
+              key={b.id + b.label}
+              className={`flex items-start gap-2.5 rounded-xl px-3.5 py-2.5 ring-1 ${
+                b.ok ? 'bg-teal-50/60 ring-teal-600/20' : 'bg-amber-50/70 ring-amber-500/30'
+              }`}
+            >
+              <span
+                aria-hidden
+                className={`mt-0.5 flex size-5 shrink-0 items-center justify-center rounded-full text-[11px] font-bold ${
+                  b.ok ? 'bg-teal-600 text-white' : 'bg-amber-500 text-white'
+                }`}
+              >
+                {b.ok ? '✓' : '!'}
+              </span>
+              <div className="min-w-0">
+                <p className={`text-sm font-medium ${b.ok ? 'text-teal-900' : 'text-amber-900'}`}>{b.label}</p>
+                {b.hinweis && <p className="mt-0.5 text-xs/5 text-amber-800">{b.hinweis}</p>}
+              </div>
+            </li>
+          ))}
+        </ul>
+      </Sektion>
+
       {/* Admin-Korrektur mit Revisionshistorie (Migration 19) */}
       <VorgangBearbeiten vorgang={v} onGespeichert={onGespeichert} />
+
+      {/* Interne Berater-Notizen & Wiedervorlage (Migration 21) */}
+      <Sektion
+        titel="Interne Notizen & Wiedervorlage"
+        hinweis="Nur für Admins sichtbar – Telefonate, Absprachen, fehlende Unterlagen dokumentieren."
+      >
+        <VorgangNotizen
+          angebotId={a.id}
+          notizen={v.notizen}
+          bearbeiter={v.bearbeiter}
+          onGespeichert={onGespeichert}
+        />
+      </Sektion>
 
       {/* BAFA 7 · Technische Maßnahme (aus dem Angebot) */}
       <Sektion
@@ -640,6 +710,68 @@ export function VorgangDatenblatt({
         </div>
       </Sektion>
 
+      {/* Kunden-Zugriffsprotokoll (Migration 20) */}
+      <Sektion
+        titel="Kunden-Zugriffe (Login-Protokoll)"
+        hinweis="Jeder Aufruf des persönlichen Journey-Links – Nachweis, wann der Kunde den Vorgang geöffnet hat."
+      >
+        {v.zugriffe.anzahl > 0 ? (
+          <div className="flex flex-col gap-4">
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+              <div className="rounded-xl bg-olive-50 px-3.5 py-2.5">
+                <p className="text-[11px] font-semibold tracking-wide text-olive-500 uppercase">Aufrufe gesamt</p>
+                <p className="mt-0.5 text-sm font-semibold text-mabe-900 tabular-nums">{v.zugriffe.anzahl}</p>
+              </div>
+              <div className="rounded-xl bg-olive-50 px-3.5 py-2.5">
+                <p className="text-[11px] font-semibold tracking-wide text-olive-500 uppercase">Zuletzt aufgerufen</p>
+                <p className="mt-0.5 text-sm font-semibold text-mabe-900 tabular-nums">
+                  {fmtZeit(v.zugriffe.liste[0]?.created_at)}
+                </p>
+              </div>
+              <div className="rounded-xl bg-olive-50 px-3.5 py-2.5">
+                <p className="text-[11px] font-semibold tracking-wide text-olive-500 uppercase">
+                  Unterschiedliche IPs (letzte {v.zugriffe.liste.length})
+                </p>
+                <p className="mt-0.5 text-sm font-semibold text-mabe-900 tabular-nums">
+                  {new Set(v.zugriffe.liste.map((z) => z.ip).filter(Boolean)).size}
+                </p>
+              </div>
+            </div>
+            <div className="overflow-x-auto rounded-xl ring-1 ring-olive-200">
+              <table className="w-full min-w-[34rem] border-collapse text-left text-sm">
+                <thead>
+                  <tr className="bg-olive-50 text-olive-500">
+                    <th className="px-4 py-2.5 font-semibold">Zeitpunkt</th>
+                    <th className="px-4 py-2.5 font-semibold">IP-Adresse</th>
+                    <th className="px-4 py-2.5 font-semibold">Gerät / Browser</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-olive-100">
+                  {v.zugriffe.liste.map((z) => (
+                    <tr key={z.id}>
+                      <td className="px-4 py-2.5 whitespace-nowrap text-mabe-900 tabular-nums">
+                        {fmtZeit(z.created_at)}
+                      </td>
+                      <td className="px-4 py-2.5 font-mono text-[13px] text-olive-600">{z.ip ?? fehlt}</td>
+                      <td className="max-w-64 truncate px-4 py-2.5 text-xs text-olive-500" title={z.user_agent ?? undefined}>
+                        {z.user_agent ?? fehlt}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+            {v.zugriffe.anzahl > v.zugriffe.liste.length && (
+              <p className="text-xs text-olive-500">
+                Angezeigt werden die letzten {v.zugriffe.liste.length} von {v.zugriffe.anzahl} Aufrufen.
+              </p>
+            )}
+          </div>
+        ) : (
+          <LeerHinweis>Der Kunde hat den Link noch nicht aufgerufen.</LeerHinweis>
+        )}
+      </Sektion>
+
       {/* Entwurfsdaten (Speichern & Fortsetzen) */}
       {v.entwurf && Object.keys(v.entwurf.schritte).length > 0 && (
         <details className="rounded-2xl border border-olive-200 bg-white p-5 sm:p-6">
@@ -720,7 +852,7 @@ export function VorgangDatenblatt({
       {/* Aktionen */}
       <section className="rounded-2xl border border-olive-200 bg-white p-5 sm:p-6">
         <h3 className="mb-3 text-sm font-semibold text-mabe-900">Vorgangs-Aktionen</h3>
-        <VorgangAktionen angebotId={a.id} status={a.status} />
+        <VorgangAktionen angebotId={a.id} status={a.status} angebotNr={a.angebot_nr} />
       </section>
     </article>
   )

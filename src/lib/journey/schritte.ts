@@ -38,10 +38,13 @@ export const SCHRITTE: SchrittDef[] = [
       { name: 'unternehmensname', typ: 'text', label: 'Unternehmensname', pflicht: true },
       {
         name: 'land',
-        typ: 'text',
+        typ: 'auswahl',
         label: 'Land',
         pflicht: true,
-        placeholder: 'Deutschland',
+        hilfe: 'Förderfähig sind nur Unternehmen mit Sitz in Deutschland (BAFA = Bundesprogramm).',
+        tooltip:
+          'Das BAFA ist eine Bundesförderung: Der Zuschuss geht nur an Unternehmen mit Sitz und Umsetzungsstandort in Deutschland. Deshalb ist hier „Deutschland“ fest vorgegeben.',
+        optionen: [{ wert: 'Deutschland', label: 'Deutschland' }],
       },
       { name: 'plz', typ: 'plz', label: 'PLZ', pflicht: true },
       { name: 'ort', typ: 'text', label: 'Ort', pflicht: true },
@@ -49,7 +52,7 @@ export const SCHRITTE: SchrittDef[] = [
       { name: 'email', typ: 'email', label: 'E-Mail (Unternehmen)', pflicht: true },
       {
         name: 'wz_code',
-        typ: 'text',
+        typ: 'wz_code',
         label: 'WZ-Code (2008)',
         pflicht: true,
         placeholder: 'z. B. 28.29',
@@ -105,7 +108,7 @@ export const SCHRITTE: SchrittDef[] = [
       },
       {
         name: 'steuer_id',
-        typ: 'text',
+        typ: 'steuer_id',
         label: 'Steuer-ID (11-stellig)',
         sichtbarWenn: { feld: 'personenart', ist: 'natuerlich' },
         pflicht: true,
@@ -114,7 +117,7 @@ export const SCHRITTE: SchrittDef[] = [
       },
       {
         name: 'steuernummer',
-        typ: 'text',
+        typ: 'steuernummer',
         label: 'Steuernummer',
         sichtbarWenn: { feld: 'personenart', ist: 'juristisch' },
         pflicht: true,
@@ -124,7 +127,7 @@ export const SCHRITTE: SchrittDef[] = [
       },
       {
         name: 'ust_id',
-        typ: 'text',
+        typ: 'ust_id',
         label: 'USt-IdNr. (falls vorhanden)',
         sichtbarWenn: { feld: 'personenart', ist: 'juristisch' },
         hilfe: 'Beginnt mit „DE“, gefolgt von 9 Ziffern. Steht auf Rechnungen und im Impressum.',

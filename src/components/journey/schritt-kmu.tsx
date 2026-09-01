@@ -6,6 +6,7 @@ import type { KmuJahrDaten, KmuSchrittDaten } from '@/lib/journey/schemas'
 import { analysiereVerbund, evaluateKmu, type Holding } from '@/lib/kmu'
 import type { VerbundErgebnis } from '@/lib/openregister/mapping'
 import { VerbundBaum } from '@/components/kmu/verbund-baum'
+import { KmuAbleitung } from './kmu-ableitung'
 import { KmuAmpel } from './ampel'
 import { Tooltip } from './tooltip'
 import { Checkbox, Feld, inputCls } from './ui'
@@ -125,12 +126,16 @@ export function SchrittKmu({
    */
   const uebernehmeVerbund = (e: VerbundErgebnis) => {
     if (e.jahre.length > 0) {
+      // Nach Geschaeftsjahr matchen, nicht nach Index: liefert das Register
+      // nur ein Jahr (z. B. 2024), wuerde Index-Mapping dem zweiten Eintrag
+      // dasselbe Jahr unterschieben -> doppelte React-Keys + doppelte
+      // kmu_bewertungen-Zeile, und das Abfragejahr bliebe ungefuellt.
       onChange(
         'jahre',
-        jahre.map((j, i) => {
-          const gef = e.jahre[i]
+        jahre.map((j) => {
+          const gef = e.jahre.find((r) => r.geschaeftsjahr === j.geschaeftsjahr)
           return gef
-            ? { ...j, geschaeftsjahr: gef.geschaeftsjahr, abgeschlossen: true, jae: gef.jae, umsatz: gef.umsatz, bilanzsumme: gef.bilanzsumme }
+            ? { ...j, abgeschlossen: true, jae: gef.jae, umsatz: gef.umsatz, bilanzsumme: gef.bilanzsumme }
             : j
         }),
       )
@@ -159,16 +164,20 @@ export function SchrittKmu({
     <div className="flex flex-col gap-8">
       {/* Schnellstart: Handelsregister-Vorbefuellung (best effort, optional) */}
       <VerbundSuche token={token} initialRegisterId={registerId} onUebernehmen={uebernehmeVerbund} />
-      {/* Eigene Kennzahlen: BAFA fragt fest die Geschaeftsjahre 2025 + 2024 ab */}
+      {/* SCHRITT 1 · Eigene Kennzahlen (BAFA fragt fest 2025 + 2024 ab) */}
       <div className="flex flex-col gap-5">
         <div className="rounded-2xl border border-olive-200 bg-olive-50/60 p-5">
+          <p className="mb-2 inline-flex items-center gap-2 rounded-full bg-mabe-900 px-3 py-1 text-[11px] font-bold tracking-wide text-white uppercase">
+            Schritt 1 von 3 · Ihre Zahlen
+          </p>
           <h3 className="flex items-center text-base font-semibold text-mabe-900">
             Ihre Kennzahlen der Geschäftsjahre 2025 und 2024
             <Tooltip text="Das BAFA-Portal fragt fest die Kennzahlen der Geschäftsjahre 2025 und 2024 ab. Für Ihre Förderquote zählt das jüngste Jahr (2025) – das Jahr 2024 dokumentiert die Entwicklung Ihres Unternehmens." />
           </h3>
           <p className="mt-1 text-sm/6 text-olive-600">
-            Sie finden alle Zahlen in Ihrem Jahresabschluss oder der BWA – im Zweifel kurz beim Steuerbüro
-            nachfragen.
+            <strong className="text-mabe-900">Warum fragen wir das?</strong> Die Höhe Ihres Zuschusses hängt von der
+            Unternehmensgröße ab – der Staat misst sie an Beschäftigten, Umsatz und Bilanzsumme. Sie finden alle
+            Zahlen in Ihrem Jahresabschluss oder der BWA – im Zweifel kurz beim Steuerbüro nachfragen.
           </p>
         </div>
         {fehler.jahre && <p className="text-xs/5 font-medium text-red-700">{fehler.jahre}</p>}
@@ -181,6 +190,15 @@ export function SchrittKmu({
               Geschäftsjahr {jahr.geschaeftsjahr}
               {i === 0 ? ' · jüngstes (zählt für Ihre Quote)' : ''}
             </legend>
+            {i === 0 && (
+              <p className="mb-4 rounded-xl bg-amber-50 px-4 py-3 text-sm/6 text-amber-900 ring-1 ring-amber-200">
+                <strong>Zahlen für {jahr.geschaeftsjahr} noch nicht vorhanden?</strong> Kein Problem – wenn Ihr
+                Jahresabschluss {jahr.geschaeftsjahr} noch nicht fertig ist (oder im Handelsregister noch keine
+                Zahlen hinterlegt sind), tragen Sie eine <strong>plausible Schätzung nach Treu und Glauben</strong>{' '}
+                ein (z. B. anhand der BWA oder des Vorjahres). Entfernen Sie dafür unten den Haken bei
+                „Geschäftsjahr abgeschlossen“.
+              </p>
+            )}
             <div className="grid grid-cols-1 gap-5 sm:grid-cols-3">
               <Feld label="Beschäftigte (Jahresarbeitseinheiten)" pflicht={i === 0}
                 hilfe={i === 0 ? 'Vollzeitäquivalente. Teilzeit anteilig; Azubis/Elternzeit zählen nicht.' : undefined}
@@ -229,19 +247,22 @@ export function SchrittKmu({
         ))}
       </div>
 
-      {/* Verbund */}
+      {/* SCHRITT 2 · Verbund (Verflechtungen sichtbar machen) */}
       <div className="flex flex-col gap-4">
         <div className="rounded-2xl border border-olive-200 bg-olive-50/60 p-5">
+          <p className="mb-2 inline-flex items-center gap-2 rounded-full bg-mabe-900 px-3 py-1 text-[11px] font-bold tracking-wide text-white uppercase">
+            Schritt 2 von 3 · Ihre Verflechtungen
+          </p>
           <h3 className="flex items-center text-base font-semibold text-mabe-900">
             Partner- und verbundene Unternehmen
             <Tooltip text="Gehört Ihr Unternehmen zu einem Konzern oder halten Sie Anteile an anderen Firmen (oder umgekehrt)? Dann zählen deren Zahlen anteilig mit – das entscheidet mit über Ihre Förderquote. Unter 25 % Beteiligung brauchen Sie nichts anzugeben." />
           </h3>
           <p className="mt-1 text-sm/6 text-olive-600">
-            <strong className="text-mabe-900">Kurz gesagt:</strong> Nur wenn eine Beteiligung von{' '}
-            <strong className="text-mabe-900">mindestens 25&nbsp;%</strong> besteht, müssen Sie hier etwas eintragen –
-            in beide Richtungen (Anteile, die Sie halten, und Anteile, die andere an Ihnen halten). Beträgt die
-            Beteiligung 25–50&nbsp;%, zählen die Zahlen des anderen Unternehmens anteilig; über 50&nbsp;% zählen sie
-            voll. Keine solchen Beteiligungen? Dann wählen Sie unten einfach „Nein“.
+            <strong className="text-mabe-900">Warum fragen wir das?</strong> Die EU betrachtet nie nur Ihre Firma
+            allein: Ab <strong className="text-mabe-900">25&nbsp;% Beteiligung</strong> – in beide Richtungen –
+            fließen die Zahlen des anderen Unternehmens in Ihre Größe ein (25–50&nbsp;% anteilig, über 50&nbsp;%
+            voll, auch über mehrere Stufen). Am Ende dieses Schritts sehen Sie Ihre Verflechtung als Grafik und
+            die fertige Rechnung. Keine solchen Beteiligungen? Dann wählen Sie unten einfach „Nein“.
           </p>
         </div>
         {fehler.beteiligungen && <p className="text-xs/5 font-medium text-red-700">{fehler.beteiligungen}</p>}
@@ -468,6 +489,21 @@ export function SchrittKmu({
         {hatBeteiligungen !== false && holdings.length > 0 && (
           <VerbundBaum firmenname={wurzelName} holdings={holdings} />
         )}
+      </div>
+
+      {/* Schritt 3: transparente Herleitung + Ampel */}
+      <div className="flex flex-col gap-4 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm sm:p-6">
+        <div>
+          <span className="inline-flex items-center rounded-full bg-mabe-900 px-3 py-1 text-xs font-semibold tracking-wide text-white uppercase">
+            Schritt 3 von 3 · Ihr Ergebnis
+          </span>
+          <h2 className="mt-3 text-lg font-semibold text-slate-900">Ihre Einstufung – transparent hergeleitet</h2>
+          <p className="mt-1 text-sm text-slate-600">
+            Unten sehen Sie, wie sich Ihre Verbundgröße zusammensetzt und wo Sie damit auf der EU-Skala landen. Sie
+            müssen nichts weiter eingeben – die Auswertung aktualisiert sich live mit jeder Angabe oben.
+          </p>
+        </div>
+        <KmuAbleitung ergebnis={ergebnis} />
       </div>
 
       {/* Live-Ergebnis: Ampel mit Foerderquote + Foerdersumme */}

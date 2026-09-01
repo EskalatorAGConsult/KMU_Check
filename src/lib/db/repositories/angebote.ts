@@ -78,3 +78,13 @@ export async function holeAngebot(id: string): Promise<Angebot | null> {
   if (error) throw new Error(`Angebot konnte nicht geladen werden: ${error.message}`)
   return data ?? null
 }
+
+/**
+ * Loescht einen Vorgang samt aller abhaengigen Daten (DSGVO Art. 17).
+ * Die DB-Kaskade (on delete cascade) entfernt Stammdaten, KMU, Beteiligungen,
+ * De-minimis, Vollmacht, Tokens, Fortschritt, Zugriffe, Notizen, Revisionen.
+ */
+export async function loescheAngebot(id: string): Promise<void> {
+  const { error } = await supabaseServer().from('angebote').delete().eq('id', id)
+  if (error) throw new Error(`Vorgang konnte nicht gelöscht werden: ${error.message}`)
+}

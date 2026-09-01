@@ -6,7 +6,19 @@
  * eigene Komponente ueber `komponente`.
  */
 
-export type FeldTyp = 'text' | 'email' | 'zahl' | 'datum' | 'auswahl' | 'checkbox' | 'plz' | 'iban'
+export type FeldTyp =
+  | 'text'
+  | 'email'
+  | 'zahl'
+  | 'datum'
+  | 'auswahl'
+  | 'checkbox'
+  | 'plz'
+  | 'iban'
+  | 'steuer_id'
+  | 'ust_id'
+  | 'wz_code'
+  | 'steuernummer'
 
 export interface FeldOption {
   wert: string

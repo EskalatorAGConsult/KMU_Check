@@ -5,6 +5,7 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 
 import type { CompanyInput, Holding, KmuResult, VerbundZeile } from '@/lib/kmu'
 import { analysiereVerbund, evaluateKmu } from '@/lib/kmu'
+import { CONSENT_EVENT, hatEinwilligung } from '@/lib/consent'
 import type { VerbundErgebnis } from '@/lib/openregister/mapping'
 import { generateKmuPdf, downloadBlob, type LeadInfo } from '@/lib/pdf'
 import { collectTracking, enrichWithFingerprint, type TrackingData } from '@/lib/tracking'
@@ -102,13 +103,26 @@ export function KmuCheck() {
   const trackingRef = useRef<TrackingData | null>(null)
   const topRef = useRef<HTMLDivElement>(null)
 
-  // Tracking beim Mount erfassen + asynchron mit Fingerprint anreichern.
+  // Tracking NUR nach Opt-in-Einwilligung (Kategorie „marketing"; der
+  // Fingerprint zusaetzlich nur bei „statistik"). Reagiert live, wenn die
+  // Einwilligung im Consent-Banner erteilt oder geaendert wird.
   useEffect(() => {
-    const data = collectTracking()
-    trackingRef.current = data
-    enrichWithFingerprint(data).then((d) => {
-      trackingRef.current = d
-    })
+    const aktualisiereTracking = () => {
+      if (!hatEinwilligung('marketing')) {
+        trackingRef.current = null
+        return
+      }
+      const data = collectTracking()
+      trackingRef.current = data
+      if (hatEinwilligung('statistik')) {
+        enrichWithFingerprint(data).then((d) => {
+          trackingRef.current = d
+        })
+      }
+    }
+    aktualisiereTracking()
+    window.addEventListener(CONSENT_EVENT, aktualisiereTracking)
+    return () => window.removeEventListener(CONSENT_EVENT, aktualisiereTracking)
   }, [])
 
   // Dynamische Schrittliste – „holdings“ nur wenn Beteiligungen vorhanden.
