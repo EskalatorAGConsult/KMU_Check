@@ -40,7 +40,7 @@ async function sendeMail(
   }
   const client = resendClient()
   if (!client) {
-    const grund = 'Kein Resend-API-Key gesetzt (RESEND_API_KEY oder RESEND_API)'
+    const grund = 'Kein Resend-API-Key gesetzt (Vercel-Umgebungsvariable RESEND_API_KEY)'
     console.warn(`[email] ${grund} – Versand übersprungen: "${betreff}" an ${empfaenger.join(', ')}`)
     return { ok: false, grund }
   }

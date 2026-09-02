@@ -12,9 +12,9 @@ const envWert = (name) =>
     ?.split('=')[1]
     ?.replace(/["'\r]/g, '')
 
-const key = envWert('RESEND_API_KEY') ?? envWert('RESEND_API')
+const key = envWert('RESEND_API_KEY')
 if (!key) {
-  console.error('✗ Weder RESEND_API_KEY noch RESEND_API sind gesetzt.')
+  console.error('✗ RESEND_API_KEY ist nicht gesetzt.')
   process.exit(1)
 }
 console.log(`• Token gefunden (${key.slice(0, 7)}…${key.slice(-4)})`)

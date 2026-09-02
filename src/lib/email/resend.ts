@@ -4,7 +4,7 @@ import { Resend } from 'resend'
 
 /**
  * Zentraler Resend-Client (lazy Singleton).
- * API-Key kommt aus RESEND_API_KEY (Vercel: RESEND_API wird als Fallback akzeptiert).
+ * API-Key kommt aus RESEND_API_KEY (Vercel-Umgebungsvariable, fuer ALLE Mails).
  * Ohne Key liefert resendClient() null -> Aufrufer ueberspringen den Versand
  * dann still (best effort, niemals den Fachprozess blockieren).
  *
@@ -17,7 +17,7 @@ import { Resend } from 'resend'
 let cached: Resend | null = null
 
 export function resendClient(): Resend | null {
-  const key = process.env.RESEND_API_KEY ?? process.env.RESEND_API
+  const key = process.env.RESEND_API_KEY
   if (!key) return null
   if (!cached) cached = new Resend(key)
   return cached
