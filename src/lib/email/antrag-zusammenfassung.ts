@@ -27,6 +27,8 @@ export interface AntragZusammenfassung {
   kmu: KmuResult
   geschaeftsjahr: number
   kmuSchaetzung: boolean
+  /** Zweites BAFA-Abfragejahr (Entwicklung) – null, falls nicht erhoben. */
+  kmuVorjahr?: { geschaeftsjahr: number; ergebnis: KmuResult } | null
   // Vorhaben (aus dem Angebot)
   technologien: string[]
   investSumme: number | null
@@ -101,6 +103,12 @@ export function baueAntragZusammenfassungHtml(z: AntragZusammenfassung): string 
         ['Umsatz im Verbund', formatEUR(c.turnover)],
         ['Bilanzsumme im Verbund', formatEUR(c.balanceSheet)],
         ['Datengrundlage', z.kmuSchaetzung ? 'Schätzung nach Treu und Glauben' : 'Abgeschlossenes Geschäftsjahr'],
+        ...(z.kmuVorjahr
+          ? ([['Entwicklung', `Geschäftsjahr ${z.kmuVorjahr.geschaeftsjahr}: ${z.kmuVorjahr.ergebnis.categoryLabel}`]] as [
+              string,
+              string,
+            ][])
+          : []),
       ]) +
         `<p style="color:#33404d;font-size:13px;line-height:1.6;margin:10px 0 0;">
           Im Verbund hat Ihr Unternehmen die Größe von <strong>${formatNumber(c.employees, 1)} Beschäftigten (JAE)</strong> –

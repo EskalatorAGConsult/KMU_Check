@@ -126,6 +126,14 @@ export interface StammdatenRow {
   updated_at: string
 }
 
+/** Kennzahlen einer Beteiligung für EIN Geschäftsjahr (BAFA: 2025 und 2024). */
+export interface BeteiligungJahrRow {
+  geschaeftsjahr: number
+  jae: number | null
+  umsatz: number | null
+  bilanzsumme: number | null
+}
+
 export interface BeteiligungRow {
   id: string
   angebot_id: string
@@ -135,6 +143,11 @@ export interface BeteiligungRow {
   jae: number | null
   umsatz: number | null
   bilanzsumme: number | null
+  /**
+   * Kennzahlen je Geschäftsjahr (letzte zwei abgeschlossene Jahre, BAFA).
+   * Skalarspalten = neuestes Jahr; null bei Alt-Beständen vor Migration 24.
+   */
+  kennzahlen: BeteiligungJahrRow[] | null
   quelle: 'manuell' | 'openregister'
   stufe: number | null
   pfad: string | null

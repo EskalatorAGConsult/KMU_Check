@@ -77,6 +77,7 @@ const vollstaendig: DossierTextEingabe = {
       jae: 300,
       umsatz: 80_000_000,
       bilanzsumme: 60_000_000,
+      kennzahlen: null,
       quelle: 'openregister',
       stufe: 2,
       pfad: 'Top Holding SE hält 100 % an Holding AG',

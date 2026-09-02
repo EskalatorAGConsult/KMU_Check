@@ -15,6 +15,7 @@ import {
 } from '@/lib/db/repositories/journey'
 import { SCHRITTE, schrittNach } from '@/lib/journey/schritte'
 import { schemaFuerSchritt, type DeminimisSchrittDaten, type KmuSchrittDaten, type VollmachtSchrittDaten } from '@/lib/journey/schemas'
+import { holdingsFuerJahr, jahrKennzahl, jahreAufbauen } from '@/lib/journey/verbund-jahre'
 import { evaluateKmu } from '@/lib/kmu'
 import { sendeEingangsbestaetigung, sendeVollmachtAnAdmins } from '@/lib/email/notify'
 import { loggeFehler } from '@/lib/fehler'
@@ -111,6 +112,68 @@ function jaNeinZuBoolean(v: unknown): boolean {
   return v === 'ja' || v === true
 }
 
+/**
+ * Angebots-PDF am Journey-Anfang hochladen (Uebersichtsschritt, optional).
+ * Das Dokument wird im privaten Blob archiviert (dokumente typ 'angebot_pdf',
+ * letzter Upload gewinnt), erscheint damit im Kunden-Konto, im Admin-
+ * Datenblatt/Fallakte und wird der Eingangsbestaetigungsmail als Anhang
+ * mitgegeben. Token-autorisiert wie der Vollmacht-Upload.
+ */
+export async function ladeAngebotHoch(
+  klartextToken: string,
+  formData: FormData,
+): Promise<{ ok: true; pfad: string } | { ok: false; fehler: string }> {
+  const kontext = await validiereToken(klartextToken)
+  if (!kontext) return { ok: false, fehler: 'Der Link ist ungültig oder abgelaufen.' }
+  const { angebot, token } = kontext
+  if (angebot.status === 'eingereicht' || angebot.status === 'abgeschlossen') {
+    return { ok: false, fehler: 'Dieser Vorgang wurde bereits eingereicht.' }
+  }
+
+  const datei = await validiereUploadDatei(formData)
+  if ('fehler' in datei) return { ok: false, fehler: datei.fehler }
+  if (datei.contentType !== 'application/pdf') {
+    return { ok: false, fehler: 'Bitte laden Sie das Angebot als PDF-Datei hoch (z. B. ausgedruckt als PDF gespeichert).' }
+  }
+
+  // Deckel gegen Blob-Missbrauch (analog Vollmacht-Upload): max. 5 Uploads
+  // pro Vorgang – jeder Upload legt einen neuen Blob an.
+  const blobTok = blobToken()
+  let anzahl = 0
+  if (blobTok) {
+    const { blobs } = await list({
+      prefix: `angebot-upload/${angebot.angebot_nr}`,
+      token: blobTok,
+      limit: 100,
+    })
+    anzahl = blobs.length
+    if (anzahl >= 5) {
+      return { ok: false, fehler: 'Zu viele Upload-Versuche – bitte dem MABE-Ansprechpartner melden.' }
+    }
+  }
+
+  try {
+    const url = await ladeDokumentHoch(
+      `angebot-upload/${angebot.angebot_nr}.${anzahl + 1}.pdf`,
+      datei.bytes,
+      'application/pdf',
+    )
+    if (!url) return { ok: false, fehler: 'Storage nicht konfiguriert – bitte dem MABE-Ansprechpartner melden.' }
+    // Ein aktuelles Angebot-Dokument pro Vorgang: letzter Upload gewinnt.
+    const db = supabaseServer()
+    await db.from('dokumente').delete().eq('angebot_id', angebot.id).eq('typ', 'angebot_pdf')
+    const { error } = await db
+      .from('dokumente')
+      .insert({ angebot_id: angebot.id, typ: 'angebot_pdf', storage_path: url })
+    if (error) throw new Error(error.message)
+    await audit(angebot.id, `kunde:${token.id}`, 'angebot_upload', { datei: datei.name })
+    return { ok: true, pfad: url }
+  } catch (e) {
+    loggeFehler('journey', e, { route: 'angebot_upload', angebotNr: angebot.angebot_nr })
+    return { ok: false, fehler: 'Der Upload ist fehlgeschlagen. Bitte erneut versuchen.' }
+  }
+}
+
 /** Finale Validierung aller Schritte + Ueberfuehrung in die fachlichen Tabellen. */
 export async function schliesseJourneyAb(
   klartextToken: string,
@@ -151,15 +214,10 @@ export async function schliesseJourneyAb(
 
   // 2 · KMU-Berechnung mit der bestehenden, geprueften Engine –
   // je Geschaeftsjahr; Foerderquote/Status aus dem juengsten Jahr.
-  const holdings = kmu.beteiligungen.map((b, i) => ({
-    id: `b${i}`,
-    name: b.name,
-    sharePct: b.anteil_pct,
-    employees: b.jae ?? 0,
-    turnover: b.umsatz ?? 0,
-    balanceSheet: b.bilanzsumme ?? 0,
-    bezug: b.bezug || undefined,
-  }))
+  // Verbund-Kennzahlen sind JAHRESBEZOGEN (BAFA fragt 2025 und 2024 ab):
+  // holdingsFuerJahr() greift je Jahr auf die passenden Werte zu – Drafts aus
+  // der Zeit vor der Jahres-Erfassung (ohne jahre) fallen auf die Skalarwerte
+  // zurueck (verbund-jahre.ts).
   const jahreSortiert = [...kmu.jahre].sort((a, b) => b.geschaeftsjahr - a.geschaeftsjahr)
   const bewertungen = jahreSortiert.map((j) => ({
     jahr: j,
@@ -169,7 +227,7 @@ export async function schliesseJourneyAb(
       employees: j.jae,
       turnover: j.umsatz,
       balanceSheet: j.bilanzsumme,
-      holdings,
+      holdings: holdingsFuerJahr(kmu.beteiligungen, j.geschaeftsjahr),
     }),
   }))
   const kmuErgebnis = bewertungen[0].ergebnis
@@ -299,6 +357,10 @@ export async function schliesseJourneyAb(
     if (e1) throw new Error(`Stammdaten: ${e1.message}`)
 
     // 4 · Verbund (ersetzen, dann neu schreiben)
+    // kennzahlen = alle BAFA-Jahre (jahrAufbauend, Skalar-Fallback fuer
+    // Alt-Drafts); die Skalarspalten halten das NEUESTE Jahr – alle
+    // Bestandsleser (Dossier, Fallakte, Kundenkonto, PDF) bleiben unberuehrt.
+    const neuestesJahr = jahreSortiert[0].geschaeftsjahr
     await db.from('beteiligungen').delete().eq('angebot_id', angebot.id)
     if (kmu.beteiligungen.length > 0) {
       const { error: e2 } = await db.from('beteiligungen').insert(
@@ -307,9 +369,10 @@ export async function schliesseJourneyAb(
           name: b.name,
           richtung: b.richtung,
           anteil_pct: b.anteil_pct,
-          jae: b.jae ?? null,
-          umsatz: b.umsatz ?? null,
-          bilanzsumme: b.bilanzsumme ?? null,
+          jae: jahrKennzahl(b, neuestesJahr, 'jae'),
+          umsatz: jahrKennzahl(b, neuestesJahr, 'umsatz'),
+          bilanzsumme: jahrKennzahl(b, neuestesJahr, 'bilanzsumme'),
+          kennzahlen: jahreAufbauen(b, jahreSortiert.map((j) => j.geschaeftsjahr)),
           quelle: b.quelle,
           stufe: b.stufe ?? null,
           pfad: b.pfad ?? null,
@@ -429,8 +492,34 @@ export async function schliesseJourneyAb(
     (angebot.invest_software ?? 0) + (angebot.invest_messtechnik ?? 0) + (angebot.invest_steuerung ?? 0)
   // `summe` aus dem try-Block ist hier ausserhalb des Scopes – lokal neu bilden
   const deminimisSumme = deminimis.beihilfen.reduce((s, b) => s + b.betrag, 0)
+  // Anhang: das hinterlegte Angebots-PDF (bevorzugt der Kunden-Upload aus
+  // dem Uebersichtsschritt, sonst das vom Vertrieb archivierte Angebot).
+  // Best effort – ohne Anhang geht die Bestaetigung trotzdem raus.
+  let angebotAnhang: { filename: string; content: string } | null = null
+  try {
+    const { data: angebotDoc } = await db
+      .from('dokumente')
+      .select('storage_path')
+      .eq('angebot_id', angebot.id)
+      .eq('typ', 'angebot_pdf')
+      .limit(1)
+      .maybeSingle()
+    const angebotPfad = angebotDoc?.storage_path ?? angebot.angebot_pdf_path ?? null
+    if (angebotPfad) {
+      const inhalt = await ladeDokumentBuffer(angebotPfad)
+      if (inhalt && inhalt.contentType === 'application/pdf') {
+        angebotAnhang = {
+          filename: `Angebot-${angebot.angebot_nr}.pdf`,
+          content: Buffer.from(inhalt.bytes).toString('base64'),
+        }
+      }
+    }
+  } catch (e) {
+    console.error('[journey] Angebot-Anhang konnte nicht geladen werden:', e)
+  }
   const mailVersand = await sendeEingangsbestaetigung({
     an: angebot.kunde_email,
+    angebotAnhang,
     zusammenfassung: {
       kundeFirma: angebot.kunde_firma,
       angebotNr: angebot.angebot_nr,
@@ -446,6 +535,10 @@ export async function schliesseJourneyAb(
       kmu: kmuErgebnis,
       geschaeftsjahr: jahreSortiert[0].geschaeftsjahr,
       kmuSchaetzung: !jahreSortiert[0].abgeschlossen,
+      // Entwicklungsvorjahr (BAFA fragt beide Jahre ab) – kompakt in der Mail
+      kmuVorjahr: bewertungen[1]
+        ? { geschaeftsjahr: bewertungen[1].jahr.geschaeftsjahr, ergebnis: bewertungen[1].ergebnis }
+        : null,
       technologien: angebot.technologien.map((t) => TECHNOLOGIE_LABELS[t] ?? t),
       investSumme: invest > 0 ? invest : null,
       sensorenGesamt: angebot.sensoren_gesamt,

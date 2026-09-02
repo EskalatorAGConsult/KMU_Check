@@ -7,6 +7,7 @@ import type {
   StammdatenRow,
   VollmachtRow,
 } from '@/lib/db/types'
+import { jahrKennzahl } from '@/lib/journey/verbund-jahre'
 import { analysiereVerbund, CATEGORY_LABELS, formatEUR, type Category, type KmuResult } from '@/lib/kmu'
 import {
   BEANTRAGUNGSWEG_LABELS,
@@ -168,6 +169,9 @@ export function baueDossierText(e: DossierTextEingabe): string {
         bezug: b.bezug ?? undefined,
       })),
     )
+    // Vorjahr fuer die Verbund-Kennzahlen (BAFA fragt beide Jahre ab);
+    // nur bei Vorhandensein von kennzahlen (neuere Einreichungen).
+    const gjAlt = e.kmuBewertungen[1]?.geschaeftsjahr ?? null
     z.push('Partner-/verbundene Unternehmen:')
     for (const b of e.beteiligungen) {
       const zl = zeilen.find((x) => x.name === b.name.trim())
@@ -184,9 +188,13 @@ export function baueDossierText(e: DossierTextEingabe): string {
           : `anteilig ${b.anteil_pct} % (Partner)`
       const kette = b.stufe && b.stufe > 1 ? ` · Kette Stufe ${b.stufe}${b.pfad ? ` (${b.pfad})` : ''}` : ''
       const kante = b.bezug ? ` · Kante an ${b.bezug}` : ''
+      const vorjahr =
+        gjAlt && b.kennzahlen
+          ? ` · Vorjahr ${gjAlt}: ${jahrKennzahl(b, gjAlt, 'jae') ?? fehlt} JAE · Umsatz ${eur(jahrKennzahl(b, gjAlt, 'umsatz'))} · Bilanz ${eur(jahrKennzahl(b, gjAlt, 'bilanzsumme'))}`
+          : ''
       z.push(
         `  - ${b.name} · ${BETEILIGUNG_RICHTUNG_LABELS[b.richtung]} · ${b.anteil_pct} %${kante} · ${zurechnung} · ` +
-          `${b.jae ?? fehlt} JAE · Umsatz ${eur(b.umsatz)} · Bilanz ${eur(b.bilanzsumme)} · Quelle: ${b.quelle}${kette}`,
+          `${b.jae ?? fehlt} JAE · Umsatz ${eur(b.umsatz)} · Bilanz ${eur(b.bilanzsumme)}${vorjahr} · Quelle: ${b.quelle}${kette}`,
       )
     }
   }

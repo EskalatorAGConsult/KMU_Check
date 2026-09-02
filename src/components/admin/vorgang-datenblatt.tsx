@@ -11,6 +11,7 @@ import type { SystemkonzeptVorlage } from '@/lib/admin/systemkonzept-actions'
 import type { KundeVorgang } from '@/lib/db/repositories/kunden'
 import type { AngebotStatus } from '@/lib/db/types'
 import { SCHRITTE } from '@/lib/journey/schritte'
+import { jahrKennzahl } from '@/lib/journey/verbund-jahre'
 import { analysiereVerbund, CATEGORY_LABELS, formatEUR, type Category, type KmuResult } from '@/lib/kmu'
 import { pruefeVollstaendigkeit } from '@/lib/vollstaendigkeit'
 import {
@@ -181,6 +182,29 @@ export function VorgangDatenblatt({
     })),
   )
   const verbundZeileZu = (name: string) => verbundZeilen.find((z) => z.name === name.trim())
+  // Verbund-Kennzahlen beider BAFA-Jahre anzeigen (2025 UND 2024 – das
+  // Portal fragt beide ab): Zelle „neuestes / Vorjahr", Tooltip mit Klarheit.
+  // Alt-Bestände ohne kennzahlen fallen auf die Skalarwerte zurueck (dann
+  // identisch in beiden Jahren – historischer Zustand, nicht neu erfunden).
+  const gjNeu = kmuAktuell?.geschaeftsjahr ?? null
+  const gjAlt = v.kmuBewertungen[1]?.geschaeftsjahr ?? null
+  const beteiligungsWert = (
+    b: KundeVorgang['beteiligungen'][number],
+    feld: 'jae' | 'umsatz' | 'bilanzsumme',
+    fmt: (n: number) => string = (n) => String(n),
+  ) => {
+    const neu = gjNeu != null ? jahrKennzahl(b, gjNeu, feld) : (b[feld] ?? null)
+    const alt = gjAlt != null ? jahrKennzahl(b, gjAlt, feld) : null
+    const titel = [gjNeu != null && neu != null ? `${gjNeu}: ${fmt(neu)}` : null, gjAlt != null && alt != null ? `${gjAlt}: ${fmt(alt)}` : null]
+      .filter(Boolean)
+      .join(' · ')
+    const text = neu == null && alt == null ? fehlt : [neu != null ? fmt(neu) : null, alt != null ? fmt(alt) : null].filter(Boolean).join(' / ')
+    return (
+      <span title={titel || undefined} className="tabular-nums">
+        {text}
+      </span>
+    )
+  }
   const invest = (a.invest_software ?? 0) + (a.invest_messtechnik ?? 0) + (a.invest_steuerung ?? 0)
   const zuschuss = kmuAktuell?.foerderquote_pct ? (invest * kmuAktuell.foerderquote_pct) / 100 : null
   const eingereicht = !!sd
@@ -541,9 +565,16 @@ export function VorgangDatenblatt({
                     <th className="px-4 py-2.5 font-semibold">Bezug</th>
                     <th className="px-4 py-2.5 font-semibold">Anteil</th>
                     <th className="px-4 py-2.5 font-semibold">Zurechnung</th>
-                    <th className="px-4 py-2.5 font-semibold">JAE</th>
-                    <th className="px-4 py-2.5 font-semibold">Umsatz</th>
-                    <th className="px-4 py-2.5 font-semibold">Bilanz</th>
+                    <th className="px-4 py-2.5 font-semibold">
+                      JAE
+                      {gjNeu != null && gjAlt != null ? (
+                        <span className="ml-1 font-normal text-olive-400">
+                          {String(gjNeu).slice(2)}/{String(gjAlt).slice(2)}
+                        </span>
+                      ) : null}
+                    </th>
+                    <th className="px-4 py-2.5 font-semibold">Umsatz (€)</th>
+                    <th className="px-4 py-2.5 font-semibold">Bilanz (€)</th>
                     <th className="px-4 py-2.5 font-semibold">Quelle</th>
                   </tr>
                 </thead>
@@ -576,9 +607,9 @@ export function VorgangDatenblatt({
                           return 'keine (nicht verrechnungspflichtig)'
                         })()}
                       </td>
-                      <td className="px-4 py-2.5 tabular-nums">{b.jae ?? fehlt}</td>
-                      <td className="px-4 py-2.5 tabular-nums">{eur(b.umsatz)}</td>
-                      <td className="px-4 py-2.5 tabular-nums">{eur(b.bilanzsumme)}</td>
+                      <td className="px-4 py-2.5 tabular-nums">{beteiligungsWert(b, 'jae')}</td>
+                      <td className="px-4 py-2.5 tabular-nums">{beteiligungsWert(b, 'umsatz', eur)}</td>
+                      <td className="px-4 py-2.5 tabular-nums">{beteiligungsWert(b, 'bilanzsumme', eur)}</td>
                       <td className="px-4 py-2.5 text-xs text-olive-500">
                         {b.quelle === 'openregister' ? 'Handelsregister' : 'manuell'}
                       </td>

@@ -6,6 +6,7 @@ import type { Angebot } from '@/lib/db/types'
 import { schliesseJourneyAb, speichereSchritt } from '@/lib/journey/actions'
 import { SCHRITTE } from '@/lib/journey/schritte'
 import { schemaFuerSchritt } from '@/lib/journey/schemas'
+import { holdingsFuerJahr, type BeteiligungMitJahren } from '@/lib/journey/verbund-jahre'
 import { evaluateKmu, formatEUR, type Holding } from '@/lib/kmu'
 import { CountUp } from './count-up'
 import { Fortschritt } from './fortschritt'
@@ -38,11 +39,14 @@ export function Wizard({
   angebot,
   initialDaten,
   startSchritt,
+  angebotHochgeladen,
 }: {
   token: string
   angebot: Angebot
   initialDaten: SchrittDaten
   startSchritt: string
+  /** Angebots-PDF bereits vom Kunden hochgeladen (Uebersichtsschritt)? */
+  angebotHochgeladen?: boolean
 }) {
   const initialIndex = Math.max(0, SCHRITTE.findIndex((s) => s.id === startSchritt))
   const [idx, setIdx] = useState(initialIndex)
@@ -85,11 +89,12 @@ export function Wizard({
    * Sticky-Zuschuss-Chip (Loss Aversion): solange der KMU-Schritt keine
    * Zahlen hat, zeigen wir das Maximum („bis zu 45 %"); danach die Quote
    * aus den Live-Eingaben – dieselbe Engine wie die Ampel (src/lib/kmu.ts).
+   * Verbund-Kennzahlen jahrgemischt (juengstes Jahr, verbund-jahre.ts).
    */
   const zuschussChip = useMemo(() => {
     if (investSumme == null || investSumme <= 0) return null
     const kmu = daten['kmu'] as
-      | { jahre?: { jae?: unknown; umsatz?: unknown; bilanzsumme?: unknown }[]; hat_beteiligungen?: boolean; beteiligungen?: { name?: string; anteil_pct?: unknown; jae?: unknown; umsatz?: unknown; bilanzsumme?: unknown; bezug?: string }[] }
+      | { jahre?: { geschaeftsjahr?: number; jae?: unknown; umsatz?: unknown; bilanzsumme?: unknown }[]; hat_beteiligungen?: boolean; beteiligungen?: BeteiligungMitJahren[] }
       | undefined
     const jahr0 = kmu?.jahre?.[0]
     const zahl = (v: unknown) => {
@@ -100,17 +105,10 @@ export function Wizard({
       return { betrag: (investSumme * 45) / 100, bisZu: true }
     }
     const wirksam = kmu?.hat_beteiligungen === false ? [] : (kmu?.beteiligungen ?? [])
-    const holdings: Holding[] = wirksam
-      .filter((b) => b?.name && zahl(b.anteil_pct) > 0)
-      .map((b, i) => ({
-        id: `b${i}`,
-        name: b.name!,
-        sharePct: zahl(b.anteil_pct),
-        employees: zahl(b.jae),
-        turnover: zahl(b.umsatz),
-        balanceSheet: zahl(b.bilanzsumme),
-        bezug: b.bezug || undefined,
-      }))
+    // Juengstes Geschaeftsjahr des KMU-Schritts (Drafts sind absteigend
+    // sortiert, aber nicht garantiert – defensiv das Maximum nehmen).
+    const gjNeu = Math.max(0, ...(kmu?.jahre ?? []).map((j) => Number(j.geschaeftsjahr ?? 0)))
+    const holdings: Holding[] = holdingsFuerJahr(wirksam, gjNeu)
     const erg = evaluateKmu({
       companyName: '',
       employees: zahl(jahr0.jae),
@@ -262,7 +260,13 @@ export function Wizard({
 
         {/* Schritt-Inhalt (Registry ueber komponente) – animierter Uebergang */}
         <div key={schritt.id} className="flex flex-col gap-6 motion-safe:animate-step-in sm:gap-8">
-        {schritt.komponente === 'uebersicht' && <SchrittUebersicht angebot={angebot} />}
+        {schritt.komponente === 'uebersicht' && (
+          <SchrittUebersicht
+            angebot={angebot}
+            token={token}
+            angebotHochgeladen={angebotHochgeladen ?? false}
+          />
+        )}
         {schritt.registerSuche && (
           <UnternehmenSuche
             token={token}

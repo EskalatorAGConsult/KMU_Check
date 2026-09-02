@@ -83,6 +83,7 @@ const vorgang: KundeVorgang = {
       jae: 10,
       umsatz: 2_000_000,
       bilanzsumme: 1_000_000,
+      kennzahlen: null,
       quelle: 'manuell',
       stufe: null,
       pfad: null,

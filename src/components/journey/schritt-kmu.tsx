@@ -3,6 +3,7 @@
 import { useMemo } from 'react'
 
 import type { KmuJahrDaten, KmuSchrittDaten } from '@/lib/journey/schemas'
+import { holdingsFuerJahr, jahrKennzahl, jahreAufbauen } from '@/lib/journey/verbund-jahre'
 import { analysiereVerbund, evaluateKmu, type Holding } from '@/lib/kmu'
 import { SKALA } from '@/lib/slider-skala'
 import type { VerbundErgebnis } from '@/lib/openregister/mapping'
@@ -86,19 +87,11 @@ export function SchrittKmu({
   const { ergebnis, zeilen, holdings } = useMemo(() => {
     // Datenkonsistenz: „keine Beteiligungen" -> Ampel rechnet mit leerem Verbund
     const wirksam = hatBeteiligungen === false ? KEINE_BETEILIGUNGEN : beteiligungen
-    const holdings: Holding[] = wirksam
-      .filter((b) => b?.name && num(b.anteil_pct) > 0)
-      .map((b, i) => ({
-        id: `b${i}`,
-        name: b.name,
-        sharePct: num(b.anteil_pct),
-        employees: num(b.jae),
-        turnover: num(b.umsatz),
-        balanceSheet: num(b.bilanzsumme),
-        bezug: b.bezug || undefined,
-      }))
-    // Live-Ampel bewertet das juengste Geschaeftsjahr (jahre[0], absteigend sortiert)
+    // Live-Ampel bewertet das juengste Geschaeftsjahr (jahre[0], absteigend
+    // sortiert) – Verbund-Kennzahlen jahrgemischt (BAFA fragt 2025 UND 2024
+    // ab, auch fuer Partner-/verbundene Unternehmen).
     const juengstes = jahre[0] ?? standardJahre()[0]
+    const holdings: Holding[] = holdingsFuerJahr(wirksam, juengstes.geschaeftsjahr)
     return {
       ergebnis: evaluateKmu({
         companyName: wurzelName,
@@ -118,6 +111,22 @@ export function SchrittKmu({
   const setBeteiligung = (i: number, patch: Partial<Beteiligung>) => {
     const naechste = beteiligungen.map((b, j) => (j === i ? { ...b, ...patch } : b))
     onChange('beteiligungen', naechste)
+  }
+
+  /**
+   * Kennzahlwert EINER Beteiligung für EIN Geschäftsjahr setzen. Speichert den
+   * rohen Eingabewert (String) – dasselbe Muster wie die eigenen Jahresfelder
+   * (setJahr): Zod coerced serverseitig, die Anzeige laeuft ueber jahrKennzahl
+   * (Komma-tolerant). Leere Eingabe = undefined (Zelle leererbar). Legacy-
+   * Zeilen ohne jahre erben beim ersten Schreiben die Skalarwerte (jahreAufbauen).
+   */
+  const setBeteiligungJahr = (i: number, gj: number, feld: 'jae' | 'umsatz' | 'bilanzsumme', wert: string) => {
+    const b = beteiligungen[i]
+    if (!b) return
+    const jahre = jahreAufbauen(b, BAFA_GESCHAEFTSJAHRE).map((j) =>
+      j.geschaeftsjahr === gj ? { ...j, [feld]: wert.trim() === '' ? undefined : wert } : j,
+    )
+    setBeteiligung(i, { jahre })
   }
 
   /**
@@ -146,6 +155,9 @@ export function SchrittKmu({
       name: b.name,
       richtung: b.richtung,
       anteil_pct: b.anteil_pct,
+      // Register liefert beide BAFA-Jahre (Mapping 2 Jahre je Firma); fehlt
+      // ein Jahr im Register, bleibt es leer und ist manuell ergänzbar.
+      jahre: b.jahre,
       jae: b.jae,
       umsatz: b.umsatz,
       bilanzsumme: b.bilanzsumme,
@@ -179,6 +191,13 @@ export function SchrittKmu({
             <strong className="text-mabe-900">Warum fragen wir das?</strong> Die Höhe Ihres Zuschusses hängt von der
             Unternehmensgröße ab – der Staat misst sie an Beschäftigten, Umsatz und Bilanzsumme. Sie finden alle
             Zahlen in Ihrem Jahresabschluss oder der BWA – im Zweifel kurz beim Steuerbüro nachfragen.
+          </p>
+          <p className="mt-3 rounded-xl bg-white px-4 py-3 text-sm/6 text-mabe-900 ring-1 ring-olive-200">
+            <strong>Wichtig – beide Jahre, kompletter Verbund:</strong> Wir erfassen für die Geschäftsjahre{' '}
+            <strong>2025 und 2024</strong> die <strong>jahreszeitäquivalenten Beschäftigten (JAE)</strong>, Umsatz und
+            Bilanzsumme – und zwar nicht nur von Ihrem Unternehmen, sondern vom <strong>Gesamtverbund</strong> (Ihr
+            Unternehmen plus alle Partner- und verbundenen Unternehmen aus dem nächsten Schritt). Ihre eigenen Zahlen
+            tragen Sie hier ein, die Zahlen Ihrer Beteiligungen direkt danach.
           </p>
         </div>
         {fehler.jahre && <p className="text-xs/5 font-medium text-red-700">{fehler.jahre}</p>}
@@ -473,28 +492,82 @@ export function SchrittKmu({
                   </div>
                 </div>
 
-                <div className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-3">
-                  {(
-                    [
-                      ['jae', 'Beschäftigte (JAE)'],
-                      ['umsatz', 'Umsatz (€)'],
-                      ['bilanzsumme', 'Bilanzsumme (€)'],
-                    ] as const
-                  ).map(([feldname, label]) => (
-                    <label key={feldname} className="block">
-                      <span className="mb-1 block text-xs font-semibold text-olive-600">
-                        {label} <span className="font-normal text-olive-400">(optional)</span>
-                      </span>
-                      <input
-                        type="number"
-                        min={0}
-                        className={inputCls}
-                        placeholder="0"
-                        value={String(b[feldname] ?? '')}
-                        onChange={(e) => setBeteiligung(i, { [feldname]: e.target.value as unknown as number })}
-                      />
-                    </label>
-                  ))}
+                {/* Kennzahlen je BAFA-Geschäftsjahr (2025 UND 2024 – das Portal
+                    fragt beide ab, auch für Partner-/verbundene Unternehmen). */}
+                <div className="mt-4">
+                  <p className="mb-2 text-xs font-semibold text-olive-600">
+                    Kennzahlen je Geschäftsjahr (2025 und 2024){' '}
+                    <span className="font-normal text-olive-400">
+                      – jahreszeitäquivalente Beschäftigte (JAE), Umsatz, Bilanzsumme
+                    </span>
+                  </p>
+                  <div className="overflow-x-auto">
+                    <table className="w-full min-w-[30rem] text-sm">
+                      <thead>
+                        <tr className="border-b border-olive-200 text-left text-xs text-olive-500">
+                          <th className="py-1.5 pr-3 font-semibold">Geschäftsjahr</th>
+                          <th className="py-1.5 pr-3 font-semibold">Beschäftigte (JAE)</th>
+                          <th className="py-1.5 pr-3 font-semibold">Umsatz (€)</th>
+                          <th className="py-1.5 font-semibold">Bilanzsumme (€)</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-olive-100">
+                        {BAFA_GESCHAEFTSJAHRE.map((gj) => (
+                          <tr key={gj}>
+                            <td className="py-2 pr-3 font-medium whitespace-nowrap text-mabe-900 tabular-nums">
+                              {gj}
+                              {gj === (jahre[0]?.geschaeftsjahr ?? BAFA_GESCHAEFTSJAHRE[0]) && (
+                                <span className="ml-1.5 text-[10px] font-semibold text-teal-700">zählt für Ihre Quote</span>
+                              )}
+                            </td>
+                            {(
+                              [
+                                ['jae', 'Beschäftigte (JAE)'],
+                                ['umsatz', 'Umsatz (€)'],
+                                ['bilanzsumme', 'Bilanzsumme (€)'],
+                              ] as const
+                            ).map(([feldname, label]) => (
+                              <td key={feldname} className="py-1.5 pr-3 last:pr-0">
+                                <input
+                                  type="number"
+                                  inputMode="decimal"
+                                  min={0}
+                                  className={`${inputCls} tabular-nums`}
+                                  placeholder="0"
+                                  aria-label={`${b.name || 'Beteiligung'}: ${label} ${gj}`}
+                                  value={String(jahrKennzahl(b, gj, feldname) ?? '')}
+                                  onChange={(e) => setBeteiligungJahr(i, gj, feldname, e.target.value)}
+                                />
+                              </td>
+                            ))}
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                  <p className="mt-1.5 text-[11px]/4 text-olive-500">
+                    Zahlen fehlen für ein Jahr (z. B. im Handelsregister noch nicht veröffentlicht)? Dann wie bei Ihren
+                    eigenen Zahlen eine plausible Schätzung eintragen oder leer lassen.
+                  </p>
+                  {(() => {
+                    // Audit 02.09.2026: Bleibt das quote-relevante Jahr (juengstes)
+                    // dieser Beteiligung leer, rechnet die Verbundgroesse mit 0 –
+                    // die Quote faehle zu hoch. Transparenter Hinweis statt
+                    // stiller Schaetzung (keine Werte-Erfindung, s. verbund-jahre.ts).
+                    const gjQuote = jahre[0]?.geschaeftsjahr ?? BAFA_GESCHAEFTSJAHRE[0]
+                    const felder = ['jae', 'umsatz', 'bilanzsumme'] as const
+                    const quoteLeer = felder.every((f) => jahrKennzahl(b, gjQuote, f) == null)
+                    const vorjahrVorhanden = BAFA_GESCHAEFTSJAHRE.some(
+                      (gj) => gj !== gjQuote && felder.some((f) => jahrKennzahl(b, gj, f) != null),
+                    )
+                    return quoteLeer && vorjahrVorhanden ? (
+                      <p className="mt-2 rounded-lg bg-amber-50 px-3 py-2 text-xs/5 font-medium text-amber-900 ring-1 ring-amber-200">
+                        Achtung: Für Ihre Förderquote zählt {gjQuote} – dieses Jahr ist für „{b.name || 'dieses Unternehmen'}"
+                        noch leer. Bitte {gjQuote}er Werte eintragen (ggf. Schätzung anhand des Vorjahres), sonst fällt
+                        das Unternehmen bei der Quote-Rechnung zu niedrig aus.
+                      </p>
+                    ) : null
+                  })()}
                 </div>
               </div>
             )

@@ -116,10 +116,30 @@ export function schemaFuerGenerischenSchritt(schritt: SchrittDef) {
 
 // ---------- Fachliche Schritte ----------
 
+/**
+ * Kennzahlen einer Beteiligung für EIN Geschäftsjahr. Das BAFA-Portal fragt
+ * die letzten zwei abgeschlossenen Geschäftsjahre ab (BAFA_GESCHAEFTSJAHRE,
+ * schritt-kmu.tsx) – auch für Partner-/verbundene Unternehmen.
+ */
+export const beteiligungJahrSchema = z.object({
+  geschaeftsjahr: z.coerce.number().int().min(2000).max(2100),
+  jae: z.coerce.number().min(0).optional(),
+  umsatz: z.coerce.number().min(0).optional(),
+  bilanzsumme: z.coerce.number().min(0).optional(),
+})
+export type BeteiligungJahrDaten = z.infer<typeof beteiligungJahrSchema>
+
 export const beteiligungSchema = z.object({
   name: z.string().trim().min(1, 'Name des Beteiligungsunternehmens fehlt.'),
   richtung: z.enum(['abwaerts', 'aufwaerts']),
   anteil_pct: z.coerce.number('Beteiligung in % fehlt.').min(25, 'Unter 25 % bitte weglassen.').max(100),
+  /**
+   * Kennzahlen je Geschäftsjahr (max. 2 = BAFA-Abfragejahre). Optional, damit
+   * in-flight Drafts aus der Zeit DER jahreslosen Erfassung weiter validieren:
+   * Fehlt jahre, greifen serverseitig die Skalarfelder als Fallback für BEIDE
+   * Jahre (verbund-jahre.ts) – die UI migriert beim nächsten Bearbeiten.
+   */
+  jahre: z.array(beteiligungJahrSchema).max(2).optional(),
   jae: z.coerce.number().min(0).optional(),
   umsatz: z.coerce.number().min(0).optional(),
   bilanzsumme: z.coerce.number().min(0).optional(),

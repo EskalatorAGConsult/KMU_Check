@@ -47,6 +47,11 @@ export interface VerbundBeteiligung {
   bezug: string
   /** Menschenlesbare letzte Kante, z. B. „Henrich Holding hält 80 % an Walter Henrich GmbH". */
   pfad: string
+  /**
+   * Kennzahlen je Geschäftsjahr (max. 2 = BAFA-Abfragejahre, neueste zuerst).
+   * Die Skalarfelder unten = neuestes Jahr (Kompatibilität zur Anzeige).
+   */
+  jahre: VerbundJahr[]
   jae?: number
   umsatz?: number
   bilanzsumme?: number
@@ -369,8 +374,13 @@ export function analysiereVerbundKette(graph: Record<string, Rohdaten>, startId:
   for (const [id, z] of zustaende) {
     if (z.klasse === 'start') continue
     const roh = graph[id]
-    const kennzahlen = kennzahlenAusIndikatoren(roh?.details?.indicators, 1)[0] ?? {}
-    if (!roh || (kennzahlen.jae === undefined && kennzahlen.umsatz === undefined && kennzahlen.bilanzsumme === undefined)) {
+    // BAFA fragt die letzten zwei Geschäftsjahre ab – Register liefert sie
+    // je Firma im indicators-Array (Cache-Payload enthält bereits alle Jahre,
+    // keine zusaetzlichen API-Credits). Neuestes Jahr spiegelverwaltet in
+    // den Skalarfeldern (Anzeige-Kompatibilitaet).
+    const jahre = kennzahlenAusIndikatoren(roh?.details?.indicators, 2)
+    const neueste = jahre[0] ?? {}
+    if (!roh || (neueste.jae === undefined && neueste.umsatz === undefined && neueste.bilanzsumme === undefined)) {
       kennzahlenUnvollstaendig = true
     }
     beteiligungen.push({
@@ -382,9 +392,10 @@ export function analysiereVerbundKette(graph: Record<string, Rohdaten>, startId:
       anteil_pct: z.anteilDirekt,
       bezug: z.bezug,
       pfad: z.pfad,
-      jae: kennzahlen.jae,
-      umsatz: kennzahlen.umsatz,
-      bilanzsumme: kennzahlen.bilanzsumme,
+      jahre,
+      jae: neueste.jae,
+      umsatz: neueste.umsatz,
+      bilanzsumme: neueste.bilanzsumme,
       quelle: 'openregister',
     })
   }

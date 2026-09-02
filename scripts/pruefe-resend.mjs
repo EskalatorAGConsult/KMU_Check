@@ -55,7 +55,7 @@ if (from) {
       : `✗ EMAIL_FROM „${from}" (Domain: ${domain ?? '?'}) ist NICHT verifiziert – Mails würden abgelehnt (403 from_address_unauthorized).`,
   )
 } else {
-  console.log('⚠ EMAIL_FROM nicht gesetzt – Fallback wäre mabe@automatisieren.io.')
+  console.log('⚠ EMAIL_FROM nicht gesetzt – Fallback wäre no-reply@foerderportal.mabe.de.')
 }
 
 // 4 · Zustellbarkeit des Kontos (letzte Sends, read-only)

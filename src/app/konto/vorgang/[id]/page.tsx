@@ -31,6 +31,7 @@ export default async function VorgangPage({ params }: { params: Promise<{ id: st
   const eingereicht = angebot.status === 'eingereicht' || angebot.status === 'abgeschlossen'
   const systemkonzept = dokumente.find((d) => d.typ === 'systemkonzept') ?? null
   const vollmachtDokument = dokumente.find((d) => d.typ === 'vollmacht') ?? null
+  const angebotDokument = dokumente.find((d) => d.typ === 'angebot_pdf') ?? null
   const invest =
     (angebot.invest_software ?? 0) + (angebot.invest_messtechnik ?? 0) + (angebot.invest_steuerung ?? 0)
 
@@ -222,6 +223,27 @@ export default async function VorgangPage({ params }: { params: Promise<{ id: st
                 )}
               </div>
             </li>
+            {angebotDokument && (
+              <li className="flex items-start gap-3 py-2.5">
+                <span
+                  aria-hidden
+                  className="mt-0.5 flex size-5 shrink-0 items-center justify-center rounded-full bg-teal-600 text-[11px] font-bold text-white"
+                >
+                  ✓
+                </span>
+                <div className="min-w-0">
+                  <p className="text-sm font-medium break-words text-mabe-900">
+                    Ihr Angebots-PDF (hinterlegt zu Beginn der Angaben)
+                  </p>
+                  <a
+                    href={`/konto/vorgang/${angebot.id}/dokument/${angebotDokument.id}`}
+                    className="text-xs font-semibold text-teal-700 hover:underline"
+                  >
+                    PDF herunterladen ↓
+                  </a>
+                </div>
+              </li>
+            )}
             {vollmacht?.beantragungsweg === 'eskalator' && (
               <li className="flex items-start gap-3 py-2.5">
                 <span

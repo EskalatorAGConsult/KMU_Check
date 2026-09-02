@@ -8,10 +8,11 @@ import { Resend } from 'resend'
  * Ohne Key liefert resendClient() null -> Aufrufer ueberspringen den Versand
  * dann still (best effort, niemals den Fachprozess blockieren).
  *
- * Absender ist einheitlich „MaBe Förderportal <MaBe-Foerderportal@automatisieren.io>"
- * (via EMAIL_FROM ueberschreibbar). Die Domain automatisieren.io ist in Resend
- * verifiziert (DNS geprueft). Perspektivisch Umstellung auf
- * foerderportal.mabe.de, sobald deren DNS-Verifizierung steht.
+ * Absender ist einheitlich „MaBe Förderportal <no-reply@foerderportal.mabe.de>"
+ * (via EMAIL_FROM ueberschreibbar). Voraussetzung: Die Subdomain
+ * foerderportal.mabe.de ist im Resend-Konto (mabe.de-API-Key) als eigene
+ * Domain angelegt und DNS-verifiziert (SPF/DKIM) – sonst lehnt Resend mit
+ * „domain is not verified" (403) ab.
  */
 
 let cached: Resend | null = null
@@ -25,10 +26,10 @@ export function resendClient(): Resend | null {
 
 /** Einheitlicher Absender aller Portal-E-Mails (Einladung, Reset, Vollmacht, Zusammenfassung, Lead). */
 export function absender(): string {
-  // Zwischenloesung: automatisieren.io ist in Resend verifiziert (DNS geprueft).
-  // Nach der Verifizierung von foerderportal.mabe.de auf diese Domain wechseln
-  // (oder EMAIL_FROM in Vercel setzen – ueberschreibt diesen Default).
-  return process.env.EMAIL_FROM ?? 'MaBe Förderportal <MaBe-Foerderportal@automatisieren.io>'
+  // Absender-Domain foerderportal.mabe.de (Resend-Konto mabe.de); ueber
+  // EMAIL_FROM in Vercel uebersteuerbar (muss auf einer verifizierten
+  // Domain liegen, sonst 403 from_address_unauthorized).
+  return process.env.EMAIL_FROM ?? 'MaBe Förderportal <no-reply@foerderportal.mabe.de>'
 }
 
 /** Oeffentliche Basis-URL des Portals (fuer Links in E-Mails). */

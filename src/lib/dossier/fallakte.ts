@@ -3,6 +3,7 @@ import 'server-only'
 import { feldLabel } from '@/lib/admin/feld-labels'
 import { formatiereWert } from '@/lib/admin/revision-diff'
 import type { KundeVorgang } from '@/lib/db/repositories/kunden'
+import { jahrKennzahl } from '@/lib/journey/verbund-jahre'
 import { analysiereVerbund, CATEGORY_LABELS, type Category, type KmuResult } from '@/lib/kmu'
 import {
   ANGEBOT_STATUS_LABELS,
@@ -165,6 +166,9 @@ export async function generiereFallaktePdf(v: KundeVorgang): Promise<Uint8Array>
       })),
     )
     w.absatz('Partner- und verbundene Unternehmen (inkl. Beteiligungsketten):', 9.5)
+    // Vorjahr fuer die Verbund-Kennzahlen (BAFA fragt beide Jahre ab);
+    // nur bei Vorhandensein von kennzahlen (neuere Einreichungen).
+    const gjAlt = v.kmuBewertungen[1]?.geschaeftsjahr ?? null
     for (const b of v.beteiligungen) {
       const z = zeilen.find((x) => x.name === b.name.trim())
       const zurechnung = !z
@@ -176,10 +180,14 @@ export async function generiereFallaktePdf(v: KundeVorgang): Promise<Uint8Array>
           : z.art === 'partner'
             ? `${Math.round(z.effektivPct)} % (Partner)`
             : 'keine Verrechnung'
+      const vorjahr =
+        gjAlt && b.kennzahlen
+          ? ` · VJ ${gjAlt}: ${jahrKennzahl(b, gjAlt, 'jae') ?? fehlt} JAE / ${eur(jahrKennzahl(b, gjAlt, 'umsatz'))} / ${eur(jahrKennzahl(b, gjAlt, 'bilanzsumme'))}`
+          : ''
       w.zeile(
         kurz(`${b.name} (${b.anteil_pct} %, ${b.richtung === 'aufwaerts' ? 'an uns' : 'unsere'})`, 52),
         kurz(
-          `${zurechnung} · ${b.jae ?? fehlt} JAE · Umsatz ${eur(b.umsatz)} · Bilanz ${eur(b.bilanzsumme)}`,
+          `${zurechnung} · ${b.jae ?? fehlt} JAE · Umsatz ${eur(b.umsatz)} · Bilanz ${eur(b.bilanzsumme)}${vorjahr}`,
         ),
       )
       if (b.pfad) w.absatz(`  Kette: ${b.pfad}`, 8.5)

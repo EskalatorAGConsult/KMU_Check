@@ -86,7 +86,7 @@ export const ANGEBOT_STATUS_LABELS: Record<AngebotStatus, string> = {
 }
 
 export const DOKUMENT_TYP_LABELS: Record<string, string> = {
-  angebot_pdf: 'Angebots-PDF (Vertrieb)',
+  angebot_pdf: 'Angebots-PDF',
   systemkonzept: 'Systemkonzept mit Datenerfassungsplan',
   vollmacht: 'Vollmacht (BAFA-Formular eew_vm_3)',
   dossier: 'Datenübersicht (Dossier)',

@@ -2,6 +2,7 @@
 
 import { useMemo } from 'react'
 
+import { holdingsFuerJahr } from '@/lib/journey/verbund-jahre'
 import { evaluateKmu, formatEUR, formatNumber, type Holding, type KmuResult } from '@/lib/kmu'
 
 type KmuDaten = Record<string, unknown>
@@ -34,17 +35,9 @@ export function KmuZusammenfassung({
     const juengstes = [...jahre].sort((a, b) => b.geschaeftsjahr - a.geschaeftsjahr)[0]
     const hatBeteiligungen = kmuDaten.hat_beteiligungen as boolean | undefined
     const wirksam = hatBeteiligungen === false ? [] : ((kmuDaten.beteiligungen as Record<string, unknown>[] | undefined) ?? [])
-    const holdings: Holding[] = wirksam
-      .filter((b) => b?.name && num(b.anteil_pct) > 0)
-      .map((b, i) => ({
-        id: `b${i}`,
-        name: String(b.name),
-        sharePct: num(b.anteil_pct),
-        employees: num(b.jae),
-        turnover: num(b.umsatz),
-        balanceSheet: num(b.bilanzsumme),
-        bezug: (b.bezug as string | undefined) || undefined,
-      }))
+    // Verbund-Kennzahlen jahrgemischt fürs juengste Jahr (verbund-jahre.ts,
+    // Skalar-Fallback fuer Drafts aus der Zeit vor der Jahres-Erfassung).
+    const holdings: Holding[] = holdingsFuerJahr(wirksam, juengstes.geschaeftsjahr)
     return evaluateKmu({
       companyName: firmenname?.trim() || 'Ihr Unternehmen',
       employees: num(juengstes.jae),

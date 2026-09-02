@@ -32,7 +32,7 @@ export async function holeVorgangDossier(userId: string, angebotId: string) {
     db.from('stammdaten').select('*').eq('angebot_id', angebotId).maybeSingle(),
     db
       .from('beteiligungen')
-      .select('name, richtung, anteil_pct, jae, umsatz, bilanzsumme')
+      .select('name, richtung, anteil_pct, jae, umsatz, bilanzsumme, kennzahlen')
       .eq('angebot_id', angebotId),
     db
       .from('kmu_bewertungen')

@@ -127,6 +127,8 @@ export async function sendeEinladung(daten: {
 export async function sendeEingangsbestaetigung(daten: {
   an: string
   zusammenfassung: AntragZusammenfassung
+  /** Optionales Angebots-PDF als Anhang (content = base64). */
+  angebotAnhang?: { filename: string; content: string } | null
 }): Promise<VersandErgebnis> {
   const html = layout(
     `Ihre Antragsdaten ${daten.zusammenfassung.angebotNr}`,
@@ -136,6 +138,7 @@ export async function sendeEingangsbestaetigung(daten: {
     daten.an,
     `Ihre Antragsdaten im Überblick – Förderprojekt ${daten.zusammenfassung.angebotNr}`,
     html,
+    daten.angebotAnhang ? [daten.angebotAnhang] : undefined,
   )
 }
 
