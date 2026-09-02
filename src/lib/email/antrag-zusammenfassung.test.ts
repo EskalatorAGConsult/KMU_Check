@@ -51,7 +51,8 @@ describe('baueAntragZusammenfassungHtml', () => {
     expect(html).toContain('40 Beschäftigten') // Verbund: 30 + 10 JAE
     expect(html).toContain('Industriestraße 12')
     expect(html).toContain('Mess- und Sensortechnik')
-    expect(html).toContain('Eskalator AG')
+    expect(html).toContain('WissensReich Academy') // Concierge (nicht mehr Eskalator AG)
+    expect(html).toContain('PDF-Anhang')
     expect(html).toContain('Geschäftsjahr 2025')
     expect(html).toContain('Zuschuss')
   })

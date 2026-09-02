@@ -6,13 +6,13 @@
  * Koeln – die deutsche Abwicklungsgesellschaft. Die Eskalator AG (Schweiz) ist
  * an der WissensReich Academy UG beteiligt und arbeitet in Kooperation mit ihr;
  * Marke, Fördermittel-Concierge und Verantwortung bleiben bei der Eskalator AG.
- * Kontaktperson im Formular: Antonja Brücker.
+ * Kontaktperson im Formular: Florian Domin (Geschäftsführer).
  */
 export const BEVOLLMAECHTIGTER = {
   name: 'WissensReich Academy UG (haftungsbeschränkt)',
-  anrede: 'Frau',
-  vorname: 'Antonja',
-  nachname: 'Brücker',
+  anrede: 'Herr',
+  vorname: 'Florian',
+  nachname: 'Domin',
   strasse: 'Weinsbergstraße 190',
   plz: '50825',
   ort: 'Köln',

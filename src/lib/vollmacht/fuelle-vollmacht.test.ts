@@ -5,11 +5,11 @@ import { BEVOLLMAECHTIGTER } from '@/lib/vollmacht/bevollmaechtigter'
 import { fuelleVollmachtAus, formatiereUnterschriftsdatum } from '@/lib/vollmacht/fuelle-vollmacht'
 
 describe('BEVOLLMAECHTIGTER (Vollmachtnehmer, Abschnitt 2 des Formulars)', () => {
-  it('ist vollstaendig gepflegt: WissensReich Academy UG, Köln, Antonja Brücker', () => {
+  it('ist vollstaendig gepflegt: WissensReich Academy UG, Köln, Florian Domin', () => {
     expect(BEVOLLMAECHTIGTER.name).toBe('WissensReich Academy UG (haftungsbeschränkt)')
-    expect(BEVOLLMAECHTIGTER.anrede).toBe('Frau')
-    expect(BEVOLLMAECHTIGTER.vorname).toBe('Antonja')
-    expect(BEVOLLMAECHTIGTER.nachname).toBe('Brücker')
+    expect(BEVOLLMAECHTIGTER.anrede).toBe('Herr')
+    expect(BEVOLLMAECHTIGTER.vorname).toBe('Florian')
+    expect(BEVOLLMAECHTIGTER.nachname).toBe('Domin')
     expect(BEVOLLMAECHTIGTER.strasse).toBe('Weinsbergstraße 190')
     expect(BEVOLLMAECHTIGTER.plz).toBe('50825')
     expect(BEVOLLMAECHTIGTER.ort).toBe('Köln')

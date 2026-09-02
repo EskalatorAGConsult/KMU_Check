@@ -94,24 +94,37 @@ export async function sendeEinladung(daten: {
   zuschussBisZu?: number | null
 }): Promise<VersandErgebnis> {
   const link = portalUrl(daten.journeyPfad)
+  const zuschuss = daten.zuschussBisZu
+    ? daten.zuschussBisZu.toLocaleString('de-DE', { style: 'currency', currency: 'EUR', maximumFractionDigits: 0 })
+    : null
   const html = layout(
     `Ihr Förderprojekt ${daten.angebotNr}`,
     [
-      h1('Ihr Förderprojekt ist vorbereitet'),
+      h1(`Gute Nachricht: Ihr Zuschuss ist vorbereitet`),
       p(`Guten Tag,`),
       p(
         `für <strong>${esc(daten.kundeFirma)}</strong> wurde das Förderprojekt <strong>${esc(daten.angebotNr)}</strong> ` +
-          `im BAFA-Programm Modul 3 vorbereitet. Über Ihren persönlichen Link prüfen Sie Ihren KMU-Status, ` +
-          `ergänzen die Antragsdaten und erteilen die Vollmacht – in etwa 10 Minuten.` +
-          (daten.zuschussBisZu
-            ? ` Möglich sind dabei bis zu <strong>${daten.zuschussBisZu.toLocaleString('de-DE', { style: 'currency', currency: 'EUR', maximumFractionDigits: 0 })}</strong> Zuschuss.`
-            : ''),
+          `im staatlichen BAFA-Programm Modul 3 vorbereitet` +
+          (zuschuss
+            ? ` – mit bis zu <strong>${zuschuss}</strong> Zuschuss, den Sie nicht zurückzahlen`
+            : '') +
+          `. Über Ihren persönlichen Link prüfen Sie Ihren KMU-Status, ergänzen die Antragsdaten und erteilen ` +
+          `die Vollmacht – in etwa <strong>10 Minuten</strong>. Den kompletten Behördenteil übernimmt danach ` +
+          `der Fördermittel-Concierge der WissensReich Academy für Sie.`,
       ),
-      p(`<a href="${link}" style="color:#0d9488;word-break:break-all;">${link}</a>`),
       button(link, 'Förderprojekt öffnen →'),
+      p(`<a href="${link}" style="color:#0d9488;word-break:break-all;">${link}</a>`),
       infoBox(
-        `Der Link ist <strong>90 Tage</strong> gültig und nur für Sie bestimmt. Sie können jederzeit ` +
-          `zwischenspeichern und später fortsetzen – Ihre Eingaben bleiben erhalten.`,
+        `<strong>Schlau vorbereitet – das beschleunigt Ihre 10 Minuten:</strong> Halten Sie nach Möglichkeit ` +
+          `die Zahlen Ihrer Geschäftsjahre <strong>2025 und 2024</strong> bereit – Jahresumsatz, Bilanzsumme ` +
+          `sowie Beschäftigte als Jahresarbeitseinheiten (Vollzeitäquivalente, nicht Kopfzahl) – und zwar auch ` +
+          `von Partner- bzw. verbundenen Unternehmen (ab 25&nbsp;% Beteiligung, in beide Richtungen). ` +
+          `Alles steht im Jahresabschluss oder der BWA – im Zweifel kennt Ihr Steuerbüro die Zahlen in einer Minute. ` +
+          `Fehlt etwas: kein Problem, Sie können jederzeit zwischenspeichern und später fortsetzen.`,
+      ),
+      infoBox(
+        `Der Link ist <strong>90 Tage</strong> gültig und nur für Sie bestimmt. Nicht eingelöste Förderquote ` +
+          `verfällt mit dem Projekt – am besten jetzt direkt öffnen.`,
       ),
       p(
         daten.ansprechpartner

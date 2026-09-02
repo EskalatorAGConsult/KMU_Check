@@ -90,7 +90,8 @@ export function baueAntragZusammenfassungHtml(z: AntragZusammenfassung): string 
     h1('Ihre Antragsdaten im Überblick'),
     p(
       `vielen Dank – wir haben alle Angaben zum Förderprojekt <strong>${esc(z.angebotNr)}</strong> für ` +
-        `<strong>${esc(z.kundeFirma)}</strong> erhalten. Hier Ihre vollständige Zusammenfassung:`,
+        `<strong>${esc(z.kundeFirma)}</strong> erhalten. Hier Ihre vollständige Zusammenfassung – ` +
+        `<strong>Ihr Angebot liegt dieser E-Mail als PDF-Anhang bei.</strong>`,
     ),
     quoteHero(z.kmu, zuschuss),
 
@@ -157,7 +158,10 @@ export function baueAntragZusammenfassungHtml(z: AntragZusammenfassung): string 
       'Beantragung',
       infoBox(
         z.beantragungsweg === 'eskalator'
-          ? `<strong>Durch den Fördermittel-Concierge der Eskalator AG</strong> (kostenlos). Ihre unterschriebene Vollmacht liegt uns vor – operative Abwicklung in Deutschland: WissensReich Academy UG (haftungsbeschränkt), Köln (Kooperationsgesellschaft, an der die Eskalator AG beteiligt ist). Sie müssen nichts weiter tun.`
+          ? `<strong>Durch den Fördermittel-Concierge der WissensReich Academy</strong> (kostenlos für Sie). ` +
+            `Ihre unterschriebene Vollmacht liegt vor – die WissensReich Academy UG (haftungsbeschränkt), Köln, reicht ` +
+            `Ihren Antrag beim BAFA ein und übernimmt die komplette Kommunikation mit der Bewilligungsstelle: ` +
+            `Rückfragen, Nachreiche von Unterlagen, Bescheid. <strong>Sie müssen nichts weiter tun.</strong>`
           : `<strong>Durch Ihr Unternehmen selbst.</strong> Sie erhalten Ihr vollständiges Antrags-Dossier – Hinweis: Für das FZD-Portal ist ein ELSTER-Organisationszertifikat erforderlich.`,
       ) +
         tabelle([['Angegebene De-minimis-Beihilfen (3 Jahre)', formatEUR(z.deminimisSumme)]]),
@@ -165,9 +169,9 @@ export function baueAntragZusammenfassungHtml(z: AntragZusammenfassung): string 
 
     p(`<strong>Wie geht es weiter?</strong>`),
     p(
-      `1. Prüfung Ihrer Angaben auf Vollständigkeit<br>` +
-        `2. Antragstellung beim BAFA<br>` +
-        `3. Bewilligung – danach kann die Maßnahme starten`,
+      `1. Wir prüfen Ihre Angaben auf Vollständigkeit<br>` +
+        `2. Antragstellung beim BAFA (durch die WissensReich Academy)<br>` +
+        `3. Bewilligung – danach kann die Maßnahme starten; bei Rückfragen der Behörde antwortet der Concierge für Sie`,
     ),
     p(
       `Bewahren Sie diese E-Mail als Nachweis auf. Bei Rückfragen genügt die Angabe der Angebotsnummer ` +

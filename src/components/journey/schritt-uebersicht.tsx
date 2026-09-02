@@ -14,30 +14,57 @@ const SOFTWARE_LABEL: Record<string, string> = {
 }
 
 /** Schritt 0: „Ihr Förderprojekt auf einen Blick" – Angebot + Rahmendaten. */
-export function SchrittUebersicht({ angebot }: { angebot: Angebot }) {
+export function SchrittUebersicht({ angebot, token }: { angebot: Angebot; token: string }) {
   const investSumme =
     (angebot.invest_software ?? 0) + (angebot.invest_messtechnik ?? 0) + (angebot.invest_steuerung ?? 0)
 
   return (
     <div className="flex flex-col gap-6">
-      {/* Persoenliche Begruessung: der Link ist kundenindividuell */}
+      {/* Persoenliche Begruessung: den Leser "abholen" – Angebot first,
+          danach der klare Rahmen: staatliche Förderung, Concierge, 10 Minuten. */}
       <div className="rounded-2xl border border-teal-600/25 bg-teal-50/50 px-6 py-5">
         <p className="text-base/7 text-mabe-900">
           <strong>Guten Tag{angebot.kunde_ansprechpartner ? ` ${angebot.kunde_ansprechpartner}` : ''},</strong>
         </p>
         <p className="mt-1 text-sm/6 text-olive-700">
-          für <strong className="text-mabe-900">{angebot.kunde_firma}</strong> ist alles vorbereitet: Dieses
-          Förderprojekt gehört zu Ihrem Angebot <strong>{angebot.angebot_nr}</strong>. Wir führen Sie jetzt durch
-          die wenigen Angaben, die wir für Ihren Förderantrag benötigen.
+          Ihr Angebot von MABE liegt bereit{angebot.angebot_pdf_path ? ' – das PDF können Sie unten rechts neben der Angebotsnummer herunterladen' : ''}.{' '}
+          Jetzt geht es um das Beste daran: die <strong className="text-mabe-900">staatliche Förderung</strong>. Damit
+          Ihr Vorhaben gefördert wird, reichen wir für{' '}
+          <strong className="text-mabe-900">{angebot.kunde_firma}</strong> einen Antrag im BAFA-Programm ein – Sie
+          begleiten uns nur mit den Angaben, die der Antrag braucht. Der Fördermittel-Concierge übernimmt den
+          gesamten Behördenteil.
+        </p>
+        <p className="mt-2 text-sm/6 text-olive-700">
+          In etwa <strong className="text-mabe-900">10 Minuten</strong> ist alles erledigt – Zwischenspeichern und
+          später Fortsetzen ist jederzeit möglich.
         </p>
       </div>
 
       <div className="overflow-hidden rounded-2xl border border-olive-200 bg-white">
         <div className="border-b border-olive-100 bg-olive-50/60 px-6 py-4">
-          <p className="text-xs font-semibold tracking-wide text-olive-500 uppercase">Ihr Angebot</p>
-          <p className="mt-1 text-lg font-semibold text-mabe-900">
-            {angebot.angebot_nr} · {new Date(angebot.angebot_datum).toLocaleDateString('de-DE')}
-          </p>
+          <div className="flex flex-wrap items-start justify-between gap-3">
+            <div className="min-w-0">
+              <p className="text-xs font-semibold tracking-wide text-olive-500 uppercase">
+                Ihr Angebot {angebot.angebot_pdf_path && <span aria-hidden>· 📄 PDF</span>}
+              </p>
+              <p className="mt-1 text-lg font-semibold text-mabe-900">
+                {angebot.angebot_nr} · {new Date(angebot.angebot_datum).toLocaleDateString('de-DE')}
+              </p>
+            </div>
+            {angebot.angebot_pdf_path && (
+              <a
+                href={`/v/${token}/angebot.pdf`}
+                download
+                className="inline-flex items-center gap-2 rounded-xl border border-teal-600/50 px-4 py-2.5 text-sm font-semibold text-teal-700 transition-colors hover:bg-teal-50"
+              >
+                <svg viewBox="0 0 20 20" fill="currentColor" className="size-4" aria-hidden>
+                  <path d="M10.75 2.75a.75.75 0 0 0-1.5 0v8.614L6.295 8.235a.75.75 0 1 0-1.09 1.03l4.25 4.5a.75.75 0 0 0 1.09 0l4.25-4.5a.75.75 0 0 0-1.09-1.03l-2.955 3.129V2.75Z" />
+                  <path d="M3.5 12.75a.75.75 0 0 0-1.5 0v2.5A2.75 2.75 0 0 0 4.75 18h10.5A2.75 2.75 0 0 0 18 15.25v-2.5a.75.75 0 0 0-1.5 0v2.5c0 .69-.56 1.25-1.25 1.25H4.75c-.69 0-1.25-.56-1.25-1.25v-2.5Z" />
+                </svg>
+                Angebot als PDF herunterladen
+              </a>
+            )}
+          </div>
         </div>
         <dl className="divide-y divide-olive-100 px-6">
           {angebot.technologien.length > 0 && (

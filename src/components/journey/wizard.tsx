@@ -257,7 +257,7 @@ export function Wizard({
 
         {/* Schritt-Inhalt (Registry ueber komponente) – animierter Uebergang */}
         <div key={schritt.id} className="flex flex-col gap-6 motion-safe:animate-step-in sm:gap-8">
-        {schritt.komponente === 'uebersicht' && <SchrittUebersicht angebot={angebot} />}
+        {schritt.komponente === 'uebersicht' && <SchrittUebersicht angebot={angebot} token={token} />}
         {schritt.registerSuche && (
           <UnternehmenSuche
             token={token}
