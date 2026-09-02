@@ -1,8 +1,6 @@
 import type { Angebot } from '@/lib/db/types'
 import { formatEUR, formatNumber } from '@/lib/kmu'
 
-import { AngebotUpload } from './angebot-upload'
-
 const TECH_LABEL: Record<string, string> = {
   software: 'Energiemanagementsoftware',
   messtechnik: 'Mess- und Sensortechnik',
@@ -16,17 +14,7 @@ const SOFTWARE_LABEL: Record<string, string> = {
 }
 
 /** Schritt 0: „Ihr Förderprojekt auf einen Blick" – Angebot + Rahmendaten. */
-export function SchrittUebersicht({
-  angebot,
-  token,
-  angebotHochgeladen,
-}: {
-  angebot: Angebot
-  /** Journey-Token (fuer den optionalen Angebots-Upload). */
-  token?: string
-  /** Angebots-PDF bereits hochgeladen (Status-Anzeige im Upload)? */
-  angebotHochgeladen?: boolean
-}) {
+export function SchrittUebersicht({ angebot }: { angebot: Angebot }) {
   const investSumme =
     (angebot.invest_software ?? 0) + (angebot.invest_messtechnik ?? 0) + (angebot.invest_steuerung ?? 0)
 
@@ -91,10 +79,6 @@ export function SchrittUebersicht({
           )}
         </dl>
       </div>
-
-      {/* Optionaler Angebots-Upload (Anfang der Journey): PDF wird im Blob
-          archiviert, dem Kunden zugeordnet und der Bestätigungsmail angehängt. */}
-      {token && <AngebotUpload token={token} bereitsHochgeladen={angebotHochgeladen ?? false} />}
 
       <div className="rounded-2xl bg-mabe-900 p-6 text-white">
         <p className="text-sm/7 text-olive-200">

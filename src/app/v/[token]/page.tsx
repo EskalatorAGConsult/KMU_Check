@@ -4,7 +4,6 @@ import Link from 'next/link'
 
 import { Wizard } from '@/components/journey/wizard'
 import { holeSession } from '@/lib/auth/guards'
-import { supabaseServer } from '@/lib/db/server'
 import { holeFortschritt, protokolliereZugriff, validiereToken } from '@/lib/db/repositories/journey'
 import { verknuepfeZugriff } from '@/lib/db/repositories/konto'
 import { formatEUR } from '@/lib/kmu'
@@ -76,20 +75,6 @@ export default async function JourneyPage({ params }: { params: Promise<{ token:
   const investSumme =
     (angebot.invest_software ?? 0) + (angebot.invest_messtechnik ?? 0) + (angebot.invest_steuerung ?? 0)
 
-  // Angebots-Upload (Uebersichtsschritt): Ist bereits ein Kunden-Upload
-  // archiviert? best effort – Fehlerfall zeigt einfach den Upload-Button.
-  let angebotHochgeladen = false
-  try {
-    const { count } = await supabaseServer()
-      .from('dokumente')
-      .select('id', { count: 'exact', head: true })
-      .eq('angebot_id', angebot.id)
-      .eq('typ', 'angebot_pdf')
-    angebotHochgeladen = (count ?? 0) > 0
-  } catch {
-    angebotHochgeladen = false
-  }
-
   return (
     <main className="mx-auto w-full max-w-3xl overflow-x-clip px-4 pt-0 pb-10 sm:px-6 2xl:max-w-6xl">
       <div className="2xl:grid 2xl:grid-cols-[minmax(0,1fr)_300px] 2xl:items-start 2xl:gap-12">
@@ -103,7 +88,6 @@ export default async function JourneyPage({ params }: { params: Promise<{ token:
             angebot={angebot}
             initialDaten={fortschritt?.schritte ?? {}}
             startSchritt={fortschritt?.aktueller_schritt ?? 'uebersicht'}
-            angebotHochgeladen={angebotHochgeladen}
           />
         </div>
 

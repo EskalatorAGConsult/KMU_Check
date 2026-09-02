@@ -232,9 +232,7 @@ export default async function VorgangPage({ params }: { params: Promise<{ id: st
                   ✓
                 </span>
                 <div className="min-w-0">
-                  <p className="text-sm font-medium break-words text-mabe-900">
-                    Ihr Angebots-PDF (hinterlegt zu Beginn der Angaben)
-                  </p>
+                  <p className="text-sm font-medium break-words text-mabe-900">Ihr Angebot (PDF)</p>
                   <a
                     href={`/konto/vorgang/${angebot.id}/dokument/${angebotDokument.id}`}
                     className="text-xs font-semibold text-teal-700 hover:underline"

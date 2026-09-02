@@ -11,6 +11,12 @@ import { requireAdmin } from '@/lib/auth/guards'
  */
 const NAV_LINK = 'inline-flex min-h-10 items-center rounded-lg px-3.5 text-sm font-semibold whitespace-nowrap'
 
+/**
+ * Kontakt-Zeile im Admin-Header: fest hinterlegte Vertriebs-Adresse (Wunsch
+ * 02.09.2026) – bewusst NICHT die Login-Adresse der jeweiligen Session.
+ */
+const HEADER_KONTAKT = 'm.dick@mabe.de'
+
 export default async function AdminLayout({ children }: { children: React.ReactNode }) {
   const session = await requireAdmin()
 
@@ -21,7 +27,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
           <div className="min-w-0">
             <p className="text-xs font-semibold tracking-wide text-teal-700 uppercase">MABE Förderportal</p>
             <h1 className="mt-1 font-display text-xl font-semibold text-mabe-900 sm:text-2xl">Vertriebsbereich</h1>
-            <p className="mt-0.5 max-w-full truncate text-xs text-olive-500">{session.user.email}</p>
+            <p className="mt-0.5 max-w-full truncate text-xs text-olive-500">{HEADER_KONTAKT}</p>
           </div>
           <LogoutButton />
         </div>

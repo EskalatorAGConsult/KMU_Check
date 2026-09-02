@@ -151,6 +151,19 @@ export async function speichereAngebotPdf(
       .eq('id', angebotId)
     if (error) throw new Error(error.message)
 
+    // Zusaetzlich als Dokument fuehren (typ 'angebot_pdf'): Damit erscheint
+    // das Angebot in der Fallakte/Datenblatt-Dokumentenliste, im Kunden-Konto
+    // und wird der Eingangsbestaetigungsmail als Anhang beigefuegt.
+    // Ein aktuelles Angebot-Dokument pro Vorgang: letzter Upload gewinnt.
+    if (url) {
+      const db = supabaseServer()
+      await db.from('dokumente').delete().eq('angebot_id', angebotId).eq('typ', 'angebot_pdf')
+      const { error: eDoc } = await db
+        .from('dokumente')
+        .insert({ angebot_id: angebotId, typ: 'angebot_pdf', storage_path: url })
+      if (eDoc) throw new Error(eDoc.message)
+    }
+
     await audit(angebotId, `admin:${session.user.id}`, 'angebot_pdf_archiviert', {
       datei: geprueft.name,
       gespeichert: !!url,

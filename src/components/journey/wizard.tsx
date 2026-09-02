@@ -39,14 +39,11 @@ export function Wizard({
   angebot,
   initialDaten,
   startSchritt,
-  angebotHochgeladen,
 }: {
   token: string
   angebot: Angebot
   initialDaten: SchrittDaten
   startSchritt: string
-  /** Angebots-PDF bereits vom Kunden hochgeladen (Uebersichtsschritt)? */
-  angebotHochgeladen?: boolean
 }) {
   const initialIndex = Math.max(0, SCHRITTE.findIndex((s) => s.id === startSchritt))
   const [idx, setIdx] = useState(initialIndex)
@@ -260,13 +257,7 @@ export function Wizard({
 
         {/* Schritt-Inhalt (Registry ueber komponente) – animierter Uebergang */}
         <div key={schritt.id} className="flex flex-col gap-6 motion-safe:animate-step-in sm:gap-8">
-        {schritt.komponente === 'uebersicht' && (
-          <SchrittUebersicht
-            angebot={angebot}
-            token={token}
-            angebotHochgeladen={angebotHochgeladen ?? false}
-          />
-        )}
+        {schritt.komponente === 'uebersicht' && <SchrittUebersicht angebot={angebot} />}
         {schritt.registerSuche && (
           <UnternehmenSuche
             token={token}

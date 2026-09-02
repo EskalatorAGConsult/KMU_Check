@@ -220,7 +220,8 @@ export function AngebotForm() {
         <p className="mt-1 text-sm/6 text-olive-600">
           Laden Sie das MABE-Angebot als PDF hoch – die KI liest <strong>Firma, Adresse, USt-Id, Angebotsnummer,
           Investitionssummen und Sensoranzahl</strong> automatisch aus und füllt das Formular vor. Sie prüfen die
-          Werte nur noch.
+          Werte nur noch. Das PDF wird archiviert (Fallakte) und dem Kunden später seiner
+          Bestätigungsmail als Anhang beigefügt.
         </p>
 
         <input

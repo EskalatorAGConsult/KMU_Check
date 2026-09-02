@@ -4,7 +4,7 @@ import { useState, useTransition } from 'react'
 
 import { testeEmailVersand } from '@/lib/admin/einstellungen-actions'
 
-/** Testversand-Button: schickt eine Test-Mail an den angemeldeten Admin. */
+/** Testversand-Button: schickt eine Test-Mail an den fest hinterlegten Empfänger (einstellungen-actions.ts). */
 export function EmailTestButton() {
   const [meldung, setMeldung] = useState<{ art: 'ok' | 'fehler'; text: string } | null>(null)
   const [pending, startTransition] = useTransition()
@@ -23,7 +23,7 @@ export function EmailTestButton() {
         }}
         className="w-fit rounded-xl bg-teal-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-teal-500 disabled:opacity-50"
       >
-        {pending ? 'Sende Test-Mail …' : 'Test-Mail an mich senden'}
+        {pending ? 'Sende Test-Mail …' : 'Test-Mail an robin@eskalator.ag senden'}
       </button>
       {meldung && (
         <p

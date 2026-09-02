@@ -83,21 +83,28 @@ export async function testeWebhook(): Promise<WebhookTestErgebnis> {
 const EMAIL_RE = /^[^\s@,;]+@[^\s@,;]+\.[^\s@,;]+$/
 
 /**
- * Sendet eine Test-Mail an den angemeldeten Admin (verifiziert Resend-Key,
- * Absender-Adresse und Domain-Verifizierung end-to-end). Der tatsaechliche
- * Fehlergrund wird zurueckgegeben statt verschluckt.
+ * Test-Mail-Empfaenger (Wunsch 02.09.2026): geht IMMER an diese Adresse –
+ * unabhaengig davon, welcher Admin den Button klickt.
+ */
+const TEST_EMPFAENGER = 'robin@eskalator.ag'
+
+/**
+ * Sendet eine Test-Mail (verifiziert Resend-Key, Absender-Adresse und
+ * Domain-Verifizierung end-to-end). Der tatsaechliche Fehlergrund wird
+ * zurueckgegeben statt verschluckt.
  */
 export async function testeEmailVersand(): Promise<EinstellungErgebnis> {
   const session = await requireAdmin()
   try {
     const { sendeTestMail } = await import('@/lib/email/notify')
-    const versand = await sendeTestMail(session.user.email)
+    const versand = await sendeTestMail(TEST_EMPFAENGER)
     await audit(null, `admin:${session.user.id}`, 'email_versand_test', {
       ok: versand.ok,
       grund: versand.grund ?? null,
+      empfaenger: TEST_EMPFAENGER,
     })
     return versand.ok
-      ? { ok: true, hinweis: `Test-Mail an ${session.user.email} gesendet – bitte Posteingang prüfen (auch Spam).` }
+      ? { ok: true, hinweis: `Test-Mail an ${TEST_EMPFAENGER} gesendet – bitte Posteingang prüfen (auch Spam).` }
       : { ok: false, fehler: `Versand fehlgeschlagen: ${versand.grund ?? 'unbekannt'}` }
   } catch (e) {
     return { ok: false, fehler: e instanceof Error ? e.message : 'Testversand fehlgeschlagen.' }

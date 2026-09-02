@@ -112,68 +112,6 @@ function jaNeinZuBoolean(v: unknown): boolean {
   return v === 'ja' || v === true
 }
 
-/**
- * Angebots-PDF am Journey-Anfang hochladen (Uebersichtsschritt, optional).
- * Das Dokument wird im privaten Blob archiviert (dokumente typ 'angebot_pdf',
- * letzter Upload gewinnt), erscheint damit im Kunden-Konto, im Admin-
- * Datenblatt/Fallakte und wird der Eingangsbestaetigungsmail als Anhang
- * mitgegeben. Token-autorisiert wie der Vollmacht-Upload.
- */
-export async function ladeAngebotHoch(
-  klartextToken: string,
-  formData: FormData,
-): Promise<{ ok: true; pfad: string } | { ok: false; fehler: string }> {
-  const kontext = await validiereToken(klartextToken)
-  if (!kontext) return { ok: false, fehler: 'Der Link ist ungültig oder abgelaufen.' }
-  const { angebot, token } = kontext
-  if (angebot.status === 'eingereicht' || angebot.status === 'abgeschlossen') {
-    return { ok: false, fehler: 'Dieser Vorgang wurde bereits eingereicht.' }
-  }
-
-  const datei = await validiereUploadDatei(formData)
-  if ('fehler' in datei) return { ok: false, fehler: datei.fehler }
-  if (datei.contentType !== 'application/pdf') {
-    return { ok: false, fehler: 'Bitte laden Sie das Angebot als PDF-Datei hoch (z. B. ausgedruckt als PDF gespeichert).' }
-  }
-
-  // Deckel gegen Blob-Missbrauch (analog Vollmacht-Upload): max. 5 Uploads
-  // pro Vorgang – jeder Upload legt einen neuen Blob an.
-  const blobTok = blobToken()
-  let anzahl = 0
-  if (blobTok) {
-    const { blobs } = await list({
-      prefix: `angebot-upload/${angebot.angebot_nr}`,
-      token: blobTok,
-      limit: 100,
-    })
-    anzahl = blobs.length
-    if (anzahl >= 5) {
-      return { ok: false, fehler: 'Zu viele Upload-Versuche – bitte dem MABE-Ansprechpartner melden.' }
-    }
-  }
-
-  try {
-    const url = await ladeDokumentHoch(
-      `angebot-upload/${angebot.angebot_nr}.${anzahl + 1}.pdf`,
-      datei.bytes,
-      'application/pdf',
-    )
-    if (!url) return { ok: false, fehler: 'Storage nicht konfiguriert – bitte dem MABE-Ansprechpartner melden.' }
-    // Ein aktuelles Angebot-Dokument pro Vorgang: letzter Upload gewinnt.
-    const db = supabaseServer()
-    await db.from('dokumente').delete().eq('angebot_id', angebot.id).eq('typ', 'angebot_pdf')
-    const { error } = await db
-      .from('dokumente')
-      .insert({ angebot_id: angebot.id, typ: 'angebot_pdf', storage_path: url })
-    if (error) throw new Error(error.message)
-    await audit(angebot.id, `kunde:${token.id}`, 'angebot_upload', { datei: datei.name })
-    return { ok: true, pfad: url }
-  } catch (e) {
-    loggeFehler('journey', e, { route: 'angebot_upload', angebotNr: angebot.angebot_nr })
-    return { ok: false, fehler: 'Der Upload ist fehlgeschlagen. Bitte erneut versuchen.' }
-  }
-}
-
 /** Finale Validierung aller Schritte + Ueberfuehrung in die fachlichen Tabellen. */
 export async function schliesseJourneyAb(
   klartextToken: string,
