@@ -183,8 +183,11 @@ export function SchrittKmu({
           <p className="mb-2 inline-flex items-center gap-2 rounded-full bg-mabe-900 px-3 py-1 text-[11px] font-bold tracking-wide text-white uppercase">
             Schritt 1 von 3 · Ihre Zahlen
           </p>
-          <h3 className="flex items-center text-base font-semibold text-mabe-900">
+          <h3 className="flex flex-wrap items-center gap-2 text-base font-semibold text-mabe-900">
             Ihre Kennzahlen der Geschäftsjahre 2025 und 2024
+            <span className="rounded-full bg-teal-600 px-2.5 py-0.5 text-[11px] font-bold text-white">
+              Ihr Unternehmen · Antragsteller
+            </span>
             <Tooltip text="Das BAFA-Portal fragt fest die Kennzahlen der Geschäftsjahre 2025 und 2024 ab. Für Ihre Förderquote zählt das jüngste Jahr (2025) – das Jahr 2024 dokumentiert die Entwicklung Ihres Unternehmens." />
           </h3>
           <p className="mt-1 text-sm/6 text-olive-600">
@@ -207,7 +210,7 @@ export function SchrittKmu({
             className="rounded-2xl border border-olive-200 bg-white p-5"
           >
             <legend className="rounded-full bg-mabe-900 px-3 py-1 text-xs font-semibold text-white">
-              Geschäftsjahr {jahr.geschaeftsjahr}
+              Geschäftsjahr {jahr.geschaeftsjahr} · Ihr Unternehmen (Antragsteller)
               {i === 0 ? ' · jüngstes (zählt für Ihre Quote)' : ''}
             </legend>
             {i === 0 && (
@@ -273,16 +276,21 @@ export function SchrittKmu({
           <p className="mb-2 inline-flex items-center gap-2 rounded-full bg-mabe-900 px-3 py-1 text-[11px] font-bold tracking-wide text-white uppercase">
             Schritt 2 von 3 · Ihre Verflechtungen
           </p>
-          <h3 className="flex items-center text-base font-semibold text-mabe-900">
+          <h3 className="flex flex-wrap items-center gap-2 text-base font-semibold text-mabe-900">
             Partner- und verbundene Unternehmen
+            <span className="rounded-full bg-mabe-100 px-2.5 py-0.5 text-[11px] font-bold text-mabe-800">
+              ANDERE Unternehmen – nicht Ihr Unternehmen
+            </span>
             <Tooltip text="Gehört Ihr Unternehmen zu einem Konzern oder halten Sie Anteile an anderen Firmen (oder umgekehrt)? Dann zählen deren Zahlen anteilig mit – das entscheidet mit über Ihre Förderquote. Unter 25 % Beteiligung brauchen Sie nichts anzugeben." />
           </h3>
           <p className="mt-1 text-sm/6 text-olive-600">
             <strong className="text-mabe-900">Warum fragen wir das?</strong> Die EU betrachtet nie nur Ihre Firma
             allein: Ab <strong className="text-mabe-900">25&nbsp;% Beteiligung</strong> – in beide Richtungen –
-            fließen die Zahlen des anderen Unternehmens in Ihre Größe ein (25–50&nbsp;% anteilig, über 50&nbsp;%
-            voll, auch über mehrere Stufen). Am Ende dieses Schritts sehen Sie Ihre Verflechtung als Grafik und
-            die fertige Rechnung. Keine solchen Beteiligungen? Dann wählen Sie unten einfach „Nein“.
+            fließen die Zahlen des <strong>anderen</strong> Unternehmens in Ihre Größe ein (25–50&nbsp;% anteilig,
+            über 50&nbsp;% voll, auch über mehrere Stufen). Die Kennzahlen unten gehören deshalb{' '}
+            <strong className="text-mabe-900">je Beteiligungsunternehmen</strong>, nicht zu Ihnen. Am Ende dieses
+            Schritts sehen Sie Ihre Verflechtung als Grafik und die fertige Rechnung. Keine solchen Beteiligungen?
+            Dann wählen Sie unten einfach „Nein“.
           </p>
         </div>
         {fehler.beteiligungen && <p className="text-xs/5 font-medium text-red-700">{fehler.beteiligungen}</p>}
@@ -330,13 +338,16 @@ export function SchrittKmu({
             const nichtRelevant = zeile?.art === 'ignoriert'
             return (
               <div key={i} className="rounded-2xl border border-olive-200 bg-olive-50/50 p-4 sm:p-5">
-                {/* Kopf: Nummer + Live-Einstufung + Entfernen (Muster Landingpage-Tool) */}
-                <div className="mb-4 flex items-center justify-between gap-2">
+                {/* Kopf: Nummer + Live-Einstufung + Entfernen (Muster Landingpage-Tool).
+                    Sticky: Beim Scrollen durch die Jahres-Kennzahlen bleibt sichtbar,
+                    Wessen Zahlen hier gerade erfasst werden (nicht der Antragsteller). */}
+                <div className="sticky top-0 z-10 -mx-4 -mt-4 mb-4 flex items-center justify-between gap-2 rounded-t-2xl bg-white px-4 py-3 ring-1 ring-olive-100 sm:-mx-5 sm:-mt-5 sm:px-5">
                   <span className="inline-flex min-w-0 flex-wrap items-center gap-2 text-sm font-semibold text-mabe-900">
                     <span className="flex size-6 shrink-0 items-center justify-center rounded-full bg-mabe-900 text-xs text-white">
                       {i + 1}
                     </span>
-                    Beteiligung
+                    Beteiligtes Unternehmen
+                    <span className="text-[11px] font-bold text-mabe-700">(nicht Ihr Unternehmen)</span>
                     {pct >= 25 && (
                       <span
                         className={`rounded-full px-2 py-0.5 text-xs font-medium ${
@@ -496,7 +507,7 @@ export function SchrittKmu({
                     fragt beide ab, auch für Partner-/verbundene Unternehmen). */}
                 <div className="mt-4">
                   <p className="mb-2 text-xs font-semibold text-olive-600">
-                    Kennzahlen je Geschäftsjahr (2025 und 2024){' '}
+                    Kennzahlen je Geschäftsjahr (2025 und 2024) dieses Unternehmens{' '}
                     <span className="font-normal text-olive-400">
                       – jahreszeitäquivalente Beschäftigte (JAE), Umsatz, Bilanzsumme
                     </span>

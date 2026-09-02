@@ -117,8 +117,8 @@ export function SchrittVollmacht({
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
         {karte(
           'eskalator',
-          'Beantragung durch den Fördermittel-Concierge der Eskalator AG',
-          'Die Eskalator AG stellt den Antrag in Ihrem Namen, beantwortet Rückfragen der Bewilligungsstelle und begleitet Sie bis zur Bewilligung – für Sie völlig kostenlos. Dafür erteilen Sie eine digitale Vollmacht.',
+          'Beantragung durch den Fördermittel-Concierge der WissensReich Academy',
+          'Die WissensReich Academy UG stellt den Antrag in Ihrem Namen, beantwortet Rückfragen der Bewilligungsstelle und begleitet Sie bis zur Bewilligung – für Sie völlig kostenlos. Dafür erteilen Sie eine digitale Vollmacht.',
           [
             { label: '⭐ Unsere Empfehlung', cls: 'bg-teal-600 text-white' },
             { label: 'KOSTENLOS', cls: 'bg-amber-400 text-mabe-900 ring-1 ring-amber-500' },
@@ -139,7 +139,7 @@ export function SchrittVollmacht({
           <thead>
             <tr className="bg-olive-50 text-xs text-olive-500">
               <th className="px-4 py-2.5 font-semibold"></th>
-              <th className="px-4 py-2.5 font-semibold text-teal-800">Eskalator-Concierge ⭐</th>
+              <th className="px-4 py-2.5 font-semibold text-teal-800">WissensReich-Concierge ⭐</th>
               <th className="px-4 py-2.5 font-semibold text-olive-600">Selbst beantragen</th>
             </tr>
           </thead>
@@ -204,11 +204,10 @@ export function SchrittVollmacht({
             </h3>
             <p className="text-sm/6 text-olive-700">
               Mit Ihrer Unterschrift bestellen Sie die <strong>WissensReich Academy UG (haftungsbeschränkt)</strong>,
-              Weinsbergstraße 190, 50825 Köln, als bevollmächtigte Organisation im Sinne des § 14 VwVfG gegenüber
-              dem Bundesamt für Wirtschaft und Ausfuhrkontrolle (BAFA). Die WissensReich Academy UG arbeitet in
-              Kooperation mit der <strong>Eskalator AG</strong>, die an ihr beteiligt ist. Maßgeblich ist
-              ausschließlich das folgende <strong>Original-Formular des BAFA</strong> – es ist bereits mit Ihren
-              Daten vorbefüllt, prüfen Sie es direkt hier:
+              Weinsbergstraße 190, 50825 Köln – Ihr Fördermittel-Partner für die Beantragung – als bevollmächtigte
+              Organisation im Sinne des § 14 VwVfG gegenüber dem Bundesamt für Wirtschaft und Ausfuhrkontrolle
+              (BAFA). Maßgeblich ist ausschließlich das folgende <strong>Original-Formular des BAFA</strong> – es
+              ist bereits mit Ihren Daten vorbefüllt, prüfen Sie es direkt hier:
             </p>
 
             {/* Vorbefuelltes Formular eingebettet (Desktop): token-geschuetzte Route
@@ -412,8 +411,8 @@ export function SchrittVollmacht({
           label={
             <>
               <strong>Datenschutz:</strong> Ich willige ein, dass meine Angaben zur Erstellung und Abwicklung des
-              Förderantrags verarbeitet und – bei Beantragung durch die Eskalator AG – an diese übermittelt werden
-              (Art. 6 Abs. 1 lit. a DSGVO). Widerruf jederzeit möglich.
+              Förderantrags verarbeitet und – bei Beantragung durch die WissensReich Academy – an diese übermittelt
+              werden (Art. 6 Abs. 1 lit. a DSGVO). Widerruf jederzeit möglich.
             </>
           }
         />

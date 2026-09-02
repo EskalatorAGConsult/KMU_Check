@@ -139,7 +139,7 @@ export default async function VorgangPage({ params }: { params: Promise<{ id: st
                   label="Beantragungsweg"
                   wert={
                     vollmacht.beantragungsweg === 'eskalator'
-                      ? 'Fördermittel-Concierge der Eskalator AG'
+                      ? 'Fördermittel-Concierge der WissensReich Academy'
                       : 'Beantragung durch Ihr Unternehmen selbst'
                   }
                 />
