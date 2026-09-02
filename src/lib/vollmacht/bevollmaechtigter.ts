@@ -2,19 +2,20 @@
  * Stammdaten der bevollmaechtigten Organisation fuer die BAFA-Vollmacht
  * (Formular eew_vm_3, Abschnitt 2). Einzige Pflegestelle.
  *
- * Eskalator AG (Schweiz) – Vollmachtnehmer nach § 14 VwVfG.
+ * Vollmachtnehmer nach § 14 VwVfG: WissensReich Academy UG (haftungsbeschraenkt),
+ * Koeln – die deutsche Abwicklungsgesellschaft. Die Eskalator AG (Schweiz) ist
+ * an der WissensReich Academy UG beteiligt und arbeitet in Kooperation mit ihr;
+ * Marke, Fördermittel-Concierge und Verantwortung bleiben bei der Eskalator AG.
  * Kontaktperson im Formular: Antonja Brücker.
- * Die operative Abwicklung erfolgt durch die WissensReich Academy GmbH,
- * Muelheim an der Ruhr (Hinweis im Journey-UI, nicht Teil des BAFA-Formulars).
  */
 export const BEVOLLMAECHTIGTER = {
-  name: 'Eskalator AG',
+  name: 'WissensReich Academy UG (haftungsbeschränkt)',
   anrede: 'Frau',
   vorname: 'Antonja',
   nachname: 'Brücker',
-  strasse: 'Churerstrasse 135',
-  plz: '8808',
-  ort: 'Freienbach (Schweiz)',
+  strasse: 'Weinsbergstraße 190',
+  plz: '50825',
+  ort: 'Köln',
   telefon: '',
   beraternummer: '',
 } as const

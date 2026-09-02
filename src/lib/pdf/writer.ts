@@ -45,11 +45,20 @@ const WINANSI_MAP: Record<string, string> = {
 /** CP1252-Reservierungen (in pdf-lib nicht kodierbar). */
 const UNGUELTIG = new Set([0x81, 0x8d, 0x8f, 0x90, 0x9d])
 
+/**
+ * Typografische Zeichen des CP1252-Erweiterungsblocks (Bytes 0x80–0x9F):
+ * Unicode-Codepoints > 0xFF, aber von pdf-libs WinAnsiEncoding kodierbar
+ * (z. B. € = U+20AC → Byte 0x80, „ = U+201E → 0x84, – = U+2013 → 0x96).
+ * Diese duerfen durch – alles andere > 0xFF wird ersetzt.
+ */
+const CP1252_TYPGRAFIE = new Set('€‚ƒ„…†‡ˆ‰Š‹ŒŽ‘’“”•–—˜™š›œžŸ')
+
 export function winAnsi(text: string): string {
   let out = ''
   for (const zeichen of text) {
     const code = zeichen.codePointAt(0)!
     if (code <= 0xff && !UNGUELTIG.has(code)) out += zeichen
+    else if (CP1252_TYPGRAFIE.has(zeichen)) out += zeichen
     else out += WINANSI_MAP[zeichen] ?? '?'
   }
   return out
@@ -179,22 +188,22 @@ export class Writer {
 
   kopf(titel: string, untertitel: string, metaZeilen: [string, string]) {
     this.seite.drawRectangle({ x: 0, y: SEITE.hoehe - 124, width: SEITE.breite, height: 124, color: NAVY })
-    this.seite.drawText(titel, { x: SEITE.rand, y: SEITE.hoehe - 52, size: 22, font: this.fett, color: rgb(1, 1, 1) })
-    this.seite.drawText(untertitel, {
+    this.seite.drawText(this.t(titel), { x: SEITE.rand, y: SEITE.hoehe - 52, size: 22, font: this.fett, color: rgb(1, 1, 1) })
+    this.seite.drawText(this.t(untertitel), {
       x: SEITE.rand,
       y: SEITE.hoehe - 74,
       size: 10.5,
       font: this.normal,
       color: rgb(0.75, 0.85, 0.9),
     })
-    this.seite.drawText(metaZeilen[0], {
+    this.seite.drawText(this.t(metaZeilen[0]), {
       x: SEITE.rand,
       y: SEITE.hoehe - 94,
       size: 9,
       font: this.normal,
       color: rgb(0.6, 0.72, 0.8),
     })
-    this.seite.drawText(metaZeilen[1], {
+    this.seite.drawText(this.t(metaZeilen[1]), {
       x: SEITE.rand,
       y: SEITE.hoehe - 108,
       size: 9,

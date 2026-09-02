@@ -1,8 +1,10 @@
 import type { Metadata } from 'next'
 
+import { EmailTestButton } from '@/components/admin/email-test-button'
 import { LeadEmpfaengerForm } from '@/components/admin/lead-empfaenger-form'
 import { WebhookForm } from '@/components/admin/webhook-form'
 import { ermittleLeadEmpfaenger, holeEinstellung } from '@/lib/db/repositories/einstellungen'
+import { absender, resendClient } from '@/lib/email/resend'
 import { loeseWebhookAuf } from '@/lib/webhook'
 
 export const metadata: Metadata = { title: 'Einstellungen | MABE Förderportal', robots: { index: false } }
@@ -30,6 +32,8 @@ export default async function EinstellungenPage() {
   const aufloesung = loeseWebhookAuf(dbWert, process.env.WEBHOOK_URL)
   const dbEmpfaenger = (await holeEinstellung('lead_email_empfaenger')) ?? ''
   const leadEmpfaenger = await ermittleLeadEmpfaenger()
+  const mailKeyGesetzt = resendClient() !== null
+  const absenderAdresse = absender()
 
   return (
     <div className="flex max-w-3xl flex-col gap-8">
@@ -39,6 +43,28 @@ export default async function EinstellungenPage() {
           Zentrale Konfiguration des Portals. Änderungen wirken sofort, ohne Redeploy.
         </p>
       </div>
+
+      <section className="rounded-2xl border border-olive-200 bg-white p-5 sm:p-6">
+        <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
+          <h3 className="text-sm font-semibold text-mabe-900">E-Mail-Versand (Resend)</h3>
+          <span
+            className={`rounded-full px-2.5 py-1 text-xs font-semibold ${
+              mailKeyGesetzt ? 'bg-teal-100 text-teal-800' : 'bg-red-100 text-red-700'
+            }`}
+          >
+            {mailKeyGesetzt ? 'API-Key gesetzt' : 'API-Key fehlt'}
+          </span>
+        </div>
+        <p className="mb-2 text-sm text-olive-600">
+          Absender: <code className="rounded bg-olive-100 px-1.5 py-0.5 text-xs break-all">{absenderAdresse}</code>
+        </p>
+        <p className="mb-4 rounded-xl bg-amber-50 px-4 py-3 text-xs/5 text-amber-800">
+          <strong>Wichtig:</strong> Die Absender-Domain muss in Resend verifiziert sein (Resend-Dashboard → Domains →
+          DNS-Einträge SPF/DKIM beim Hoster hinterlegen). Sonst lehnt Resend jede Mail ab – der Testversand zeigt den
+          genauen Grund.
+        </p>
+        <EmailTestButton />
+      </section>
 
       <section className="rounded-2xl border border-olive-200 bg-white p-5 sm:p-6">
         <div className="mb-4 flex flex-wrap items-center justify-between gap-2">

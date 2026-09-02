@@ -12,26 +12,37 @@ import { button, esc, h1, infoBox, layout, p } from './templates'
  * Design-Prinzipien:
  * - Jede Funktion ist BEST EFFORT: Fehler werden geloggt, niemals geworfen –
  *   ein Mail-Ausfall darf weder Angebotserstellung noch Antrag blockieren.
- * - Rueckgabe true/false, damit Aufrufer den Versand im Audit vermerken koennen.
+ * - Rueckgabe ist ein VersandErgebnis { ok, grund? }: der Grund (fehlender
+ *   API-Key, Resend-Fehler wie „Domain nicht verifiziert", blockierte
+ *   Testadresse) ist sichtbar statt verschluckt – Aufrufer koennen ihn im
+ *   Audit vermerken und dem Admin direkt anzeigen.
  * - Neue Benachrichtigungen = neue Funktion hier + Template in templates.ts.
  */
+
+/** Ergebnis eines Versands – grund nur bei ok === false (lesbar, kurz). */
+export interface VersandErgebnis {
+  ok: boolean
+  grund?: string
+}
 
 async function sendeMail(
   an: string | string[],
   betreff: string,
   html: string,
   anhaenge?: { filename: string; content: string }[], // content = base64
-): Promise<boolean> {
+): Promise<VersandErgebnis> {
   // Sicherheitsnetz: Test-/Platzhalter-Adressen niemals wirklich versenden
   const empfaenger = (Array.isArray(an) ? an : [an]).filter((a) => !istTestAdresse(a))
   if (empfaenger.length === 0) {
-    console.warn(`[email] Nur Test-/Platzhalter-Adressen – kein Versand: "${betreff}"`)
-    return false
+    const grund = 'Nur Test-/Platzhalter-Adressen – Versand bewusst blockiert'
+    console.warn(`[email] ${grund}: "${betreff}"`)
+    return { ok: false, grund }
   }
   const client = resendClient()
   if (!client) {
-    console.warn(`[email] Kein RESEND_API_KEY gesetzt – Versand übersprungen: "${betreff}" an ${empfaenger.join(', ')}`)
-    return false
+    const grund = 'Kein Resend-API-Key gesetzt (RESEND_API_KEY oder RESEND_API)'
+    console.warn(`[email] ${grund} – Versand übersprungen: "${betreff}" an ${empfaenger.join(', ')}`)
+    return { ok: false, grund }
   }
   try {
     const { error } = await client.emails.send({
@@ -42,14 +53,35 @@ async function sendeMail(
       ...(anhaenge && anhaenge.length > 0 ? { attachments: anhaenge } : {}),
     })
     if (error) {
-      console.error(`[email] Resend-Fehler bei "${betreff}" an ${empfaenger.join(', ')}:`, error)
-      return false
+      // Typisch: „The <domain> domain is not verified" (DNS-Eintraege fehlen)
+      const grund = `Resend: ${error.message ?? 'unbekannter Fehler'}`
+      console.error(`[email] ${grund} bei "${betreff}" an ${empfaenger.join(', ')}`)
+      return { ok: false, grund }
     }
-    return true
+    return { ok: true }
   } catch (e) {
-    console.error(`[email] Versand fehlgeschlagen ("${betreff}" an ${empfaenger.join(', ')}):`, e)
-    return false
+    const grund = `Versandfehler: ${e instanceof Error ? e.message : String(e)}`
+    console.error(`[email] ${grund} ("${betreff}" an ${empfaenger.join(', ')})`)
+    return { ok: false, grund }
   }
+}
+
+/**
+ * 0 · Test-Mail (Admin-Einstellungen): verifiziert Key, Absender und
+ * Domain-Verifizierung end-to-end. Geht an den angemeldeten Admin selbst.
+ */
+export async function sendeTestMail(an: string): Promise<VersandErgebnis> {
+  const html = layout(
+    'Test-Mail',
+    [
+      h1('Der E-Mail-Versand funktioniert ✅'),
+      p(
+        `Diese Test-Mail wurde aus dem MABE Förderportal versendet. Absender: <strong>${esc(absender())}</strong>. ` +
+          `Wenn Sie sie sehen, sind API-Key und Domain-Verifizierung korrekt eingerichtet.`,
+      ),
+    ].join(''),
+  )
+  return sendeMail(an, 'Test-Mail: MABE Förderportal (E-Mail-Versand)', html)
 }
 
 /** 1 · Einladung: Vertrieb hat ein Angebot angelegt -> Kunde erhaelt seinen Link. */
@@ -60,7 +92,7 @@ export async function sendeEinladung(daten: {
   journeyPfad: string // z. B. /v/<token>
   ansprechpartner?: string | null
   zuschussBisZu?: number | null
-}): Promise<boolean> {
+}): Promise<VersandErgebnis> {
   const link = portalUrl(daten.journeyPfad)
   const html = layout(
     `Ihr Förderprojekt ${daten.angebotNr}`,
@@ -95,7 +127,7 @@ export async function sendeEinladung(daten: {
 export async function sendeEingangsbestaetigung(daten: {
   an: string
   zusammenfassung: AntragZusammenfassung
-}): Promise<boolean> {
+}): Promise<VersandErgebnis> {
   const html = layout(
     `Ihre Antragsdaten ${daten.zusammenfassung.angebotNr}`,
     baueAntragZusammenfassungHtml(daten.zusammenfassung),
@@ -108,7 +140,7 @@ export async function sendeEingangsbestaetigung(daten: {
 }
 
 /** 3 · Passwort zurücksetzen (wird von Better Auth aufgerufen). */
-export async function sendePasswortReset(daten: { an: string; resetUrl: string }): Promise<boolean> {
+export async function sendePasswortReset(daten: { an: string; resetUrl: string }): Promise<VersandErgebnis> {
   const html = layout(
     'Passwort zurücksetzen',
     [
@@ -128,7 +160,7 @@ export async function sendePasswortReset(daten: { an: string; resetUrl: string }
 }
 
 /** 4 · Willkommen: Kunde hat ein Konto angelegt. */
-export async function sendeWillkommen(daten: { an: string; name?: string }): Promise<boolean> {
+export async function sendeWillkommen(daten: { an: string; name?: string }): Promise<VersandErgebnis> {
   const html = layout(
     'Willkommen im Förderportal',
     [
@@ -150,7 +182,7 @@ export async function sendeStatusUpdate(daten: {
   kundeFirma: string
   angebotNr: string
   statusText: string
-}): Promise<boolean> {
+}): Promise<VersandErgebnis> {
   const html = layout(
     `Status-Update ${daten.angebotNr}`,
     [
@@ -171,7 +203,7 @@ export async function sendeBenutzerEinladung(daten: {
   rolleLabel: string
   einladungPfad: string // z. B. /einladung/<token>
   eingeladenVon: string
-}): Promise<boolean> {
+}): Promise<VersandErgebnis> {
   const link = portalUrl(daten.einladungPfad)
   const html = layout(
     'Einladung zum MABE Förderportal',
@@ -199,12 +231,12 @@ export async function sendeBenutzerEinladung(daten: {
  * Empfaenger aus den Admin-Einstellungen (lead_email_empfaenger) mit
  * ENV-/Standard-Fallback. Best effort – blockiert den Lead nie.
  */
-export async function sendeLeadBenachrichtigung(payload: LeadPayload): Promise<boolean> {
+export async function sendeLeadBenachrichtigung(payload: LeadPayload): Promise<VersandErgebnis> {
   const { ermittleLeadEmpfaenger } = await import('@/lib/db/repositories/einstellungen')
   const { empfaenger } = await ermittleLeadEmpfaenger()
   if (empfaenger.length === 0) {
     console.warn('[email] Keine Lead-Empfänger konfiguriert – Versand übersprungen.')
-    return false
+    return { ok: false, grund: 'Keine Lead-Empfänger konfiguriert (Einstellungen)' }
   }
   const firma = payload.company?.name || 'Unbekanntes Unternehmen'
   const html = layout(
@@ -235,12 +267,12 @@ export async function sendeVollmachtAnAdmins(daten: {
   angebotNr: string
   unterzeichnetVon: string | null
   pdfBytes: Uint8Array
-}): Promise<boolean> {
+}): Promise<VersandErgebnis> {
   const { ermittleLeadEmpfaenger } = await import('@/lib/db/repositories/einstellungen')
   const { empfaenger } = await ermittleLeadEmpfaenger()
   if (empfaenger.length === 0) {
     console.warn('[email] Keine Lead-Empfänger konfiguriert – Vollmacht-Versand übersprungen.')
-    return false
+    return { ok: false, grund: 'Keine Lead-Empfänger konfiguriert (Einstellungen)' }
   }
   const html = layout(
     `Unterschriebene Vollmacht: ${daten.kundeFirma}`,
@@ -256,7 +288,7 @@ export async function sendeVollmachtAnAdmins(daten: {
         `Das <strong>ausgefüllte Original-Formular eew_vm_3</strong> mit eingebetteter Unterschrift liegt als ` +
           `PDF-Anhang bei. Es ist zusätzlich dauerhaft im Admin-Menü (Fallakte → Dokumente & Ablage) hinterlegt.`,
       ),
-      p(`Der Vorgang kann jetzt zur Antragstellung an die Eskalator AG übergeben werden.`),
+      p(`Der Vorgang kann jetzt zur Antragstellung an das Fördermittel-Team (Eskalator AG / WissensReich Academy UG) übergeben werden.`),
     ].join(''),
   )
   return sendeMail(

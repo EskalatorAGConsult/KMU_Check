@@ -230,6 +230,27 @@ export async function schliesseJourneyAb(
 
   try {
     // 3 · Stammdaten (Abschnitte 1–5 des Zielformulars)
+    // Datenkonsistenz (Berater-Prioritaet): Hat ein Admin Felder dieses
+    // Vorgangs korrigiert (vorgang_revisionen, Bereich 'stammdaten'), gewinnen
+    // diese Korrekturen gegenueber dem Kunden-Payload – sonst wuerde der
+    // Upsert Admin-Arbeit still zuruecksetzen (Audit-Finding HIGH).
+    const { data: adminRevisionen } = await db
+      .from('vorgang_revisionen')
+      .select('aenderungen')
+      .eq('angebot_id', angebot.id)
+      .eq('bereich', 'stammdaten')
+      .order('created_at', { ascending: true })
+    const adminKorrekturen: Record<string, unknown> = {}
+    for (const rev of adminRevisionen ?? []) {
+      for (const [feld, a] of Object.entries(rev.aenderungen as Record<string, { neu: unknown }>)) {
+        adminKorrekturen[feld] = a.neu // chronologisch: letzte Admin-Entscheidung gewinnt
+      }
+    }
+    const bewahrt = Object.keys(adminKorrekturen)
+    if (bewahrt.length > 0) {
+      await audit(angebot.id, 'system', 'admin_korrekturen_bewahrt', { felder: bewahrt })
+    }
+
     const { error: e1 } = await db.from('stammdaten').upsert(
       {
         angebot_id: angebot.id,
@@ -270,6 +291,8 @@ export async function schliesseJourneyAb(
         standort_strasse: (antrag.standort_strasse as string) || null,
         vorhaben_nicht_begonnen: vollmacht.vorhaben_nicht_begonnen,
         dsgvo_einwilligung_at: new Date().toISOString(),
+        // Berater-Prioritaet: admin-korrigierte Felder zuletzt ueberlagern
+        ...adminKorrekturen,
       },
       { onConflict: 'angebot_id' },
     )
@@ -406,7 +429,7 @@ export async function schliesseJourneyAb(
     (angebot.invest_software ?? 0) + (angebot.invest_messtechnik ?? 0) + (angebot.invest_steuerung ?? 0)
   // `summe` aus dem try-Block ist hier ausserhalb des Scopes – lokal neu bilden
   const deminimisSumme = deminimis.beihilfen.reduce((s, b) => s + b.betrag, 0)
-  const mailGesendet = await sendeEingangsbestaetigung({
+  const mailVersand = await sendeEingangsbestaetigung({
     an: angebot.kunde_email,
     zusammenfassung: {
       kundeFirma: angebot.kunde_firma,
@@ -431,7 +454,7 @@ export async function schliesseJourneyAb(
       deminimisSumme,
     },
   })
-  await audit(angebot.id, 'system', 'bestaetigung_email', { gesendet: mailGesendet })
+  await audit(angebot.id, 'system', 'bestaetigung_email', { gesendet: mailVersand.ok, grund: mailVersand.grund ?? null })
 
   // 11 · Systemkonzept generieren + ablegen (best effort, blockiert den Abschluss nicht)
   // Ausnahme: Hat der Admin bereits ein kundenindividuelles Systemkonzept
@@ -505,13 +528,17 @@ export async function schliesseJourneyAb(
         // Anhang) – Buffer wurde oben serverseitig verifiziert (uploadInhalt).
         const inhalt = uploadInhalt
         if (inhalt && inhalt.contentType === 'application/pdf') {
-          const gesendet = await sendeVollmachtAnAdmins({
+          const versand = await sendeVollmachtAnAdmins({
             kundeFirma: angebot.kunde_firma,
             angebotNr: angebot.angebot_nr,
             unterzeichnetVon: vollmacht.unterschrift_name ?? null,
             pdfBytes: inhalt.bytes,
           })
-          await audit(angebot.id, 'system', 'vollmacht_email_admins', { gesendet, modus: 'upload' })
+          await audit(angebot.id, 'system', 'vollmacht_email_admins', {
+            gesendet: versand.ok,
+            grund: versand.grund ?? null,
+            modus: 'upload',
+          })
         }
         await audit(angebot.id, 'system', 'vollmacht_ausgefuellt', { ok: true, modus: 'upload' })
       } else {
@@ -545,13 +572,16 @@ export async function schliesseJourneyAb(
 
           // Unterschriebenes PDF an die Admins senden (Empfaenger im Admin-Menue
           // konfigurierbar); best effort – die Datei bleibt im Blob/Download.
-          const vollmachtGesendet = await sendeVollmachtAnAdmins({
+          const vollmachtVersand = await sendeVollmachtAnAdmins({
             kundeFirma: angebot.kunde_firma,
             angebotNr: angebot.angebot_nr,
             unterzeichnetVon: vollmacht.unterschrift_name ?? null,
             pdfBytes: vollmachtPdf,
           })
-          await audit(angebot.id, 'system', 'vollmacht_email_admins', { gesendet: vollmachtGesendet })
+          await audit(angebot.id, 'system', 'vollmacht_email_admins', {
+            gesendet: vollmachtVersand.ok,
+            grund: vollmachtVersand.grund ?? null,
+          })
         }
         await audit(angebot.id, 'system', 'vollmacht_ausgefuellt', { ok: !!url })
       }

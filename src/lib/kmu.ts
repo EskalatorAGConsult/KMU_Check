@@ -203,7 +203,12 @@ function kontrollSchluss(start: string, kanten: Kante[], ausgeschlossen: Set<str
  * - verbunden (> 50 %, transitiv ueber Kontrollketten): 100 %
  * - Partner (25–50 %, nur DIREKT am Antragsteller): Quote × konsolidierte
  *   Daten des Partners (d. h. inkl. 100 % der mit ihm verbundenen Unternehmen)
- * - mittelbare Partner (25–50 % in der Folgekette): nicht verrechnungspflichtig
+ * - Partner eines VERBUNDENEN Unternehmens (25–50 % am Verbundenen): zaehlen
+ *   mit ihrer direkten Quote in die Daten des Verbundenen, das selbst zu
+ *   100 % zaehlt (Art. 6 Abs. 2) – war frueher faelschlich „ignoriert"
+ *   (Audit-Finding HIGH).
+ * - mittelbare Partner (25–50 % an einem PARTNER, nicht am Verbundenen):
+ *   nicht verrechnungspflichtig
  * - Doppelzaehlungen werden vermieden (pro Unternehmen zaehlt die hoechste
  *   ermittelte Quote, verbunden schlaegt Partner).
  */
@@ -256,6 +261,22 @@ export function analysiereVerbund(companyName: string, holdings: Holding[]): Ver
     partnerPct.set(name, Math.max(partnerPct.get(name) ?? 0, e.pct))
   }
 
+  // 2b · Partner VERBUNDENER Unternehmen (25–50 % an einem Verbundenen):
+  // Ihre Daten zaehlen mit der DIREKTEN Quote in die konsolidierten Daten
+  // des Verbundenen (der selbst zu 100 % zaehlt) – EU Anhang Art. 6 Abs. 2.
+  // Ausgeschlossen: Antragsteller, Verbundene (zaehlen eh 100 %) und direkte
+  // Partner des Antragstellers (zaehlen bereits ueber Schritt 2).
+  const partnerVonLinked = new Map<string, { pct: number; ueber: string }>()
+  for (const e of kanten) {
+    if (e.pct < 25 || e.pct > 50) continue
+    const verbundeneSeite = linked.has(e.von) ? e.von : linked.has(e.nach) ? e.nach : null
+    if (!verbundeneSeite) continue
+    const name = e.von === verbundeneSeite ? e.nach : e.von
+    if (name === applicant || linked.has(name) || partnerPct.has(name)) continue
+    const b = partnerVonLinked.get(name)
+    if (!b || e.pct > b.pct) partnerVonLinked.set(name, { pct: e.pct, ueber: verbundeneSeite })
+  }
+
   // 3 · Partner-Konsolidation: mit einem Partner verbundene Unternehmen zaehlen
   // mit der Quote des PARTNERS (nicht 100 %) – Doppelzaehlung via Max-Prinzip.
   const effektiv = new Map<string, { pct: number; grund: string }>()
@@ -271,6 +292,18 @@ export function analysiereVerbund(companyName: string, holdings: Holding[]): Ver
           grund: `Mit „${partner}" verbunden – zaehlt ueber den Partner anteilig mit (effektiv ${pct} %).`,
         })
       }
+    }
+  }
+
+  // 3b · Partner verbundener Unternehmen einmischen (Max-Prinzip gegen
+  // Partner-Konsolidation; verbunden schlaegt beides – schon ausgeschlossen).
+  for (const [name, info] of partnerVonLinked) {
+    const b = effektiv.get(name)
+    if (!b || b.pct < info.pct) {
+      effektiv.set(name, {
+        pct: info.pct,
+        grund: `Partner des verbundenen Unternehmens „${info.ueber}“ – zaehlt ueber dieses anteilig mit (effektiv ${info.pct} %).`,
+      })
     }
   }
 
@@ -366,7 +399,9 @@ export function evaluateKmu(input: CompanyInput): KmuResult {
       partnerContribution.employees += d.employees * f
       partnerContribution.turnover += d.turnover * f
       partnerContribution.balanceSheet += d.balanceSheet * f
-      if (z.grund.includes('ueber den Partner')) chainReasons.push(`„${z.name}“ ${z.grund}`)
+      if (z.grund.includes('ueber den Partner') || z.grund.includes('verbundenen Unternehmens')) {
+        chainReasons.push(`„${z.name}“ ${z.grund}`)
+      }
     }
   }
 

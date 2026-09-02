@@ -91,6 +91,80 @@ describe('evaluateKmu – Verbund-Verrechnung', () => {
 describe('evaluateKmu – Beteiligungsketten (EU 2003/361/EG, Anhang Art. 6)', () => {
   const KETTE_BEZUG = 'Test GmbH'
 
+  it('Partner eines VERBUNDENEN zählt anteilig (EU Art. 6 Abs. 2) – frueher faelschlich ignoriert', () => {
+    // Fern GmbH --40 %--> Holding AG --60 %--> Antragsteller
+    // Holding ist verbunden (100 %); Fern ist Partner der Holding und zaehlt
+    // mit seiner DIREKTEN Quote (40 %) in die Holding-Daten.
+    const r = evaluateKmu(
+      basis({
+        holdings: [
+          holding(60, { name: 'Holding AG', employees: 40, turnover: 0, balanceSheet: 0 }),
+          holding(40, { name: 'Fern GmbH', bezug: 'Holding AG', employees: 100, turnover: 0, balanceSheet: 0 }),
+        ],
+      }),
+    )
+    expect(r.linkedContribution.employees).toBe(40) // Holding voll
+    expect(r.partnerContribution.employees).toBeCloseTo(40) // 40 % von Fern
+    expect(r.consolidated.employees).toBeCloseTo(85) // 5 + 40 + 40
+  })
+
+  it('Partner eines verbundenen ueber Kontrollkette (2. Stufe) zaehlt ebenfalls anteilig', () => {
+    // Ober --80 %--> Holding --60 %--> Antragsteller; Fern --30 %--> Ober
+    const r = evaluateKmu(
+      basis({
+        holdings: [
+          holding(60, { name: 'Holding AG', employees: 10, turnover: 0, balanceSheet: 0 }),
+          holding(80, { name: 'Ober SE', bezug: 'Holding AG', employees: 20, turnover: 0, balanceSheet: 0 }),
+          holding(30, { name: 'Fern GmbH', bezug: 'Ober SE', employees: 100, turnover: 0, balanceSheet: 0 }),
+        ],
+      }),
+    )
+    expect(r.linkedContribution.employees).toBe(30)
+    expect(r.partnerContribution.employees).toBeCloseTo(30) // 30 % von Fern
+  })
+
+  it('Partner eines PARTNERS (kein Verbundener) bleibt weiterhin unberuecksichtigt', () => {
+    // Fern GmbH --40 %--> Partner GmbH --30 %--> Antragsteller
+    // EU: Partner-von-Partner ist NICHT verrechnungspflichtig.
+    const r = evaluateKmu(
+      basis({
+        holdings: [
+          holding(30, { name: 'Partner GmbH', employees: 50, turnover: 0, balanceSheet: 0 }),
+          holding(40, { name: 'Fern GmbH', bezug: 'Partner GmbH', employees: 999, turnover: 0, balanceSheet: 0 }),
+        ],
+      }),
+    )
+    expect(r.partnerContribution.employees).toBeCloseTo(15) // nur 30 % von Partner GmbH
+    expect(r.consolidated.employees).toBeCloseTo(20)
+  })
+
+  it('Partner verbundener Unternehmen: hoechste Quote gewinnt, verbunden schlaegt Partner', () => {
+    // Fern ist Partner ZWEIER Verbundener (40 % und 25 %) und zusaetzlich
+    // ist Mutter zu 100 % mit Holding verbunden (zaehlt ohnehin voll).
+    const r = evaluateKmu(
+      basis({
+        holdings: [
+          holding(60, { name: 'Holding AG', employees: 10, turnover: 0, balanceSheet: 0 }),
+          holding(70, { name: 'Zweit AG', employees: 10, turnover: 0, balanceSheet: 0 }),
+          holding(40, { name: 'Fern GmbH', bezug: 'Holding AG', employees: 100, turnover: 0, balanceSheet: 0 }),
+          holding(25, { name: 'Fern GmbH', bezug: 'Zweit AG', employees: 100, turnover: 0, balanceSheet: 0 }),
+          holding(100, { name: 'Mutter GmbH', bezug: 'Holding AG', employees: 500, turnover: 0, balanceSheet: 0 }),
+        ],
+      }),
+    )
+    expect(r.partnerContribution.employees).toBeCloseTo(40) // max(40, 25), keine Doppelzaehlung
+    expect(r.linkedContribution.employees).toBe(520) // Holding + Zweit + Mutter voll
+    const zeilen = analysiereVerbund('Test GmbH', [
+      holding(60, { name: 'Holding AG' }),
+      holding(70, { name: 'Zweit AG' }),
+      holding(40, { name: 'Fern GmbH', bezug: 'Holding AG' }),
+      holding(25, { name: 'Fern GmbH', bezug: 'Zweit AG' }),
+      holding(100, { name: 'Mutter GmbH', bezug: 'Holding AG' }),
+    ])
+    expect(zeilen.find((z) => z.name === 'Fern GmbH')?.effektivPct).toBe(40)
+    expect(zeilen.find((z) => z.name === 'Mutter GmbH')?.art).toBe('verbunden')
+  })
+
   it('Kontrollkette aufwärts: Ober-Holding zählt transitiv zu 100 %', () => {
     // Holding --60 %--> Antragsteller; OberHolding --80 %--> Holding
     const r = evaluateKmu(
@@ -144,17 +218,19 @@ describe('evaluateKmu – Beteiligungsketten (EU 2003/361/EG, Anhang Art. 6)', (
     expect(r.consolidated.employees).toBeCloseTo(95)
   })
 
-  it('Mittelbare Partner (25–50 % in der Folgekette) werden NICHT verrechnet', () => {
-    // Fern GmbH --40 %--> Holding AG --60 %--> Antragsteller
+  it('Mittelbare Partner an einem PARTNER (nicht am Verbundenen) werden NICHT verrechnet', () => {
+    // Fern GmbH --40 %--> Partner GmbH --30 %--> Antragsteller
+    // EU: nur Partner des Antragstellers und Partner VERBUNDENER zaehlen;
+    // Partner eines Partners ist nicht verrechnungspflichtig.
     const r = evaluateKmu(
       basis({
         holdings: [
-          holding(60, { name: 'Holding AG', employees: 40, turnover: 0, balanceSheet: 0 }),
-          holding(40, { name: 'Fern GmbH', bezug: 'Holding AG', employees: 999, turnover: 0, balanceSheet: 0 }),
+          holding(30, { name: 'Partner GmbH', employees: 50, turnover: 0, balanceSheet: 0 }),
+          holding(40, { name: 'Fern GmbH', bezug: 'Partner GmbH', employees: 999, turnover: 0, balanceSheet: 0 }),
         ],
       }),
     )
-    expect(r.consolidated.employees).toBe(45) // nur eigene + Holding
+    expect(r.consolidated.employees).toBeCloseTo(20) // 5 eigene + 30 % von 50 (Partner), Fern bleibt aussen vor
   })
 
   it('Doppelte Anbindung: höchste Quote gewinnt, keine Doppelzählung', () => {
@@ -195,7 +271,8 @@ describe('evaluateKmu – Beteiligungsketten (EU 2003/361/EG, Anhang Art. 6)', (
     expect(nach['Holding AG']).toMatchObject({ art: 'verbunden', effektivPct: 100, tiefe: 1 })
     expect(nach['Ober SE']).toMatchObject({ art: 'verbunden', effektivPct: 100, tiefe: 2 })
     expect(nach['Kompagnon GmbH']).toMatchObject({ art: 'partner', effektivPct: 30, tiefe: 1 })
-    expect(nach['Fern GmbH']).toMatchObject({ art: 'ignoriert', effektivPct: 0 })
+    // Fern ist Partner (40 %) der VERBUNDENEN Holding – EU Art. 6 Abs. 2: anteilig mitzaehlen
+    expect(nach['Fern GmbH']).toMatchObject({ art: 'partner', effektivPct: 40, tiefe: 2 })
   })
 })
 

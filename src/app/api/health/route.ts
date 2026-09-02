@@ -32,6 +32,9 @@ export async function GET() {
   const env = Object.fromEntries(ENV_NAMEN.map((n) => [n, !!process.env[n]]))
   // Blob-Token: Standardname ODER Store-praefixter Name (Store „MABE") zaehlt
   env.BLOB_READ_WRITE_TOKEN = !!(process.env.BLOB_READ_WRITE_TOKEN ?? process.env.MABE_READ_WRITE_TOKEN)
+  // Resend-Key: Standardname ODER Alt-Name (RESEND_API in Vercel) zaehlt –
+  // spiegelt resendClient() in src/lib/email/resend.ts.
+  env.RESEND_API_KEY = !!(process.env.RESEND_API_KEY ?? process.env.RESEND_API)
 
   let datenbank = false
   let dbFehler: string | null = null

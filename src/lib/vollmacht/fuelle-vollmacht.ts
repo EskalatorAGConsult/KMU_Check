@@ -15,7 +15,7 @@ import { BEVOLLMAECHTIGTER } from '@/lib/vollmacht/bevollmaechtigter'
  *
  * Feldbelegung (Position im Formular geprueft):
  * - Abschnitt 1 = Vollmachtgebende Person/Unternehmen (der Kunde)
- * - Abschnitt 2 = Bevollmaechtigte/r nach § 14 VwVfG (Eskalator AG)
+ * - Abschnitt 2 = Bevollmaechtigte/r nach § 14 VwVfG (WissensReich Academy UG)
  */
 
 const VORLAGE = path.join(process.cwd(), 'docs', 'vorlagen', 'eew_formular_eew_vm_3.pdf')
@@ -84,7 +84,7 @@ export async function fuelleVollmachtAus(geber: VollmachtgeberDaten): Promise<Ui
   setze('Postleitzahl', geber.plz)
   setze('Ort', geber.ort)
 
-  // 2 · Bevollmaechtigte/-s nach § 14 VwVfG (Eskalator AG)
+  // 2 · Bevollmaechtigte/-s nach § 14 VwVfG (WissensReich Academy UG, Koeln)
   setze('unternehmensname', BEVOLLMAECHTIGTER.name)
   setze('Anrede', BEVOLLMAECHTIGTER.anrede)
   setze('Vorname', BEVOLLMAECHTIGTER.vorname)

@@ -46,8 +46,9 @@ export function EskalatorBlock() {
       <div className="rounded-xl bg-olive-50 px-4 py-3 text-xs/5 text-olive-600">
         <p>
           Die <strong className="text-mabe-900">operative Abwicklung</strong> Ihres Antrags erfolgt durch die{' '}
-          <strong className="text-mabe-900">WissensReich Academy GmbH</strong>, Mülheim an der Ruhr – im Auftrag und
-          unter Verantwortung der Eskalator AG.
+          <strong className="text-mabe-900">WissensReich Academy UG (haftungsbeschränkt)</strong>, Weinsbergstraße
+          190, 50825 Köln (Geschäftsführer: Hermann Fürstenau &amp; Florian Domin · info@wissensreich.academy) – einer
+          deutschen Gesellschaft, an der die Eskalator AG beteiligt ist und mit der sie in Kooperation arbeitet.
         </p>
         <p className="mt-1.5">
           Rechtliche Angaben (Impressum, Datenschutz) finden Sie im Fussbereich dieser Seite.

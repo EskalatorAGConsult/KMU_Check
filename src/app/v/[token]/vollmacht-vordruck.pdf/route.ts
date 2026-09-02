@@ -14,12 +14,14 @@ export const dynamic = 'force-dynamic'
  * (Download -> Drucken -> Unterschreiben -> Scannen -> Hochladen).
  * Der persoenliche Link (Token) ist die Zugriffsberechtigung.
  */
-export async function GET(_req: Request, { params }: { params: Promise<{ token: string }> }) {
+export async function GET(req: Request, { params }: { params: Promise<{ token: string }> }) {
   const { token } = await params
   const kontext = await validiereToken(token)
   if (!kontext) {
     return NextResponse.json({ ok: false, fehler: 'Der Link ist ungültig oder abgelaufen.' }, { status: 404 })
   }
+  // ?inline=1: Anzeige im eingebetteten Viewer (iframe) statt Download-Dialog
+  const inline = new URL(req.url).searchParams.get('inline') === '1'
 
   try {
     // Stammdaten aus dem Entwurf (muss noch nicht eingereicht sein);
@@ -41,7 +43,7 @@ export async function GET(_req: Request, { params }: { params: Promise<{ token: 
     return new NextResponse(Buffer.from(pdf), {
       headers: {
         'Content-Type': 'application/pdf',
-        'Content-Disposition': `attachment; filename="${dateiname}"`,
+        'Content-Disposition': `${inline ? 'inline' : 'attachment'}; filename="${dateiname}"`,
         'Cache-Control': 'private, no-store',
       },
     })

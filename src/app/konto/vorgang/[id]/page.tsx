@@ -234,7 +234,7 @@ export default async function VorgangPage({ params }: { params: Promise<{ id: st
                 </span>
                 <div className="min-w-0">
                   <p className="text-sm font-medium break-words text-mabe-900">
-                    Vollmacht für die Eskalator AG (BAFA-Formular eew_vm_3)
+                    Vollmacht für die WissensReich Academy UG (BAFA-Formular eew_vm_3)
                   </p>
                   {vollmachtDokument ? (
                     <a

@@ -149,7 +149,7 @@ export function baueAntragZusammenfassungHtml(z: AntragZusammenfassung): string 
       'Beantragung',
       infoBox(
         z.beantragungsweg === 'eskalator'
-          ? `<strong>Durch den Fördermittel-Concierge der Eskalator AG</strong> (kostenlos). Ihre unterschriebene Vollmacht liegt uns vor – operative Abwicklung: WissensReich Academy GmbH, Mülheim an der Ruhr. Sie müssen nichts weiter tun.`
+          ? `<strong>Durch den Fördermittel-Concierge der Eskalator AG</strong> (kostenlos). Ihre unterschriebene Vollmacht liegt uns vor – operative Abwicklung in Deutschland: WissensReich Academy UG (haftungsbeschränkt), Köln (Kooperationsgesellschaft, an der die Eskalator AG beteiligt ist). Sie müssen nichts weiter tun.`
           : `<strong>Durch Ihr Unternehmen selbst.</strong> Sie erhalten Ihr vollständiges Antrags-Dossier – Hinweis: Für das FZD-Portal ist ein ELSTER-Organisationszertifikat erforderlich.`,
       ) +
         tabelle([['Angegebene De-minimis-Beihilfen (3 Jahre)', formatEUR(z.deminimisSumme)]]),

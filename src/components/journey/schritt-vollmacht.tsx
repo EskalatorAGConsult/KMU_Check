@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useTransition } from 'react'
+import { useEffect, useState, useTransition } from 'react'
 
 import { ladeVollmachtUploadHoch } from '@/lib/journey/actions'
 import { EskalatorBlock } from './eskalator-block'
@@ -20,18 +20,31 @@ export function SchrittVollmacht({
   fehler,
   onChange,
   token,
+  nameVorschlag,
 }: {
   daten: Record<string, unknown>
   fehler: Record<string, string>
   onChange: (name: string, wert: unknown) => void
   /** Journey-Token (fuer den Vordruck-Download und den Upload). */
   token: string
+  /** Vorschlag fuer den Unterzeichner-Namen (Ansprechpartner aus der Journey). */
+  nameVorschlag?: string
 }) {
   const weg = (daten.beantragungsweg as string | undefined) ?? 'eskalator'
   const uploadPfad = (daten.vollmacht_upload_pfad as string | undefined) ?? null
   const [modus, setModus] = useState<'canvas' | 'upload'>(uploadPfad ? 'upload' : 'canvas')
   const [uploadMeldung, setUploadMeldung] = useState<{ art: 'ok' | 'fehler'; text: string } | null>(null)
   const [pending, startTransition] = useTransition()
+
+  // Smart Default: Unterzeichner-Name aus dem Ansprechpartner-Schritt
+  // vorbefuellen (nur wenn leer; ueberschreibt nie eine eigene Eingabe).
+  // Verzoegert hinter die Hydration (kein setState direkt im Effekt).
+  useEffect(() => {
+    if (!nameVorschlag || daten.unterschrift_name) return
+    const frame = requestAnimationFrame(() => onChange('unterschrift_name', nameVorschlag))
+    return () => cancelAnimationFrame(frame)
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- einmalig beim Mount; spaetere eigene Eingaben gewinnen
+  }, [])
 
   const waehleModus = (m: 'canvas' | 'upload') => {
     setModus(m)
@@ -179,26 +192,29 @@ export function SchrittVollmacht({
               </span>
             </h3>
             <p className="text-sm/6 text-olive-700">
-              Mit Ihrer Unterschrift bestellen Sie die <strong>Eskalator AG</strong> als bevollmächtigte
-              Organisation im Sinne des § 14 VwVfG gegenüber dem Bundesamt für Wirtschaft und Ausfuhrkontrolle
-              (BAFA). Maßgeblich ist ausschließlich das folgende <strong>Original-Formular des BAFA</strong> –
-              lesen Sie es hier direkt durch:
+              Mit Ihrer Unterschrift bestellen Sie die <strong>WissensReich Academy UG (haftungsbeschränkt)</strong>,
+              Weinsbergstraße 190, 50825 Köln, als bevollmächtigte Organisation im Sinne des § 14 VwVfG gegenüber
+              dem Bundesamt für Wirtschaft und Ausfuhrkontrolle (BAFA). Die WissensReich Academy UG arbeitet in
+              Kooperation mit der <strong>Eskalator AG</strong>, die an ihr beteiligt ist. Maßgeblich ist
+              ausschließlich das folgende <strong>Original-Formular des BAFA</strong> – es ist bereits mit Ihren
+              Daten vorbefüllt, prüfen Sie es direkt hier:
             </p>
 
-            {/* Original-Formular eingebettet (Desktop); mobil oeffnet es in einem eigenen Tab,
-                weil iOS/Android PDFs in iframes nicht zuverlaessig darstellen. */}
+            {/* Vorbefuelltes Formular eingebettet (Desktop): token-geschuetzte Route
+                fuellt die Reisedaten aus dem Journey-Entwurf live ein. Mobil oeffnet
+                der Link in einem eigenen Tab (iOS/Android zeigen iframe-PDFs unsicher). */}
             <iframe
-              src="/vorlagen/eew_vm_3.pdf#view=FitH"
-              title="BAFA-Vollmacht – offizielles Formular eew_vm_3"
+              src={`/v/${token}/vollmacht-vordruck.pdf?inline=1#view=FitH`}
+              title="BAFA-Vollmacht eew_vm_3 – vorbefüllt mit Ihren Daten"
               className="hidden h-[36rem] w-full rounded-xl bg-white ring-1 ring-olive-200 sm:block"
             />
             <a
-              href="/vorlagen/eew_vm_3.pdf"
+              href={`/v/${token}/vollmacht-vordruck.pdf`}
               target="_blank"
               rel="noopener noreferrer"
               className="inline-flex w-fit items-center gap-1.5 rounded-xl border border-teal-600 bg-white px-4 py-2.5 text-sm font-semibold text-teal-700 hover:bg-teal-50"
             >
-              Vollmacht-Formular öffnen (PDF, 2 Seiten) ↗
+              Vorbefülltes Vollmacht-Formular öffnen (PDF, 2 Seiten) ↗
             </a>
 
             {modus === 'canvas' ? (
@@ -227,7 +243,7 @@ export function SchrittVollmacht({
 
                 <Feld
                   label="Unterzeichner/in (vollständiger Name)"
-                  hilfe="Name der zeichnungsberechtigten Person – ergänzt die gezeichnete Unterschrift als Nachweis. Zeitpunkt und technische Daten werden protokolliert."
+                  hilfe="Name der zeichnungsberechtigten Person (vorbefüllt mit Ihrem Ansprechpartner – bitte prüfen). Ergänzt die gezeichnete Unterschrift als Nachweis; Zeitpunkt und technische Daten werden protokolliert."
                   fehler={fehler.unterschrift_name}
                   pflicht
                 >

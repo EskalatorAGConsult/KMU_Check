@@ -295,7 +295,18 @@ export function Wizard({
               investSumme={investSumme}
               firmenname={(daten['unternehmen']?.unternehmensname as string | undefined) ?? undefined}
             />
-            <SchrittVollmacht daten={schrittDaten} fehler={fehler} onChange={setze} token={token} />
+            <SchrittVollmacht
+              daten={schrittDaten}
+              fehler={fehler}
+              onChange={setze}
+              token={token}
+              nameVorschlag={[
+                daten['ansprechpartner']?.ap_vorname as string | undefined,
+                daten['ansprechpartner']?.ap_nachname as string | undefined,
+              ]
+                .filter(Boolean)
+                .join(' ') || undefined}
+            />
           </>
         )}
         </div>

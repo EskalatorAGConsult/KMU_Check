@@ -44,7 +44,11 @@ export function SignaturPad({
   const [hatStriche, setHatStriche] = useState(false)
   const [zuGross, setZuGross] = useState(false)
 
-  const zeigtVorschau = !!wert && !bearbeite
+  // Vorschau nur fuer einen WIEDERHERGESTELLTEN Entwurf (noch keine eigenen
+  // Striche in dieser Sitzung). Nach jedem eigenen Strich waere wert gesetzt
+  // und das Pad wuerde sonst sofort in den Vorschau-Modus kippen (Canvas
+  // unmountet) – „bricht nach dem 1. Strich ab" (Audit-Finding).
+  const zeigtVorschau = !!wert && !bearbeite && !hatStriche
 
   /** Canvas an CSS-Groesse + devicePixelRatio anpassen (scharf auf Retina/iPhone). */
   const initialisiereCanvas = useCallback(() => {

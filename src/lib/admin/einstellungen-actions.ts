@@ -82,6 +82,28 @@ export async function testeWebhook(): Promise<WebhookTestErgebnis> {
 
 const EMAIL_RE = /^[^\s@,;]+@[^\s@,;]+\.[^\s@,;]+$/
 
+/**
+ * Sendet eine Test-Mail an den angemeldeten Admin (verifiziert Resend-Key,
+ * Absender-Adresse und Domain-Verifizierung end-to-end). Der tatsaechliche
+ * Fehlergrund wird zurueckgegeben statt verschluckt.
+ */
+export async function testeEmailVersand(): Promise<EinstellungErgebnis> {
+  const session = await requireAdmin()
+  try {
+    const { sendeTestMail } = await import('@/lib/email/notify')
+    const versand = await sendeTestMail(session.user.email)
+    await audit(null, `admin:${session.user.id}`, 'email_versand_test', {
+      ok: versand.ok,
+      grund: versand.grund ?? null,
+    })
+    return versand.ok
+      ? { ok: true, hinweis: `Test-Mail an ${session.user.email} gesendet – bitte Posteingang prüfen (auch Spam).` }
+      : { ok: false, fehler: `Versand fehlgeschlagen: ${versand.grund ?? 'unbekannt'}` }
+  } catch (e) {
+    return { ok: false, fehler: e instanceof Error ? e.message : 'Testversand fehlgeschlagen.' }
+  }
+}
+
 /** Speichert die Empfaenger der Lead-Benachrichtigung (Komma/Semikolon-getrennt; leer = Standard). */
 export async function speichereLeadEmpfaenger(wert: string): Promise<EinstellungErgebnis> {
   const session = await requireAdmin()

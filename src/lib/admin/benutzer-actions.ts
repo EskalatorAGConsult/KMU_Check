@@ -35,19 +35,24 @@ export async function ladeBenutzerEin(email: string, rolle: string): Promise<Ben
   try {
     const klartext = await erstelleEinladung(bereinigt, rolle as AdminRolle, session.user.id)
     const pfad = `/einladung/${klartext}`
-    const gesendet = await sendeBenutzerEinladung({
+    const versand = await sendeBenutzerEinladung({
       an: bereinigt,
       rolleLabel: ROLLEN_LABEL[rolle] ?? rolle,
       einladungPfad: pfad,
       eingeladenVon: session.user.email,
     })
-    await audit(null, `admin:${session.user.id}`, 'benutzer_eingeladen', { email: bereinigt, rolle, gesendet })
+    await audit(null, `admin:${session.user.id}`, 'benutzer_eingeladen', {
+      email: bereinigt,
+      rolle,
+      gesendet: versand.ok,
+      grund: versand.grund ?? null,
+    })
     revalidatePath('/admin/benutzer')
     return {
       ok: true,
-      hinweis: gesendet
+      hinweis: versand.ok
         ? `Einladung an ${bereinigt} gesendet.`
-        : 'Einladung angelegt, aber E-Mail-Versand fehlgeschlagen – bitte den Link manuell weitergeben.',
+        : `Einladung angelegt, aber E-Mail-Versand fehlgeschlagen (${versand.grund ?? 'unbekannt'}) – bitte den Link manuell weitergeben.`,
       link: pfad,
     }
   } catch (e) {

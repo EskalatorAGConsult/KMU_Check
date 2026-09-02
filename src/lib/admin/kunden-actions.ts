@@ -65,7 +65,7 @@ export async function erneutEinladen(angebotId: string): Promise<KundeActionErge
     await setzeAngebotStatus(angebotId, 'eingeladen')
     const invest =
       (angebot.invest_software ?? 0) + (angebot.invest_messtechnik ?? 0) + (angebot.invest_steuerung ?? 0)
-    const gesendet = await sendeEinladung({
+    const versand = await sendeEinladung({
       an: angebot.kunde_email,
       kundeFirma: angebot.kunde_firma,
       angebotNr: angebot.angebot_nr,
@@ -73,13 +73,16 @@ export async function erneutEinladen(angebotId: string): Promise<KundeActionErge
       ansprechpartner: angebot.kunde_ansprechpartner ?? undefined,
       zuschussBisZu: invest > 0 ? invest * 0.45 : null,
     })
-    await audit(angebotId, `admin:${session.user.id}`, 'einladung_gesendet', { gesendet })
+    await audit(angebotId, `admin:${session.user.id}`, 'einladung_gesendet', {
+      gesendet: versand.ok,
+      grund: versand.grund ?? null,
+    })
     revalidatePath('/admin/kunden')
     return {
       ok: true,
-      hinweis: gesendet
+      hinweis: versand.ok
         ? 'Einladung an den Kunden gesendet.'
-        : `Neuer Link erstellt, aber E-Mail-Versand fehlgeschlagen. Link: /v/${klartext}`,
+        : `Neuer Link erstellt, aber E-Mail-Versand fehlgeschlagen (${versand.grund ?? 'unbekannt'}). Link: /v/${klartext}`,
     }
   } catch (e) {
     return { ok: false, fehler: e instanceof Error ? e.message : 'Erneutes Einladen fehlgeschlagen.' }
