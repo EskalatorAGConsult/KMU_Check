@@ -63,15 +63,12 @@ export async function erneutEinladen(angebotId: string): Promise<KundeActionErge
   try {
     const klartext = await erstelleJourneyToken(angebotId)
     await setzeAngebotStatus(angebotId, 'eingeladen')
-    const invest =
-      (angebot.invest_software ?? 0) + (angebot.invest_messtechnik ?? 0) + (angebot.invest_steuerung ?? 0)
     const versand = await sendeEinladung({
       an: angebot.kunde_email,
       kundeFirma: angebot.kunde_firma,
       angebotNr: angebot.angebot_nr,
       journeyPfad: `/v/${klartext}`,
       ansprechpartner: angebot.kunde_ansprechpartner ?? undefined,
-      zuschussBisZu: invest > 0 ? invest * 0.45 : null,
     })
     await audit(angebotId, `admin:${session.user.id}`, 'einladung_gesendet', {
       gesendet: versand.ok,

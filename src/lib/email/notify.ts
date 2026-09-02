@@ -91,12 +91,8 @@ export async function sendeEinladung(daten: {
   angebotNr: string
   journeyPfad: string // z. B. /v/<token>
   ansprechpartner?: string | null
-  zuschussBisZu?: number | null
 }): Promise<VersandErgebnis> {
   const link = portalUrl(daten.journeyPfad)
-  const zuschuss = daten.zuschussBisZu
-    ? daten.zuschussBisZu.toLocaleString('de-DE', { style: 'currency', currency: 'EUR', maximumFractionDigits: 0 })
-    : null
   const html = layout(
     `Ihr Förderprojekt ${daten.angebotNr}`,
     [
@@ -104,13 +100,10 @@ export async function sendeEinladung(daten: {
       p(`Guten Tag,`),
       p(
         `für <strong>${esc(daten.kundeFirma)}</strong> wurde das Förderprojekt <strong>${esc(daten.angebotNr)}</strong> ` +
-          `im staatlichen BAFA-Programm Modul 3 vorbereitet` +
-          (zuschuss
-            ? ` – mit bis zu <strong>${zuschuss}</strong> Zuschuss, den Sie nicht zurückzahlen`
-            : '') +
-          `. Über Ihren persönlichen Link prüfen Sie Ihren KMU-Status, ergänzen die Antragsdaten und erteilen ` +
-          `die Vollmacht – in etwa <strong>10 Minuten</strong>. Den kompletten Behördenteil übernimmt danach ` +
-          `der Fördermittel-Concierge der WissensReich Academy für Sie.`,
+          `im staatlichen BAFA-Programm Modul 3 vorbereitet – mit bis zu <strong>45&nbsp;% Zuschuss</strong>, den ` +
+          `Sie nicht zurückzahlen. Über Ihren persönlichen Link prüfen Sie Ihren KMU-Status, ergänzen die ` +
+          `Antragsdaten und erteilen die Vollmacht – in etwa <strong>10 Minuten</strong>. Den kompletten ` +
+          `Behördenteil übernimmt danach der Fördermittel-Concierge der WissensReich Academy für Sie.`,
       ),
       button(link, 'Förderprojekt öffnen →'),
       p(`<a href="${link}" style="color:#0d9488;word-break:break-all;">${link}</a>`),
