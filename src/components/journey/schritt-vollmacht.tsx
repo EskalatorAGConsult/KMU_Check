@@ -46,6 +46,17 @@ export function SchrittVollmacht({
     // eslint-disable-next-line react-hooks/exhaustive-deps -- einmalig beim Mount; spaetere eigene Eingaben gewinnen
   }, [])
 
+  // Smart Default: „Antrag durch die WissensReich Academy" ist vorangewaehlt.
+  // Die Karte darunter rendert den Fallback 'eskalator' nur optisch – ohne
+  // diesen Effekt bliebe der Draft undefiniert und der Absende-Schritt
+  // meldete eine Fehlermeldung, obwohl nichts zu waehlen war.
+  useEffect(() => {
+    if (daten.beantragungsweg) return
+    const frame = requestAnimationFrame(() => onChange('beantragungsweg', 'eskalator'))
+    return () => cancelAnimationFrame(frame)
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- einmalig beim Mount; eigene Auswahl gewinnt immer
+  }, [])
+
   const waehleModus = (m: 'canvas' | 'upload') => {
     setModus(m)
     setUploadMeldung(null)
