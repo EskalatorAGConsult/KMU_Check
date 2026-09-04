@@ -573,7 +573,7 @@ export function SchrittKmu({
                     )
                     return quoteLeer && vorjahrVorhanden ? (
                       <p className="mt-2 rounded-lg bg-amber-50 px-3 py-2 text-xs/5 font-medium text-amber-900 ring-1 ring-amber-200">
-                        Achtung: Für Ihre Förderquote zählt {gjQuote} – dieses Jahr ist für „{b.name || 'dieses Unternehmen'}"
+                        Achtung: Für Ihre Förderquote zählt {gjQuote} – dieses Jahr ist für „{b.name || 'dieses Unternehmen'}“
                         noch leer. Bitte {gjQuote}er Werte eintragen (ggf. Schätzung anhand des Vorjahres), sonst fällt
                         das Unternehmen bei der Quote-Rechnung zu niedrig aus.
                       </p>

@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState, useTransition } from 'react'
 
 import type { Angebot } from '@/lib/db/types'
+import { CONSENT_EVENT, leseEinwilligung } from '@/lib/consent'
 import { schliesseJourneyAb, speichereSchritt } from '@/lib/journey/actions'
 import { SCHRITTE } from '@/lib/journey/schritte'
 import { schemaFuerSchritt } from '@/lib/journey/schemas'
@@ -53,6 +54,17 @@ export function Wizard({
   const [gespeichert, setGespeichert] = useState(false)
   const [gespeichertAm, setGespeichertAm] = useState<Date | null>(null)
   const [abgeschlossen, setAbgeschlossen] = useState(false)
+  // Solange der Consent-Banner offen ist, wandert die mobile Sticky-Bar hoch.
+  const [consentOffen, setConsentOffen] = useState(false)
+  useEffect(() => {
+    const pruefen = () => setConsentOffen(leseEinwilligung() === null)
+    const frame = requestAnimationFrame(pruefen)
+    window.addEventListener(CONSENT_EVENT, pruefen)
+    return () => {
+      cancelAnimationFrame(frame)
+      window.removeEventListener(CONSENT_EVENT, pruefen)
+    }
+  }, [])
   const [busy, startTransition] = useTransition()
 
   const schritt = SCHRITTE[idx]
@@ -330,8 +342,14 @@ export function Wizard({
           </p>
         )}
 
-        {/* Navigation: mobil sticky unten (Daumen-Reichweite), ab md klassisch im Fluss */}
-        <div className="fixed inset-x-0 bottom-0 z-30 border-t border-olive-200 bg-white/95 px-4 py-3 backdrop-blur-md md:static md:border-0 md:bg-transparent md:p-0 md:backdrop-blur-none">
+        {/* Navigation: mobil sticky unten (Daumen-Reichweite), ab md klassisch im Fluss.
+            Ragt ueber den Consent-Banner hinaus, solange keine Einwilligungs-
+            Entscheidung vorliegt – sonst ist „Weiter" auf dem iPhone verdeckt. */}
+        <div
+          className={`fixed inset-x-0 z-30 border-t border-olive-200 bg-white/95 px-4 py-3 backdrop-blur-md transition-[bottom] md:static md:border-0 md:bg-transparent md:p-0 md:backdrop-blur-none ${
+            consentOffen ? 'bottom-44' : 'bottom-0'
+          }`}
+        >
           <div className="mx-auto flex max-w-3xl items-center gap-2.5 sm:gap-3">
             <button
               type="button"

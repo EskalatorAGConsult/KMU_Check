@@ -22,14 +22,14 @@ export const SCHRITTE: SchrittDef[] = [
     kurz: 'Übersicht',
     beschreibung: 'Ihr MABE-Angebot und die mögliche Förderung auf einen Blick.',
     erklaerung:
-      'Gute Nachricht vorab: Für das angebotene Vorhaben können Sie einen staatlichen Zuschuss erhalten – das ist Geld, das Sie nicht zurückzahlen. Dieser Assistent führt Sie in wenigen Schritten durch alle Angaben, die dafür nötig sind.',
+      'Gute Nachricht vorab: Für das angebotene Vorhaben können Sie einen staatlichen Zuschuss erhalten – das ist Geld, das Sie nicht zurückzahlen. In ca. 10 Minuten sind Sie durch – ich führe Sie Schritt für Schritt, Sie können jederzeit pausieren.',
     komponente: 'uebersicht',
   },
   {
     id: 'unternehmen',
     titel: 'Ihr Unternehmen',
     kurz: 'Unternehmen',
-    beschreibung: 'Stammdaten des antragstellenden Unternehmens (Zuwendungsempfänger).',
+    beschreibung: 'Die offiziellen Daten Ihres Unternehmens – genau so, wie sie im Handelsregister oder beim Finanzamt stehen.',
     erklaerung:
       'Der Zuschuss wird offiziell an Ihr Unternehmen gezahlt. Deshalb brauchen wir die Daten exakt so, wie sie im Handelsregister bzw. bei Ihrem Finanzamt hinterlegt sind.',
     komponente: 'generisch',
@@ -64,16 +64,16 @@ export const SCHRITTE: SchrittDef[] = [
       {
         name: 'unternehmensart',
         typ: 'auswahl',
-        label: 'Unternehmensart',
+        label: 'Steht Ihr Unternehmen in Beteiligungsverhältnissen?',
         pflicht: true,
         gruppe: 'Rechtsform & Steuern',
-        hilfe: 'Steht Ihr Unternehmen in Beteiligungsverhältnissen? Das wird im Schritt „Ihr KMU-Status“ konkret verrechnet.',
+        hilfe: 'Wenn ja, wird das im Schritt „Ihr KMU-Status“ konkret verrechnet.',
         tooltip:
           '„Partner“ oder „verbunden“ heißt: Ein anderes Unternehmen hält mindestens 25 % Ihrer Anteile – oder Sie halten mindestens 25 % an einem anderen. Wenn das nicht der Fall ist, wählen Sie „eigenständig“.',
         optionen: [
-          { wert: 'eigenstaendig', label: 'Eigenständiges Unternehmen' },
-          { wert: 'partner', label: 'Partnerunternehmen' },
-          { wert: 'verbunden', label: 'Verbundenes Unternehmen' },
+          { wert: 'eigenstaendig', label: 'Nein, wir sind eigenständig' },
+          { wert: 'partner', label: 'Ja, Partnerunternehmen vorhanden' },
+          { wert: 'verbunden', label: 'Ja, verbundene Unternehmen vorhanden' },
         ],
       },
       {
@@ -93,13 +93,13 @@ export const SCHRITTE: SchrittDef[] = [
       {
         name: 'personenart',
         typ: 'auswahl',
-        label: 'Antragsteller ist eine',
+        label: 'Ihr Unternehmen ist …',
         pflicht: true,
         tooltip:
           'GmbH, AG, UG & Co. sind „juristische Personen“. Einzelunternehmer und Freiberufler wählen „natürliche Person“.',
         optionen: [
-          { wert: 'juristisch', label: 'Juristische Person (z. B. GmbH, AG)' },
-          { wert: 'natuerlich', label: 'Natürliche Person (z. B. Einzelunternehmer)' },
+          { wert: 'juristisch', label: 'eine Firma (z. B. GmbH, AG, UG)' },
+          { wert: 'natuerlich', label: 'ein Einzelunternehmen (Privatperson)' },
         ],
       },
       {
@@ -142,11 +142,11 @@ export const SCHRITTE: SchrittDef[] = [
   },
   {
     id: 'ansprechpartner',
-    titel: 'Ihr Ansprechpartner',
+    titel: 'Ansprechpartner in Ihrem Unternehmen',
     kurz: 'Kontakt',
     beschreibung: 'Wer ist fachlich für dieses Vorhaben zuständig?',
     erklaerung:
-      'Für Rückfragen der Bewilligungsstelle brauchen wir eine feste Kontaktperson in Ihrem Unternehmen – idealerweise jemand, der das Projekt fachlich kennt.',
+      'Für Rückfragen des Förderamts (BAFA) brauchen wir eine feste Kontaktperson in Ihrem Unternehmen – idealerweise jemand, der das Projekt fachlich kennt.',
     komponente: 'generisch',
     felder: [
       {
@@ -187,7 +187,7 @@ export const SCHRITTE: SchrittDef[] = [
     kurz: 'De-minimis',
     beschreibung: 'Beihilfen der letzten drei Jahre – gesetzlich vorgeschriebene Angabe (VO (EU) 2023/2831).',
     erklaerung:
-      'Der Staat muss sicherstellen, dass ein Unternehmen nicht zu viele kleine Förderungen sammelt. Deshalb listen Sie hier alle staatlichen „De-minimis“-Zuschüsse der letzten drei Jahre auf. Sie erkennen diese an der „De-minimis-Bescheinigung“ in den Förderunterlagen.',
+      'Der Staat muss sicherstellen, dass ein Unternehmen nicht zu viele kleine Förderungen sammelt. Deshalb listen Sie hier alle staatlichen „De-minimis“-Zuschüsse der letzten drei Jahre auf. Sie erkennen diese an der „De-minimis-Bescheinigung“ in den Förderunterlagen. Die meisten Unternehmen haben keine – dann sind Sie hier in 30 Sekunden fertig.',
     komponente: 'deminimis',
   },
   {
@@ -202,7 +202,7 @@ export const SCHRITTE: SchrittDef[] = [
       {
         name: 'gruppenzugehoerigkeit',
         typ: 'auswahl',
-        label: 'Gruppenzugehörigkeit',
+        label: 'Wem gehört Ihr Unternehmen?',
         pflicht: true,
         standard: 'privat',
         tooltip:
@@ -238,7 +238,7 @@ export const SCHRITTE: SchrittDef[] = [
       },
       { name: 'standort_ort', typ: 'text', label: 'Ort der Umsetzung: Ort' },
       { name: 'standort_strasse', typ: 'text', label: 'Ort der Umsetzung: Straße + Hausnr.' },
-      { name: 'kontoinhaber', typ: 'text', label: 'Kontoinhaber (Vor- & Nachname)', pflicht: true },
+      { name: 'kontoinhaber', typ: 'text', label: 'Kontoinhaber (wie im Konto geführt – meist die Firma)', pflicht: true },
       {
         name: 'iban',
         typ: 'iban',
@@ -256,7 +256,7 @@ export const SCHRITTE: SchrittDef[] = [
     kurz: 'Vollmacht',
     beschreibung: 'Wer soll Ihren Antrag stellen – und die abschließenden Bestätigungen.',
     erklaerung:
-      'Letzter Schritt: Sie entscheiden, ob der Fördermittel-Concierge der Eskalator AG den Antrag komplett für Sie übernimmt (empfohlen – inklusive aller Rückfragen der Behörde) oder ob Sie ihn selbst einreichen möchten.',
+      'Letzter Schritt: Sie entscheiden, ob unser Fördermittel-Team (WissensReich Academy, in Kooperation mit der Eskalator AG) den Antrag komplett für Sie übernimmt (empfohlen – inklusive aller Rückfragen der Behörde) oder ob Sie ihn selbst einreichen möchten.',
     komponente: 'vollmacht',
   },
 ]

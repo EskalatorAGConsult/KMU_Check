@@ -51,7 +51,7 @@ export async function GET() {
     'Status',
     'Kundenfirma',
     'Kunden-E-Mail',
-    'Ansprechpartner (Vertrieb)',
+    'MABE-Ansprechpartner',
     'Angebotsdatum',
     'Technologien',
     'Investition gesamt (EUR)',

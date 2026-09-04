@@ -8,13 +8,20 @@ import { SignaturPad } from './signatur-pad'
 import { Checkbox, Feld, inputCls } from './ui'
 
 /**
- * Vollmacht & Beantragungsweg. Eskalator-Concierge ist die empfohlene
- * (visuell hervorgehobene) Option. Zwei Signatur-Wege (signatur_modus):
- * - 'canvas': online zeichnen (eIDAS einfache elektronische Signatur)
- * - 'upload': Vordruck laden -> haendisch unterschreiben -> scannen ->
- *   hochladen (das Dokument ist dann selbst die Vollmacht)
+ * Vollmacht & Beantragungsweg. WissensReich-Concierge ist die empfohlene
+ * (visuell hervorgehobene) Option.
+ *
+ * Signatur-Modi (signatur_modus):
+ * - 'upload' (AKTIV): Vordruck laden -> handschriftlich unterschreiben ->
+ *   scannen/fotografieren -> hochladen. Hintergrund: Das BAFA verlangt
+ *   handschriftlich unterschriebene Vollmachten (keine Online-Signatur).
+ * - 'canvas' (deaktiviert, Feature-Flag): online zeichnen. Bleibt im Code
+ *   und kann bei Bedarf reaktiviert werden (ONLINE_SIGNATUR_AKTIV = true).
  * Zeitpunkt, IP und User-Agent werden serverseitig protokolliert.
  */
+
+/** BAFA akzeptiert nur handschriftliche Unterschriften -> Online-Signatur ist ausgeblendet. */
+const ONLINE_SIGNATUR_AKTIV: boolean = false
 export function SchrittVollmacht({
   daten,
   fehler,
@@ -32,14 +39,18 @@ export function SchrittVollmacht({
 }) {
   const weg = (daten.beantragungsweg as string | undefined) ?? 'eskalator'
   const uploadPfad = (daten.vollmacht_upload_pfad as string | undefined) ?? null
-  const [modus, setModus] = useState<'canvas' | 'upload'>(uploadPfad ? 'upload' : 'canvas')
+  const [modus, setModus] = useState<'canvas' | 'upload'>(
+    ONLINE_SIGNATUR_AKTIV ? (uploadPfad ? 'upload' : 'canvas') : 'upload',
+  )
   const [uploadMeldung, setUploadMeldung] = useState<{ art: 'ok' | 'fehler'; text: string } | null>(null)
   const [pending, startTransition] = useTransition()
 
   // Smart Default: Unterzeichner-Name aus dem Ansprechpartner-Schritt
-  // vorbefuellen (nur wenn leer; ueberschreibt nie eine eigene Eingabe).
+  // vorbefuellen (nur wenn leer; ueberschreibt nie eine eigene Eingabe) –
+  // nur solange der Unterzeichner-Dialog (Online-Signatur) aktiv ist.
   // Verzoegert hinter die Hydration (kein setState direkt im Effekt).
   useEffect(() => {
+    if (!ONLINE_SIGNATUR_AKTIV) return
     if (!nameVorschlag || daten.unterschrift_name) return
     const frame = requestAnimationFrame(() => onChange('unterschrift_name', nameVorschlag))
     return () => cancelAnimationFrame(frame)
@@ -127,7 +138,7 @@ export function SchrittVollmacht({
         {karte(
           'selbst',
           'Beantragung durch unser Unternehmen selbst',
-          'Sie erhalten Ihr vollständiges Antrags-Dossier zum Download und stellen den Antrag eigenständig im FZD-Portal. Hinweis: Für das Portal ist ein ELSTER-Organisationszertifikat erforderlich.',
+          'Sie erhalten alle Unterlagen fertig vorbereitet zum Download und reichen selbst im BAFA-Portal ein. Hinweis: Dafür brauchen Sie ein ELSTER-Organisationszertifikat – die Beantragung dauert dort mehrere Wochen.',
           [],
         )}
       </div>
@@ -149,7 +160,7 @@ export function SchrittVollmacht({
                 ['Wer stellt den Antrag im BAFA-Portal?', 'Wir – komplett für Sie', 'Sie selbst (ELSTER-Zertifikat nötig)'],
                 ['Wer beantwortet Rückfragen der Behörde?', 'Wir – bis zur Bewilligung', 'Sie selbst'],
                 ['Kosten für Sie', '0 € (kostenlos)', '0 €, aber Ihr Zeitaufwand'],
-                ['Ihr Aufwand', 'Unterschrift – fertig', 'Portal-Anmeldung + komplette Antragstellung'],
+                ['Ihr Aufwand', 'Vollmacht herunterladen, unterschreiben, hochladen – fertig', 'Portal-Anmeldung + komplette Antragstellung'],
               ] as const
             ).map(([frage, eskalator, selbst]) => (
               <tr key={frage}>
@@ -169,7 +180,10 @@ export function SchrittVollmacht({
         <div className="flex flex-col gap-4">
           <EskalatorBlock />
 
-          {/* Signatur-Modus waehlen: online zeichnen ODER haendisch */}
+          {/* Signatur-Modus-Toggle nur mit aktivierter Online-Signatur zeigen;
+              derzeit (BAFA: handschriftliche Unterschrift) ist der Ablauf
+              einspurig: laden -> unterschreiben -> hochladen. */}
+          {ONLINE_SIGNATUR_AKTIV && (
           <div className="grid grid-cols-2 gap-2 rounded-2xl border border-olive-200 bg-olive-50/50 p-1.5" role="tablist" aria-label="Wie möchten Sie unterschreiben?">
             <button
               type="button"
@@ -194,6 +208,7 @@ export function SchrittVollmacht({
               🖊 Händisch unterschreiben
             </button>
           </div>
+          )}
 
           <div className="flex flex-col gap-4 rounded-2xl border border-olive-200 bg-olive-50/50 p-5">
             <h3 className="text-sm font-semibold text-mabe-900">
@@ -227,7 +242,7 @@ export function SchrittVollmacht({
               Vorbefülltes Vollmacht-Formular öffnen (PDF, 2 Seiten) ↗
             </a>
 
-            {modus === 'canvas' ? (
+            {ONLINE_SIGNATUR_AKTIV && modus === 'canvas' ? (
               <>
                 <p className="rounded-xl bg-white px-4 py-3 text-xs/5 text-olive-600 ring-1 ring-olive-200">
                   Nach dem Absenden erstellen wir automatisch das <strong>ausgefüllte</strong> BAFA-Formular
@@ -268,14 +283,13 @@ export function SchrittVollmacht({
               </>
             ) : (
               <div className="flex flex-col gap-4">
-                {/* 4-Schritte-Anleitung fuer die haendische Signatur */}
+                {/* 3-Schritte-Ablauf (BAFA verlangt die handschriftliche Unterschrift) */}
                 <ol className="flex flex-col gap-2.5">
                   {(
                     [
-                      ['Vordruck herunterladen', 'Das BAFA-Formular ist bereits mit Ihren Daten vorbefüllt – nur Datum und Unterschrift sind frei.'],
-                      ['Ausdrucken & unterschreiben', 'Bitte wie auf Ihrem Ausweis – mit Ort und Datum.'],
-                      ['Einscannen oder abfotografieren', 'PDF, PNG oder JPG genügt – gut lesbar.'],
-                      ['Hier hochladen', 'Wir ordnen die signierte Vollmacht Ihrem Vorgang zu und reichen sie ein.'],
+                      ['Vollmacht herunterladen', 'Das offizielle BAFA-Formular ist bereits mit Ihren Daten vorbefüllt – Sie müssen nichts eintragen.'],
+                      ['Unterschreiben', 'Ort, Datum und Ihre handschriftliche Unterschrift auf die letzte Seite – fertig.'],
+                      ['Hochladen', 'Scan oder Foto der unterschriebenen Vollmacht hier ablegen – wir reichen sie für Sie ein.'],
                     ] as const
                   ).map(([titel, text], i) => (
                     <li key={titel} className="flex gap-3 rounded-xl bg-white px-4 py-3 ring-1 ring-olive-200">
@@ -290,11 +304,28 @@ export function SchrittVollmacht({
                   ))}
                 </ol>
 
+                {/* BAFA-Hinweis: händisch unterschreiben, einscannen, hochladen – kein Unterschriftenstempel */}
+                <div className="flex gap-3 rounded-xl border border-teal-600/25 bg-teal-50/70 p-4">
+                  <svg viewBox="0 0 20 20" fill="currentColor" className="mt-0.5 size-5 shrink-0 text-teal-700" aria-hidden>
+                    <path
+                      fillRule="evenodd"
+                      d="M18 10a8 8 0 1 1-16 0 8 8 0 0 1 16 0Zm-7-4a1 1 0 1 1-2 0 1 1 0 0 1 2 0ZM9 9a.75.75 0 0 0 0 1.5h.253a.25.25 0 0 1 .244.304l-.459 2.066A1.75 1.75 0 0 0 10.747 15H11a.75.75 0 0 0 0-1.5h-.253a.25.25 0 0 1-.244-.304l.459-2.066A1.75 1.75 0 0 0 9.253 9H9Z"
+                      clipRule="evenodd"
+                    />
+                  </svg>
+                  <p className="text-sm/6 text-teal-900">
+                    <strong>Wichtig: Kein Unterschriftenstempel.</strong> Das BAFA akzeptiert die Vollmacht nur
+                    handschriftlich unterschrieben. Bitte unterschreiben Sie das Formular <strong>händisch mit
+                    Stift</strong>, scannen Sie es ein (oder fotografieren Sie es gut lesbar) und laden Sie die Datei
+                    anschließend hier hoch.
+                  </p>
+                </div>
+
                 <a
                   href={`/v/${token}/vollmacht-vordruck.pdf`}
                   className="flex min-h-12 items-center justify-center gap-2 rounded-xl bg-mabe-900 px-5 py-3 text-sm font-semibold text-white hover:bg-mabe-800"
                 >
-                  ⬇ Vordruck herunterladen (vorbefüllt, ohne Unterschrift)
+                  ⬇ 1 · Vollmacht herunterladen (vorbefüllt)
                 </a>
 
                 {/* Upload der signierten Datei */}
@@ -346,7 +377,7 @@ export function SchrittVollmacht({
                       pending ? 'pointer-events-none opacity-60' : ''
                     }`}
                   >
-                    {pending ? 'Lädt hoch …' : '⬆ Signierte Vollmacht hochladen (PDF, PNG oder JPG · max. 15 MB)'}
+                    {pending ? 'Lädt hoch …' : '⬆ 3 · Unterschriebene Vollmacht hochladen (PDF, PNG oder JPG · max. 15 MB)'}
                     <input
                       type="file"
                       accept=".pdf,.png,.jpg,.jpeg"

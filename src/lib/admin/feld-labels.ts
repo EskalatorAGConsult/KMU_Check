@@ -6,7 +6,7 @@
 export const FELD_LABEL: Record<string, string> = {
   status: 'Status',
   kunde_firma: 'Kundenfirma',
-  kunde_ansprechpartner: 'Ansprechpartner (Kunde)',
+  kunde_ansprechpartner: 'MABE-Ansprechpartner (für den Kunden)',
   kunde_email: 'E-Mail (Kunde)',
   angebot_nr: 'Angebotsnummer',
   angebot_datum: 'Angebotsdatum',

@@ -18,7 +18,7 @@ const NAV_LINK = 'inline-flex min-h-10 items-center rounded-lg px-3.5 text-sm fo
 const HEADER_KONTAKT = 'm.dick@mabe.de'
 
 export default async function AdminLayout({ children }: { children: React.ReactNode }) {
-  const session = await requireAdmin()
+  await requireAdmin() // Guard: ohne Admin-Session geht es nicht weiter
 
   return (
     <div className="mx-auto max-w-6xl px-4 py-6 sm:px-6 sm:py-10">

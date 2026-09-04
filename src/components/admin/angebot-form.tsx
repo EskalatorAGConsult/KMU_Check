@@ -278,7 +278,7 @@ export function AngebotForm() {
           <input key={`${v}-kunde_firma`} id="kunde_firma" name="kunde_firma" required className={inputCls} defaultValue={dv(extraktion?.kunde_firma)} />
         </div>
         <div>
-          <label className={labelCls} htmlFor="kunde_ansprechpartner">Ansprechpartner</label>
+          <label className={labelCls} htmlFor="kunde_ansprechpartner">MABE-Ansprechpartner (Name, den der Kunde sieht)</label>
           <input key={`${v}-kunde_ansprechpartner`} id="kunde_ansprechpartner" name="kunde_ansprechpartner" className={inputCls} defaultValue={dv(extraktion?.kunde_ansprechpartner)} />
         </div>
         <div>
