@@ -35,10 +35,10 @@ export function KundenListe({ kunden }: { kunden: KundeUebersicht[] }) {
   const [offen, setOffen] = useState<Record<string, boolean>>({})
   const [akten, setAkten] = useState<Record<string, AktenZustand>>({})
 
-  async function ladeAkte(email: string) {
+  async function ladeAkte(email: string, angebotId: string) {
     const schluessel = email.toLowerCase()
     setAkten((a) => ({ ...a, [schluessel]: { status: 'laden' } }))
-    const antwort = await ladeFallakte(email)
+    const antwort = await ladeFallakte(angebotId)
     setAkten((a) => ({
       ...a,
       [schluessel]: antwort.ok
@@ -47,13 +47,13 @@ export function KundenListe({ kunden }: { kunden: KundeUebersicht[] }) {
     }))
   }
 
-  async function umschalten(email: string) {
+  async function umschalten(email: string, angebotId: string) {
     const schluessel = email.toLowerCase()
     const wirdAufgeklappt = !offen[schluessel]
     setOffen((o) => ({ ...o, [schluessel]: wirdAufgeklappt }))
     // Lazy laden: nur beim ersten Aufklappen
     if (wirdAufgeklappt && !akten[schluessel]) {
-      await ladeAkte(email)
+      await ladeAkte(email, angebotId)
     }
   }
 
@@ -69,7 +69,7 @@ export function KundenListe({ kunden }: { kunden: KundeUebersicht[] }) {
             <div className="flex items-stretch">
               <button
                 type="button"
-                onClick={() => void umschalten(k.email)}
+                onClick={() => void umschalten(k.email, k.letzteAngebotId)}
                 aria-expanded={istOffen}
                 aria-controls={`fallakte-${schluessel}`}
                 className="flex min-h-14 min-w-0 flex-1 flex-col gap-2 p-4 text-left transition-colors hover:bg-olive-50/60 focus-visible:bg-teal-50 focus-visible:outline-none sm:flex-row sm:items-center sm:gap-4"
@@ -116,7 +116,7 @@ export function KundenListe({ kunden }: { kunden: KundeUebersicht[] }) {
                 </span>
               </button>
               <Link
-                href={`/admin/kunden/${encodeURIComponent(k.email)}`}
+                href={`/admin/kunden/${k.letzteAngebotId}`}
                 className="flex shrink-0 items-center border-l border-olive-100 px-3 text-xs font-semibold text-teal-700 hover:bg-teal-50 sm:px-4"
                 aria-label={`Fallakte von ${k.firma} als eigene Seite öffnen`}
               >
@@ -154,7 +154,7 @@ export function KundenListe({ kunden }: { kunden: KundeUebersicht[] }) {
                         <VorgangDatenblatt
                           vorgang={v}
                           vorlagen={akt.vorlagen}
-                          onGespeichert={() => void ladeAkte(k.email)}
+                          onGespeichert={() => void ladeAkte(k.email, k.letzteAngebotId)}
                         />
                       </div>
                     ))}

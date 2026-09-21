@@ -1,6 +1,6 @@
 'use client'
 
-import { useMemo } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 
 import type { KmuJahrDaten, KmuSchrittDaten } from '@/lib/journey/schemas'
 import { holdingsFuerJahr, jahrKennzahl, jahreAufbauen } from '@/lib/journey/verbund-jahre'
@@ -112,6 +112,15 @@ export function SchrittKmu({
     const naechste = beteiligungen.map((b, j) => (j === i ? { ...b, ...patch } : b))
     onChange('beteiligungen', naechste)
   }
+
+  // Loesch-Bestaetigung („Sicher?"): Kartenzahl-Jahre sind teuer erfassbar –
+  // ein Fehltipp auf dem Papierkorb soll nichts zerstoeren. Laeuft nach 3 s ab.
+  const [loeschBestaetigt, setLoeschBestaetigt] = useState<number | null>(null)
+  useEffect(() => {
+    if (loeschBestaetigt === null) return
+    const t = setTimeout(() => setLoeschBestaetigt(null), 3000)
+    return () => clearTimeout(t)
+  }, [loeschBestaetigt])
 
   /**
    * Kennzahlwert EINER Beteiligung für EIN Geschäftsjahr setzen. Speichert den
@@ -340,8 +349,11 @@ export function SchrittKmu({
               <div key={i} className="rounded-2xl border border-olive-200 bg-olive-50/50 p-4 sm:p-5">
                 {/* Kopf: Nummer + Live-Einstufung + Entfernen (Muster Landingpage-Tool).
                     Sticky: Beim Scrollen durch die Jahres-Kennzahlen bleibt sichtbar,
-                    Wessen Zahlen hier gerade erfasst werden (nicht der Antragsteller). */}
-                <div className="sticky top-0 z-10 -mx-4 -mt-4 mb-4 flex items-center justify-between gap-2 rounded-t-2xl bg-white px-4 py-3 ring-1 ring-olive-100 sm:-mx-5 sm:-mt-5 sm:px-5">
+                    wessen Zahlen hier gerade erfasst werden (nicht der Antragsteller).
+                    Offset = Navbar (5.25rem, --scroll-padding-top) + Fortschrittsleiste
+                    (~4.75rem) – klebt UNTER beiden statt hinter ihnen zu verschwinden
+                    (Mobile-Audit: beide sticken sonst auf top-0 unter der Navbar). */}
+                <div className="sticky top-[calc(var(--scroll-padding-top)+4.75rem)] z-20 -mx-4 -mt-4 mb-4 flex items-center justify-between gap-2 rounded-t-2xl bg-white px-4 py-3 ring-1 ring-olive-100 sm:-mx-5 sm:-mt-5 sm:px-5">
                   <span className="inline-flex min-w-0 flex-wrap items-center gap-2 text-sm font-semibold text-mabe-900">
                     <span className="flex size-6 shrink-0 items-center justify-center rounded-full bg-mabe-900 text-xs text-white">
                       {i + 1}
@@ -368,17 +380,39 @@ export function SchrittKmu({
                   </span>
                   <button
                     type="button"
-                    onClick={() => onChange('beteiligungen', beteiligungen.filter((_, j) => j !== i))}
-                    className="shrink-0 rounded-full p-1.5 text-olive-500 transition-colors hover:bg-red-50 hover:text-red-600"
-                    aria-label={`Beteiligung ${b.name || i + 1} entfernen`}
+                    onClick={() => {
+                      // Destruktiv ohne Undo: zweiter Tap binnen 3 s bestätigt
+                      // (Mobile-Audit: 32px-Hitbox direkt am Slider loeschte
+                      // erfasste Jahres-Zahlen versehentlich). Hitbox 44px.
+                      if (loeschBestaetigt === i) {
+                        setLoeschBestaetigt(null)
+                        onChange('beteiligungen', beteiligungen.filter((_, j) => j !== i))
+                      } else {
+                        setLoeschBestaetigt(i)
+                      }
+                    }}
+                    className={`flex size-11 shrink-0 items-center justify-center rounded-full transition-colors ${
+                      loeschBestaetigt === i
+                        ? 'bg-red-100 text-red-700 ring-1 ring-red-300'
+                        : 'text-olive-500 hover:bg-red-50 hover:text-red-600'
+                    }`}
+                    aria-label={
+                      loeschBestaetigt === i
+                        ? `Beteiligung ${b.name || i + 1} wirklich entfernen – erneut tippen`
+                        : `Beteiligung ${b.name || i + 1} entfernen`
+                    }
                   >
-                    <svg viewBox="0 0 20 20" fill="currentColor" className="size-5" aria-hidden>
-                      <path
-                        fillRule="evenodd"
-                        d="M8.75 1A2.75 2.75 0 0 0 6 3.75v.443A28.97 28.97 0 0 0 2.5 4.5a.75.75 0 0 0 0 1.5h.227l.706 11.31A2.75 2.75 0 0 0 6.178 19h7.644a2.75 2.75 0 0 0 2.745-2.69L17.273 6H17.5a.75.75 0 0 0 0-1.5 28.97 28.97 0 0 0-3.5-.307V3.75A2.75 2.75 0 0 0 11.25 1h-2.5ZM10 4c.84 0 1.673.025 2.5.075V3.75c0-.69-.56-1.25-1.25-1.25h-2.5c-.69 0-1.25.56-1.25 1.25v.325C8.327 4.025 9.16 4 10 4Z"
-                        clipRule="evenodd"
-                      />
-                    </svg>
+                    {loeschBestaetigt === i ? (
+                      <span className="text-[10px] font-bold">Sicher?</span>
+                    ) : (
+                      <svg viewBox="0 0 20 20" fill="currentColor" className="size-5" aria-hidden>
+                        <path
+                          fillRule="evenodd"
+                          d="M8.75 1A2.75 2.75 0 0 0 6 3.75v.443A28.97 28.97 0 0 0 2.5 4.5a.75.75 0 0 0 0 1.5h.227l.706 11.31A2.75 2.75 0 0 0 6.178 19h7.644a2.75 2.75 0 0 0 2.745-2.69L17.273 6H17.5a.75.75 0 0 0 0-1.5 28.97 28.97 0 0 0-3.5-.307V3.75A2.75 2.75 0 0 0 11.25 1h-2.5ZM10 4c.84 0 1.673.025 2.5.075V3.75c0-.69-.56-1.25-1.25-1.25h-2.5c-.69 0-1.25.56-1.25 1.25v.325C8.327 4.025 9.16 4 10 4Z"
+                          clipRule="evenodd"
+                        />
+                      </svg>
+                    )}
                   </button>
                 </div>
 
@@ -504,7 +538,10 @@ export function SchrittKmu({
                 </div>
 
                 {/* Kennzahlen je BAFA-Geschäftsjahr (2025 UND 2024 – das Portal
-                    fragt beide ab, auch für Partner-/verbundene Unternehmen). */}
+                    fragt beide ab, auch für Partner-/verbundene Unternehmen).
+                    Mobil (unter sm): Jahres-Stack statt Wisch-Tabelle – drei
+                    Eingabefelder passen auf 375px nicht nebeneinander lesbar
+                    (Mobile-Audit: min-w-Zwang erzwang horizontales Wischen). */}
                 <div className="mt-4">
                   <p className="mb-2 text-xs font-semibold text-olive-600">
                     Kennzahlen je Geschäftsjahr (2025 und 2024) dieses Unternehmens{' '}
@@ -512,8 +549,47 @@ export function SchrittKmu({
                       – jahreszeitäquivalente Beschäftigte (JAE), Umsatz, Bilanzsumme
                     </span>
                   </p>
-                  <div className="overflow-x-auto">
-                    <table className="w-full min-w-[30rem] text-sm">
+
+                  {/* Mobil: ein Block je Geschäftsjahr, Felder gestapelt */}
+                  <div className="flex flex-col gap-3 sm:hidden">
+                    {BAFA_GESCHAEFTSJAHRE.map((gj) => (
+                      <div key={gj} className="rounded-xl bg-olive-50/70 p-3 ring-1 ring-olive-100">
+                        <p className="mb-2 text-xs font-bold text-mabe-900 tabular-nums">
+                          {gj}
+                          {gj === (jahre[0]?.geschaeftsjahr ?? BAFA_GESCHAEFTSJAHRE[0]) && (
+                            <span className="ml-1.5 text-[10px] font-semibold text-teal-700">zählt für Ihre Quote</span>
+                          )}
+                        </p>
+                        <div className="grid grid-cols-2 gap-2.5">
+                          {(
+                            [
+                              ['jae', 'Beschäftigte (JAE)'],
+                              ['umsatz', 'Umsatz (€)'],
+                              ['bilanzsumme', 'Bilanzsumme (€)'],
+                            ] as const
+                          ).map(([feldname, label]) => (
+                            <label key={feldname} className={`block ${feldname === 'bilanzsumme' ? 'col-span-2' : ''}`}>
+                              <span className="mb-1 block text-[11px] font-semibold text-olive-600">{label}</span>
+                              <input
+                                type="number"
+                                inputMode="decimal"
+                                min={0}
+                                className={`${inputCls} tabular-nums`}
+                                placeholder="0"
+                                aria-label={`${b.name || 'Beteiligung'}: ${label} ${gj}`}
+                                value={String(jahrKennzahl(b, gj, feldname) ?? '')}
+                                onChange={(e) => setBeteiligungJahr(i, gj, feldname, e.target.value)}
+                              />
+                            </label>
+                          ))}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+
+                  {/* Ab sm: kompakte Tabelle (Platz reicht fuer alle Spalten) */}
+                  <div className="hidden overflow-x-auto sm:block">
+                    <table className="w-full text-sm">
                       <thead>
                         <tr className="border-b border-olive-200 text-left text-xs text-olive-500">
                           <th className="py-1.5 pr-3 font-semibold">Geschäftsjahr</th>
@@ -591,7 +667,7 @@ export function SchrittKmu({
               onChange('hat_beteiligungen', true)
               onChange('beteiligungen', [...beteiligungen, { name: '', richtung: 'aufwaerts', anteil_pct: 50 }])
             }}
-            className="self-start rounded-xl border border-dashed border-teal-600/50 px-4 py-2.5 text-sm font-semibold text-teal-700 hover:bg-teal-50"
+            className="min-h-11 self-start rounded-xl border border-dashed border-teal-600/50 px-4 py-2.5 text-sm font-semibold text-teal-700 hover:bg-teal-50"
           >
             + Beteiligung hinzufügen
           </button>

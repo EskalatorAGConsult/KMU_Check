@@ -144,9 +144,14 @@ export function SchrittVollmacht({
       </div>
       {fehler.beantragungsweg && <p className="text-xs/5 font-medium text-red-700">{fehler.beantragungsweg}</p>}
 
-      {/* Vergleich auf einen Blick: informierte statt „verkaufte" Entscheidung */}
+      {/* Vergleich auf einen Blick: informierte statt „verkaufte" Entscheidung.
+          Mobil bewusst seitlich scrollbar (Nur-Lese-Vergleich, min-w reduziert)
+          + Wisch-Hinweis (Mobile-Audit). */}
+      <p className="text-center text-[11px] text-olive-400 sm:hidden" aria-hidden>
+        Vergleichstabelle ↔ seitlich wischen
+      </p>
       <div className="overflow-x-auto rounded-2xl border border-olive-200 bg-white">
-        <table className="w-full min-w-[30rem] border-collapse text-left text-sm">
+        <table className="w-full min-w-[26rem] border-collapse text-left text-sm">
           <thead>
             <tr className="bg-olive-50 text-xs text-olive-500">
               <th className="px-4 py-2.5 font-semibold"></th>
@@ -234,7 +239,7 @@ export function SchrittVollmacht({
               className="hidden h-[36rem] w-full rounded-xl bg-white ring-1 ring-olive-200 sm:block"
             />
             <a
-              href={`/v/${token}/vollmacht-vordruck.pdf`}
+              href={`/v/${token}/vollmacht-vordruck.pdf?inline=1`}
               target="_blank"
               rel="noopener noreferrer"
               className="inline-flex w-fit items-center gap-1.5 rounded-xl border border-teal-600 bg-white px-4 py-2.5 text-sm font-semibold text-teal-700 hover:bg-teal-50"

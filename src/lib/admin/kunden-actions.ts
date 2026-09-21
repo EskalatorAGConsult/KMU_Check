@@ -21,24 +21,27 @@ import { ladeDokumentHoch } from '@/lib/storage/blob'
 export type KundeActionErgebnis = { ok: true; hinweis: string } | { ok: false; fehler: string }
 
 /**
- * Laedt die vollstaendige Fallakte eines Kunden (alle Vorgaenge mit
- * Stammdaten, Verbund, KMU-Bewertungen, De-minimis, Vollmacht, Dokumenten,
- * Entwuerfen, Uebergaben und Audit-Trail) fuer die aufklappbare
- * Kundenuebersicht. Admin-guarded; Ergebnis ist JSON-serialisierbar.
+ * Laedt die vollstaendige Fallakte eines Vorgangs bzw. Kunden (alle Vorgaenge
+ * derselben E-Mail mit Stammdaten, Verbund, KMU-Bewertungen, De-minimis,
+ * Vollmacht, Dokumenten, Entwuerfen, Uebergaben und Audit-Trail) fuer die
+ * aufklappbare Kundenuebersicht. Adressiert wird ueber die Angebots-ID –
+ * keine Klartext-E-Mail im Funktionsaufruf (Datenminimierung, DSGVO).
+ * Admin-guarded; Ergebnis ist JSON-serialisierbar.
  */
 export async function ladeFallakte(
-  email: string,
+  angebotId: string,
 ): Promise<
   | { ok: true; kunde: KundeDetail; vorlagen: SystemkonzeptVorlage[] }
   | { ok: false; fehler: string }
 > {
   await requireAdmin()
-  const bereinigt = email.trim().toLowerCase()
-  if (!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(bereinigt)) {
-    return { ok: false, fehler: 'Ungültige E-Mail-Adresse.' }
+  if (!angebotId || angebotId.trim() === '') {
+    return { ok: false, fehler: 'Ungültige Vorgangs-ID.' }
   }
   try {
-    const [kunde, vorlagen] = await Promise.all([holeKunde(bereinigt), listeSystemkonzeptVorlagen()])
+    const angebot = await holeAngebot(angebotId.trim())
+    if (!angebot) return { ok: false, fehler: 'Vorgang nicht gefunden.' }
+    const [kunde, vorlagen] = await Promise.all([holeKunde(angebot.kunde_email), listeSystemkonzeptVorlagen()])
     if (!kunde) return { ok: false, fehler: 'Kunde nicht gefunden.' }
     return { ok: true, kunde, vorlagen }
   } catch (e) {

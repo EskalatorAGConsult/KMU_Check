@@ -928,7 +928,7 @@ function HoldingCard({
           type="button"
           onClick={onRemove}
           aria-label="Beteiligung entfernen"
-          className="rounded-full p-1.5 text-olive-500 hover:bg-red-50 hover:text-red-600"
+          className="flex size-11 shrink-0 items-center justify-center rounded-full text-olive-500 hover:bg-red-50 hover:text-red-600"
         >
           <svg viewBox="0 0 20 20" fill="currentColor" className="size-5">
             <path

@@ -4,14 +4,25 @@ import { notFound } from 'next/navigation'
 
 import { VorgangDatenblatt } from '@/components/admin/vorgang-datenblatt'
 import { listeSystemkonzeptVorlagen } from '@/lib/admin/systemkonzept-actions'
+import { holeAngebot } from '@/lib/db/repositories/angebote'
 import { holeKunde } from '@/lib/db/repositories/kunden'
 
 export const metadata: Metadata = { title: 'Kunde | MABE Förderportal', robots: { index: false } }
 export const dynamic = 'force-dynamic'
 
-export default async function KundeDetailPage({ params }: { params: Promise<{ email: string }> }) {
-  const { email } = await params
-  const kunde = await holeKunde(decodeURIComponent(email))
+/**
+ * Fallakte eines Kunden, adressiert ueber die Angebots-ID (UUID v7) eines
+ * seiner Vorgaenge – KANONISCH: keine Klartext-E-Mail-Adressen in Admin-URLs
+ * (DSGVO-Datenminimierung; E-Mails landeten sonst in Browser-History,
+ * Server-Logs und Referer-Headern).
+ */
+export default async function KundeDetailPage({ params }: { params: Promise<{ id: string }> }) {
+  const { id } = await params
+  // Format vorab pruefen: keine UUID -> sauberes 404 statt Postgres-Syntaxfehler
+  if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id)) notFound()
+  const angebot = await holeAngebot(id)
+  if (!angebot) notFound()
+  const kunde = await holeKunde(angebot.kunde_email)
   if (!kunde) notFound()
   const vorlagen = await listeSystemkonzeptVorlagen()
 

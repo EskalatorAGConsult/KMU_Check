@@ -33,6 +33,8 @@ export interface KundeUebersicht {
   status: AngebotStatus[]
   registriert: boolean
   letzterVorgang: string // ISO-Datum
+  /** Angebots-ID des juengsten Vorgangs – kanonischer Schluessel fuer Fallakte-Links (keine Klartext-E-Mail in URLs). */
+  letzteAngebotId: string
 }
 
 interface AngebotZeile {
@@ -68,6 +70,7 @@ export async function listeKunden(): Promise<KundeUebersicht[]> {
       if (a.created_at > vorhanden.letzterVorgang) {
         vorhanden.letzterVorgang = a.created_at
         vorhanden.firma = a.kunde_firma
+        vorhanden.letzteAngebotId = a.id
       }
     } else {
       nachMail.set(schluessel, {
@@ -77,6 +80,7 @@ export async function listeKunden(): Promise<KundeUebersicht[]> {
         status: [a.status],
         registriert: registrierteMails.has(schluessel),
         letzterVorgang: a.created_at,
+        letzteAngebotId: a.id,
       })
     }
   }

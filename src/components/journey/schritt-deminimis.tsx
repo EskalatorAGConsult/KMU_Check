@@ -144,7 +144,7 @@ export function SchrittDeminimis({
               <button
                 type="button"
                 onClick={() => onChange('beihilfen', beihilfen.filter((_, j) => j !== i))}
-                className="rounded-lg px-3 py-2 text-sm font-medium text-red-700 hover:bg-red-50"
+                className="min-h-11 rounded-lg px-3 py-2 text-sm font-medium text-red-700 hover:bg-red-50"
               >
                 Entfernen
               </button>
@@ -156,7 +156,7 @@ export function SchrittDeminimis({
       <button
         type="button"
         onClick={() => onChange('beihilfen', [...beihilfen, { beihilfegeber: '', form: 'zuschuss', kategorie: 'allgemein', status: 'gewaehrt' }])}
-        className="self-start rounded-xl border border-dashed border-teal-600/50 px-4 py-2.5 text-sm font-semibold text-teal-700 hover:bg-teal-50"
+        className="min-h-11 self-start rounded-xl border border-dashed border-teal-600/50 px-4 py-2.5 text-sm font-semibold text-teal-700 hover:bg-teal-50"
       >
         + Beihilfe hinzufügen
       </button>

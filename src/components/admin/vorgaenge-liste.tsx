@@ -167,7 +167,7 @@ export function VorgaengeListe({ angebote }: { angebote: AngebotListeItem[] }) {
           {/* Mobile: Kartenliste (daumenfreundlich, ohne horizontales Scrollen) */}
           <ul className="flex flex-col gap-3 sm:hidden">
             {sichtbar.map((a) => {
-              const href = `/admin/kunden/${encodeURIComponent(a.kunde_email)}`
+              const href = `/admin/kunden/${a.id}`
               return (
                 <li key={a.id}>
                   <Link
@@ -214,7 +214,7 @@ export function VorgaengeListe({ angebote }: { angebote: AngebotListeItem[] }) {
               </thead>
               <tbody className="divide-y divide-olive-100 bg-white">
                 {sichtbar.map((a) => {
-                  const href = `/admin/kunden/${encodeURIComponent(a.kunde_email)}`
+                  const href = `/admin/kunden/${a.id}`
                   const linkCls =
                     'block px-5 py-3.5 outline-none focus-visible:bg-teal-50 focus-visible:ring-2 focus-visible:ring-teal-600 focus-visible:ring-inset'
                   return (

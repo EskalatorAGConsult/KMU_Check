@@ -26,7 +26,7 @@ export function Fortschritt({
   const aktuell = SCHRITTE[idx]
 
   return (
-    <div className="sticky top-0 z-30 -mx-4 border-b border-olive-100 bg-white/90 px-4 py-3 backdrop-blur-md sm:-mx-6 sm:px-6">
+    <div className="sticky top-(--scroll-padding-top) z-30 -mx-4 border-b border-olive-100 bg-white/90 px-4 py-3 shadow-sm backdrop-blur-md sm:-mx-6 sm:px-6">
       <div className="flex items-center justify-between gap-3">
         <p className="min-w-0 truncate text-sm text-olive-600">
           <span className="font-semibold text-mabe-900">

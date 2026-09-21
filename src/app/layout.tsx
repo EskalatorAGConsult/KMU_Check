@@ -91,7 +91,7 @@ export default function RootLayout({
             </>
           }
           socialLinks={
-            <SocialLink href="https://www.linkedin.com" name="LinkedIn">
+            <SocialLink href="https://www.linkedin.com/company/maschinen-und-behälterbau-gmbh/" name="LinkedIn">
               <LinkedInIcon />
             </SocialLink>
           }

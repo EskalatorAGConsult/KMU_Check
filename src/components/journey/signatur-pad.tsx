@@ -201,7 +201,7 @@ export function SignaturPad({
           <button
             type="button"
             onClick={zuruecksetzen}
-            className="shrink-0 rounded-lg px-2 py-1 text-xs font-semibold text-olive-600 hover:bg-olive-100"
+            className="min-h-11 shrink-0 rounded-lg px-4 py-2 text-xs font-semibold text-olive-600 hover:bg-olive-100"
           >
             Zurücksetzen
           </button>

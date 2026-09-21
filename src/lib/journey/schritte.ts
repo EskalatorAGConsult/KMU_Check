@@ -56,10 +56,10 @@ export const SCHRITTE: SchrittDef[] = [
         typ: 'wz_code',
         label: 'WZ-Code (2008)',
         pflicht: true,
-        placeholder: 'z. B. 28.29',
-        hilfe: 'Die Branchenklassifikation Ihres Unternehmens (WZ 2008). Sie steht z. B. im Handelsregisterauszug oder beim Steuerberater.',
+        placeholder: 'Code oder Branche tippen, z. B. 28.29',
+        hilfe: 'Tippen Sie den Code oder ein Stichwort Ihrer Branche – die amtliche Bezeichnung (offizielle Destatis-Liste WZ 2008) erscheint automatisch darunter.',
         tooltip:
-          'Der WZ-Code ist eine Nummer für Ihre Branche (ähnlich wie eine Artikelnummer für Wirtschaftszweige). Sie steht auf Ihrem Fragebogen zur steuerlichen Erfassung oder im Handelsregisterauszug. Ihr Steuerbüro nennt ihn Ihnen in einer Minute.',
+          'Der WZ-Code ist die amtliche Branchennummer Ihres Unternehmens. Sie steht auf Ihrem Fragebogen zur steuerlichen Erfassung oder im Handelsregisterauszug. Ihr Steuerbüro nennt ihn Ihnen in einer Minute.',
       },
       {
         name: 'unternehmensart',
