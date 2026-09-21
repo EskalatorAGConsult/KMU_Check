@@ -239,6 +239,9 @@ export const vollmachtSchema = z
     vorhaben_nicht_begonnen: z
       .boolean()
       .refine((v) => v === true, 'Ohne diese Bestätigung ist eine Förderung nicht möglich.'),
+    systemkonzept_bestaetigt: z
+      .boolean()
+      .refine((v) => v === true, 'Bitte bestätigen Sie das Systemkonzept (Pflichtanlage zum Antrag).'),
     wahrheitsgemaess: z
       .boolean()
       .refine((v) => v === true, 'Bitte bestätigen Sie die Richtigkeit Ihrer Angaben.'),

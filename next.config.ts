@@ -5,10 +5,11 @@ const nextConfig: NextConfig = {
   outputFileTracingExcludes: {
     '*': ['./_oatmeal_template/**'],
   },
-  // BAFA-Vollmachtvorlage (AcroForm) muss im Serverless-Bundle der Journey-
-  // Seite landen, damit fuelleVollmachtAus() sie zur Laufzeit lesen kann.
+  // BAFA-Vollmachtvorlage + universelles Systemkonzept (AcroForm/PDF) muessen
+  // im Serverless-Bundle der Journey- und Vorlagen-Routen landen.
   outputFileTracingIncludes: {
     '/v/*': ['./docs/vorlagen/*.pdf'],
+    '/vorlagen/*': ['./docs/vorlagen/*.pdf'],
   },
   // Server-Action-Bodies (PDF-Uploads: Angebot, Systemkonzept, Dokumente)
   // sind per Default auf 1 MB begrenzt – Scans erreichen validiereUploadDatei

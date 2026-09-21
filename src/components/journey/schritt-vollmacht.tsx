@@ -422,6 +422,49 @@ export function SchrittVollmacht({
         </div>
       )}
 
+      {/* Systemkonzept (BAFA-Pflichtanlage): Ansicht + Bestaetigung.
+          Gilt fuer beide Beantragungswege – das Dokument wird in jedem
+          Fall mit dem Antrag eingereicht. */}
+      <div className="flex flex-col gap-4 rounded-2xl border border-olive-200 bg-olive-50/50 p-5">
+        <h3 className="text-sm font-semibold text-mabe-900">
+          Systemkonzept (MABE smart control)
+          <span className="ml-2 text-xs font-normal text-olive-500">Pflichtanlage zum Antrag · Datenerfassungsplan</span>
+        </h3>
+        <p className="text-sm/6 text-olive-700">
+          Das BAFA verlangt für Modul 3 ein <strong>Systemkonzept mit Datenerfassungsplan</strong> – es beschreibt,
+          wie MABE smart control Mess-, Steuer- und Energiemanagementtechnik in Ihrem Betrieb zusammenwirkt.
+          <strong> Genau dieses Dokument reichen wir mit Ihrem Antrag ein</strong> – bitte sehen Sie es sich an:
+        </p>
+        {/* Desktop: eingebettet; mobil: eigener Tab (iOS/Android zeigen iframe-PDFs unsicher) */}
+        <iframe
+          src="/vorlagen/systemkonzept.pdf#view=FitH"
+          title="Systemkonzept MABE smart control (BAFA Modul 3)"
+          className="hidden h-[30rem] w-full rounded-xl bg-white ring-1 ring-olive-200 sm:block"
+        />
+        <a
+          href="/vorlagen/systemkonzept.pdf"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="inline-flex w-fit items-center gap-1.5 rounded-xl border border-teal-600 bg-white px-4 py-2.5 text-sm font-semibold text-teal-700 hover:bg-teal-50"
+        >
+          Systemkonzept öffnen (PDF, 5 Seiten) ↗
+        </a>
+        <div className="rounded-xl border border-amber-300 bg-amber-50/60 p-4">
+          <Checkbox
+            checked={(daten.systemkonzept_bestaetigt as boolean) ?? false}
+            onChange={(v) => onChange('systemkonzept_bestaetigt', v)}
+            fehler={fehler.systemkonzept_bestaetigt}
+            label={
+              <>
+                <strong>Bestätigung Systemkonzept:</strong> Ich habe das Systemkonzept (Datenerfassungsplan)
+                eingesehen und bestätige, dass es mit meinem Antrag eingereicht wird.{' '}
+                <span className="font-semibold text-red-700">*</span>
+              </>
+            }
+          />
+        </div>
+      </div>
+
       <div className="flex flex-col gap-3">
         <Checkbox
           checked={(daten.vorhaben_nicht_begonnen as boolean) ?? false}

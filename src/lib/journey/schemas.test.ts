@@ -94,6 +94,7 @@ describe('Fehlermeldungen sind immer deutsch (keine Zod-Rohtexte)', () => {
 describe('vollmachtSchema – Signatur-Modi (canvas | upload)', () => {
   const basis = {
     vorhaben_nicht_begonnen: true,
+    systemkonzept_bestaetigt: true,
     wahrheitsgemaess: true,
     dsgvo: true,
   }

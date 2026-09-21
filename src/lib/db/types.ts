@@ -202,6 +202,8 @@ export interface VollmachtRow {
   unterzeichnet_von: string | null
   unterschrift_ip: string | null
   unterschrift_ua: string | null
+  /** Kunde hat das Systemkonzept eingesehen und der Einreichung zugestimmt (Migration 24). */
+  systemkonzept_bestaetigt: boolean
   created_at: string
 }
 

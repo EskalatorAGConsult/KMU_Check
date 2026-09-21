@@ -138,6 +138,7 @@ const vorgang: KundeVorgang = {
     unterzeichnet_von: 'Jürgen Müller',
     unterschrift_ip: null,
     unterschrift_ua: null,
+    systemkonzept_bestaetigt: true,
     created_at: '2026-08-20T10:05:00Z',
   },
   dokumente: [],

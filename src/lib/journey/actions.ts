@@ -371,6 +371,7 @@ export async function schliesseJourneyAb(
         signatur_bild_path: vollmacht.beantragungsweg === 'eskalator' && !uploadPfad ? signaturPfad : null,
         unterzeichnet_at: vollmacht.beantragungsweg === 'eskalator' ? new Date().toISOString() : null,
         unterzeichnet_von: vollmacht.unterschrift_name ?? null,
+        systemkonzept_bestaetigt: vollmacht.systemkonzept_bestaetigt,
         unterschrift_ip: ip,
         unterschrift_ua: ua,
       },
@@ -487,9 +488,12 @@ export async function schliesseJourneyAb(
   })
   await audit(angebot.id, 'system', 'bestaetigung_email', { gesendet: mailVersand.ok, grund: mailVersand.grund ?? null })
 
-  // 11 · Systemkonzept generieren + ablegen (best effort, blockiert den Abschluss nicht)
-  // Ausnahme: Hat der Admin bereits ein kundenindividuelles Systemkonzept
-  // hinterlegt (Upload/Vorlage), bleibt dieses bestehen – nicht ueberschreiben.
+  // 11 · Systemkonzept zum Fall einbinden (best effort, blockiert den
+  // Abschluss nicht). Primaer: das UNIVERSELLE MABE-Systemkonzept aus
+  // docs/vorlagen (das der Kunde im letzten Schritt eingesehen und
+  // bestaetigt hat). Fallback: dynamisch generierte Variante mit
+  // Kundendaten. Ausnahme: Hat der Admin bereits ein kundenindividuelles
+  // Systemkonzept hinterlegt (Upload/Vorlage), bleibt dieses bestehen.
   try {
     const { count: vorhandenes } = await db
       .from('dokumente')
@@ -499,24 +503,34 @@ export async function schliesseJourneyAb(
     if ((vorhandenes ?? 0) > 0) {
       await audit(angebot.id, 'system', 'systemkonzept_generiert', { ok: true, uebersprungen: 'admin_vorlage' })
     } else {
-      const pdfBytes = await generiereSystemkonzept(
-        angebot,
-        {
-          unternehmensname: String(unternehmen.unternehmensname),
-          strasse: String(unternehmen.strasse),
-          plz: String(unternehmen.plz),
-          ort: String(unternehmen.ort),
-          land: String(unternehmen.land ?? 'Deutschland'),
-          wz_code: String(unternehmen.wz_code),
-          ap_rolle: String(ansprechpartner.ap_rolle),
-          ap_vorname: String(ansprechpartner.ap_vorname),
-          ap_nachname: String(ansprechpartner.ap_nachname),
-          standort_strasse: (antrag.standort_strasse as string) || null,
-          standort_plz: (antrag.standort_plz as string) || null,
-          standort_ort: (antrag.standort_ort as string) || null,
-        },
-        { kategorie: kmuErgebnis.category, foerderquotePct: kmuErgebnis.fundingRatePct },
-      )
+      let pdfBytes: Uint8Array
+      let quelle: string
+      try {
+        const { readFile } = await import('node:fs/promises')
+        const path = await import('node:path')
+        pdfBytes = new Uint8Array(await readFile(path.join(process.cwd(), 'docs', 'vorlagen', 'systemkonzept_modul3.pdf')))
+        quelle = 'universal'
+      } catch {
+        pdfBytes = await generiereSystemkonzept(
+          angebot,
+          {
+            unternehmensname: String(unternehmen.unternehmensname),
+            strasse: String(unternehmen.strasse),
+            plz: String(unternehmen.plz),
+            ort: String(unternehmen.ort),
+            land: String(unternehmen.land ?? 'Deutschland'),
+            wz_code: String(unternehmen.wz_code),
+            ap_rolle: String(ansprechpartner.ap_rolle),
+            ap_vorname: String(ansprechpartner.ap_vorname),
+            ap_nachname: String(ansprechpartner.ap_nachname),
+            standort_strasse: (antrag.standort_strasse as string) || null,
+            standort_plz: (antrag.standort_plz as string) || null,
+            standort_ort: (antrag.standort_ort as string) || null,
+          },
+          { kategorie: kmuErgebnis.category, foerderquotePct: kmuErgebnis.fundingRatePct },
+        )
+        quelle = 'generiert'
+      }
       const url = await ladeDokumentHoch(`systemkonzept/${angebot.angebot_nr}.pdf`, pdfBytes)
       if (url) {
         // storage_path ist unique – bei erneuter Einreichung alten Eintrag ersetzen
@@ -528,10 +542,10 @@ export async function schliesseJourneyAb(
         })
         if (e7) throw new Error(`Dokumente: ${e7.message}`)
       }
-      await audit(angebot.id, 'system', 'systemkonzept_generiert', { ok: !!url })
+      await audit(angebot.id, 'system', 'systemkonzept_generiert', { ok: !!url, quelle })
     }
   } catch (e) {
-    console.error('[journey] Systemkonzept-Generierung fehlgeschlagen:', e)
+    console.error('[journey] Systemkonzept-Einbindung fehlgeschlagen:', e)
     await audit(angebot.id, 'system', 'systemkonzept_generiert', {
       ok: false,
       fehler: e instanceof Error ? e.message : String(e),

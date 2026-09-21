@@ -143,6 +143,7 @@ const vollstaendig: DossierTextEingabe = {
     unterzeichnet_von: 'Max Muster',
     unterschrift_ip: null,
     unterschrift_ua: null,
+    systemkonzept_bestaetigt: true,
     created_at: '2026-02-01T09:05:00Z',
   },
 }
