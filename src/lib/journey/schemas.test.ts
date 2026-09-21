@@ -67,6 +67,30 @@ describe('Schritt „antrag" – IBAN-Validierung', () => {
   })
 })
 
+describe('Fehlermeldungen sind immer deutsch (keine Zod-Rohtexte)', () => {
+  it('unangetastete Pflichtfelder liefern „Bitte ausfüllen.“ statt „expected string“', () => {
+    const res = schemaFuerSchritt(schrittNach('unternehmen')!).safeParse({})
+    expect(res.success).toBe(false)
+    if (!res.success) {
+      const meldungen = res.error.issues.map((i) => i.message)
+      for (const m of meldungen) {
+        expect(m).not.toMatch(/expected|received|Invalid input/i)
+      }
+      // Mindestens ein Pflichtfeld wird mit der deutschen Standardmeldung gemeldet
+      expect(meldungen.some((m) => m === 'Bitte ausfüllen.')).toBe(true)
+    }
+  })
+
+  it('E-Mail-Pflichtfeld bei undefined liefert deutsche Formatmeldung', () => {
+    const res = schemaFuerSchritt(schrittNach('unternehmen')!).safeParse({})
+    expect(res.success).toBe(false)
+    if (!res.success) {
+      const issue = res.error.issues.find((i) => i.path[0] === 'email')
+      expect(issue?.message).toBe('Bitte eine gültige E-Mail-Adresse eingeben.')
+    }
+  })
+})
+
 describe('vollmachtSchema – Signatur-Modi (canvas | upload)', () => {
   const basis = {
     vorhaben_nicht_begonnen: true,

@@ -4,6 +4,7 @@ import type { FeldDef, SchrittDef } from '@/lib/journey/types'
 import { schemaFuerSchritt } from '@/lib/journey/schemas'
 import { formatiereIban } from '@/lib/validierung'
 import { Feld, inputCls } from './ui'
+import { WzCodeFeld } from './wz-code-feld'
 
 /**
  * Rendert einen generischen Schritt rein aus seiner Felddefinition.
@@ -173,6 +174,16 @@ export function StepGenerisch({
                       <input type="date" {...common} />
                     ) : feld.typ === 'zahl' ? (
                       <input type="number" inputMode="decimal" min={0} {...common} />
+                    ) : feld.typ === 'wz_code' ? (
+                      // Amtliche Destatis-Liste (WZ 2008) als Autocomplete mit
+                      // Live-Bezeichnung – eigene Komponente mit eigenem ✓-Feedback
+                      <WzCodeFeld
+                        id={common.id}
+                        wert={String(wert)}
+                        className={common.className}
+                        onChange={(v) => onChange(feld.name, v)}
+                        onBlur={common.onBlur}
+                      />
                     ) : (
                       <input
                         type={feld.typ === 'email' ? 'email' : 'text'}
@@ -188,14 +199,13 @@ export function StepGenerisch({
                                 ? 5
                                 : feld.typ === 'ust_id'
                                   ? 11
-                                  : feld.typ === 'wz_code'
-                                    ? 9
-                                    : undefined
+                                  : undefined
+                          // wz_code hat sein eigenes maxLength in WzCodeFeld
                         }
                         {...common}
                       />
                     )}
-                    {gueltig && <CheckIcon />}
+                    {gueltig && feld.typ !== 'wz_code' && <CheckIcon />}
                   </div>
               </Feld>
             </div>

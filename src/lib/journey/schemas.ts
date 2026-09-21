@@ -42,13 +42,23 @@ function formatFehler(typ: FeldTyp, wert: unknown): string | null {
 function feldSchema(feld: FeldDef): z.ZodTypeAny {
   switch (feld.typ) {
     case 'email':
-      return z.email('Bitte eine gültige E-Mail-Adresse eingeben.')
+      // undefined (unangetastetes Pflichtfeld) -> '' -> deutsche Formatmeldung statt Zod-Rohtext
+      return z.preprocess(
+        (v) => (v === undefined || v === null ? '' : v),
+        z.email('Bitte eine gültige E-Mail-Adresse eingeben.'),
+      )
     case 'zahl':
       return z.coerce.number('Bitte eine Zahl eingeben.').min(0, 'Darf nicht negativ sein.')
     case 'datum':
-      return z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'Bitte ein Datum wählen.')
+      return z.preprocess(
+        (v) => (v === undefined || v === null ? '' : v),
+        z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'Bitte ein Datum wählen.'),
+      )
     case 'plz':
-      return z.string().trim().regex(/^\d{5}$/, 'Bitte eine 5-stellige PLZ eingeben.')
+      return z.preprocess(
+        (v) => (v === undefined || v === null ? '' : v),
+        z.string().trim().regex(/^\d{5}$/, 'Bitte eine 5-stellige PLZ eingeben.'),
+      )
     case 'auswahl': {
       // Serverseitige Integritaet: nur definierte Optionswerte sind erlaubt
       // (Schutz vor manipulierten Payloads, z. B. land != „Deutschland").
@@ -60,7 +70,8 @@ function feldSchema(feld: FeldDef): z.ZodTypeAny {
     case 'checkbox':
       return z.boolean()
     // IBAN & Co.: Basisschema ist Text; die Formatpruefung (inkl. Pruefziffern)
-    // laeuft sichtbarkeitsbewusst in der superRefine unten.
+    // laeuft sichtbarkeitsbewusst in der superRefine unten. Der Fehlerparameter
+    // faengt undefined (unangetastetes Pflichtfeld) mit deutscher Meldung ab.
     case 'iban':
     case 'steuer_id':
     case 'ust_id':
@@ -68,7 +79,7 @@ function feldSchema(feld: FeldDef): z.ZodTypeAny {
     case 'steuernummer':
     case 'text':
     default:
-      return z.string().trim()
+      return z.string(PFLICHT).trim()
   }
 }
 
