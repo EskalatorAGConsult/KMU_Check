@@ -101,45 +101,52 @@ export function Fortschritt({
         )}
       </div>
 
-      {/* Klickbare Schritt-Kette (nur grosszuegige Viewports) */}
-      <ol className="mt-2.5 hidden items-center gap-1 lg:flex" aria-label="Alle Schritte">
-        {liste.map((s, i) => {
-          const erreicht = i <= idx
-          const aktiv = i === idx
-          return (
-            <li key={s.id} className="flex min-w-0 items-center">
-              <button
-                type="button"
-                disabled={!erreicht}
-                onClick={() => onSprung(i)}
-                aria-current={aktiv ? 'step' : undefined}
-                title={s.titel}
-                className={`flex min-h-8 items-center gap-1.5 rounded-lg px-2 py-1 text-xs font-medium whitespace-nowrap transition-colors ${
-                  aktiv
-                    ? 'bg-mabe-900 text-white'
-                    : erreicht
-                      ? 'text-teal-800 hover:bg-teal-50'
-                      : 'cursor-default text-olive-400'
-                }`}
-              >
-                <span
-                  className={`flex size-4.5 shrink-0 items-center justify-center rounded-full text-[10px] font-bold ${
+      {/* Klickbare Schritt-Kette (nur grosszuegige Viewports): horizontal
+          scrollbar statt Ueberlappung – Labels duerfen nie in den Nachbarn
+          laufen, der letzte Schritt nie abgeschnitten werden. */}
+      <div className="mt-2.5 -mx-1 hidden lg:block">
+        <ol
+          className="flex items-center gap-1 overflow-x-auto px-1 pb-1 [scrollbar-width:thin]"
+          aria-label="Alle Schritte"
+        >
+          {liste.map((s, i) => {
+            const erreicht = i <= idx
+            const aktiv = i === idx
+            return (
+              <li key={s.id} className="flex shrink-0 items-center">
+                <button
+                  type="button"
+                  disabled={!erreicht}
+                  onClick={() => onSprung(i)}
+                  aria-current={aktiv ? 'step' : undefined}
+                  title={s.titel}
+                  className={`flex min-h-8 items-center gap-1.5 rounded-lg px-2 py-1 text-xs font-medium whitespace-nowrap transition-colors ${
                     aktiv
-                      ? 'bg-white/20 text-white'
+                      ? 'bg-mabe-900 text-white'
                       : erreicht
-                        ? 'bg-teal-600 text-white'
-                        : 'bg-olive-100 text-olive-400'
+                        ? 'text-teal-800 hover:bg-teal-50'
+                        : 'cursor-default text-olive-400'
                   }`}
                 >
-                  {i < idx ? '✓' : i + 1}
-                </span>
-                {s.kurz ?? s.titel}
-              </button>
-              {i < liste.length - 1 && <span className="mx-0.5 h-px w-3 shrink-0 bg-olive-200" aria-hidden />}
-            </li>
-          )
-        })}
-      </ol>
+                  <span
+                    className={`flex size-4.5 shrink-0 items-center justify-center rounded-full text-[10px] font-bold ${
+                      aktiv
+                        ? 'bg-white/20 text-white'
+                        : erreicht
+                          ? 'bg-teal-600 text-white'
+                          : 'bg-olive-100 text-olive-400'
+                    }`}
+                  >
+                    {i < idx ? '✓' : i + 1}
+                  </span>
+                  <span className="max-w-28 truncate">{s.kurz ?? s.titel}</span>
+                </button>
+                {i < liste.length - 1 && <span className="mx-0.5 h-px w-3 shrink-0 bg-olive-200" aria-hidden />}
+              </li>
+            )
+          })}
+        </ol>
+      </div>
     </div>
   )
 }
