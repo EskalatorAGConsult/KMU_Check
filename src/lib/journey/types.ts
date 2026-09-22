@@ -45,7 +45,7 @@ export interface FeldDef {
   sichtbarWenn?: { feld: string; ist: string }
 }
 
-export type SchrittKomponente = 'generisch' | 'uebersicht' | 'kmu' | 'deminimis' | 'vollmacht'
+export type SchrittKomponente = 'generisch' | 'uebersicht' | 'beantragungsweg' | 'selbst' | 'kmu' | 'deminimis' | 'vollmacht'
 
 export interface SchrittDef {
   id: string

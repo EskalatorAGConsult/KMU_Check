@@ -1,6 +1,7 @@
 'use client'
 
 import { SCHRITTE } from '@/lib/journey/schritte'
+import type { SchrittDef } from '@/lib/journey/types'
 import { fortschrittInfo } from '@/lib/journey/fortschritt-info'
 import { formatEUR } from '@/lib/kmu'
 
@@ -16,21 +17,25 @@ export function Fortschritt({
   idx,
   onSprung,
   zuschuss,
+  schritte,
 }: {
   idx: number
   onSprung: (i: number) => void
   /** Konkreter Zuschuss in EUR (bereits ermittelt) oder „bis zu"-Maximum. */
   zuschuss?: { betrag: number; bisZu: boolean } | null
+  /** Effektive Strecke (selbst-Weg ist kuerzer). Standard: alle Schritte. */
+  schritte?: SchrittDef[]
 }) {
-  const info = fortschrittInfo(idx, SCHRITTE.length)
-  const aktuell = SCHRITTE[idx]
+  const liste = schritte ?? SCHRITTE
+  const info = fortschrittInfo(idx, liste.length)
+  const aktuell = liste[Math.min(idx, liste.length - 1)]
 
   return (
     <div className="sticky top-(--scroll-padding-top) z-30 -mx-4 border-b border-olive-100 bg-white/90 px-4 py-3 shadow-sm backdrop-blur-md sm:-mx-6 sm:px-6">
       <div className="flex items-center justify-between gap-3">
         <p className="min-w-0 truncate text-sm text-olive-600">
           <span className="font-semibold text-mabe-900">
-            Schritt {idx + 1} von {SCHRITTE.length}
+            Schritt {idx + 1} von {liste.length}
           </span>
           <span className="mx-1.5 text-olive-300" aria-hidden>
             ·
@@ -98,7 +103,7 @@ export function Fortschritt({
 
       {/* Klickbare Schritt-Kette (nur grosszuegige Viewports) */}
       <ol className="mt-2.5 hidden items-center gap-1 lg:flex" aria-label="Alle Schritte">
-        {SCHRITTE.map((s, i) => {
+        {liste.map((s, i) => {
           const erreicht = i <= idx
           const aktiv = i === idx
           return (
@@ -130,7 +135,7 @@ export function Fortschritt({
                 </span>
                 {s.kurz ?? s.titel}
               </button>
-              {i < SCHRITTE.length - 1 && <span className="mx-0.5 h-px w-3 shrink-0 bg-olive-200" aria-hidden />}
+              {i < liste.length - 1 && <span className="mx-0.5 h-px w-3 shrink-0 bg-olive-200" aria-hidden />}
             </li>
           )
         })}

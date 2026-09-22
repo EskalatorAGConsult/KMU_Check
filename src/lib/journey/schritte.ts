@@ -26,6 +26,24 @@ export const SCHRITTE: SchrittDef[] = [
     komponente: 'uebersicht',
   },
   {
+    id: 'beantragungsweg',
+    titel: 'Wer stellt Ihren Antrag?',
+    kurz: 'Beantragung',
+    beschreibung: 'Eine Frage vorweg – danach sehen Sie nur noch, was Sie wirklich brauchen.',
+    erklaerung:
+      'Empfohlen: Unser Fördermittel-Team (WissensReich Academy, in Kooperation mit der Eskalator AG) übernimmt den Antrag komplett für Sie – kostenlos. Oder Sie reichen selbst beim BAFA ein – dann bekommen Sie gleich eine klare Checkliste und alle Unterlagen zum Download, ohne das Portal auszufüllen.',
+    komponente: 'beantragungsweg',
+  },
+  {
+    id: 'selbst',
+    titel: 'Selbst einreichen – Ihre Unterlagen',
+    kurz: 'Unterlagen',
+    beschreibung: 'Alles, was Sie für die eigene Einreichung beim BAFA brauchen – zum Mitnehmen.',
+    erklaerung:
+      'Sie füllen dieses Portal nicht aus. Laden Sie Ihre Unterlagen herunter, halten Sie die Daten aus der Checkliste bereit und reichen Sie direkt beim BAFA ein.',
+    komponente: 'selbst',
+  },
+  {
     id: 'unternehmen',
     titel: 'Ihr Unternehmen',
     kurz: 'Unternehmen',
@@ -252,11 +270,11 @@ export const SCHRITTE: SchrittDef[] = [
   },
   {
     id: 'vollmacht',
-    titel: 'Vollmacht & Beantragung',
+    titel: 'Vollmacht & Bestätigungen',
     kurz: 'Vollmacht',
-    beschreibung: 'Wer soll Ihren Antrag stellen – und die abschließenden Bestätigungen.',
+    beschreibung: 'Die Vollmacht für unser Fördermittel-Team und die abschließenden Bestätigungen.',
     erklaerung:
-      'Letzter Schritt: Sie entscheiden, ob unser Fördermittel-Team (WissensReich Academy, in Kooperation mit der Eskalator AG) den Antrag komplett für Sie übernimmt (empfohlen – inklusive aller Rückfragen der Behörde) oder ob Sie ihn selbst einreichen möchten.',
+      'Letzter Schritt: Sie erteilen die Vollmacht (händisch unterschreiben und hochladen), sehen das Systemkonzept ein und bestätigen Ihre Angaben. Danach übernehmen wir alles Weitere.',
     komponente: 'vollmacht',
   },
 ]
@@ -266,4 +284,14 @@ export type SchrittId = (typeof SCHRITT_IDS)[number]
 
 export function schrittNach(id: string): SchrittDef | undefined {
   return SCHRITTE.find((s) => s.id === id)
+}
+
+/**
+ * Effektive Klickstrecke je Beantragungsweg (rein, testbar):
+ * - 'selbst': nur Übersicht -> Wahl -> Unterlagen-Seite (kein Portal-Formular!)
+ * - 'eskalator'/undefiniert: volle Strecke ohne die Selbst-Seite
+ */
+export function aktiveSchritteFuer(weg: string | undefined): SchrittDef[] {
+  if (weg === 'selbst') return SCHRITTE.filter((s) => ['uebersicht', 'beantragungsweg', 'selbst'].includes(s.id))
+  return SCHRITTE.filter((s) => s.id !== 'selbst')
 }

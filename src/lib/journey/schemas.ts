@@ -278,7 +278,10 @@ export function schemaFuerSchritt(schritt: SchrittDef): z.ZodTypeAny {
       return deminimisSchema
     case 'vollmacht':
       return vollmachtSchema
+    case 'beantragungsweg':
+      return z.object({ beantragungsweg: z.enum(['selbst', 'eskalator'], 'Bitte wählen Sie einen Beantragungsweg.') })
     case 'uebersicht':
+    case 'selbst':
       return z.object({}).strip()
     default:
       return schemaFuerGenerischenSchritt(schritt)

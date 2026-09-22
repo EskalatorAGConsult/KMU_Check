@@ -4,8 +4,8 @@ import { useEffect, useMemo, useState, useTransition } from 'react'
 
 import type { Angebot } from '@/lib/db/types'
 import { CONSENT_EVENT, leseEinwilligung } from '@/lib/consent'
-import { schliesseJourneyAb, speichereSchritt } from '@/lib/journey/actions'
-import { SCHRITTE } from '@/lib/journey/schritte'
+import { schliesseJourneyAb, schliesseSelbstBeantragungAb, speichereSchritt } from '@/lib/journey/actions'
+import { aktiveSchritteFuer } from '@/lib/journey/schritte'
 import { schemaFuerSchritt } from '@/lib/journey/schemas'
 import { holdingsFuerJahr, type BeteiligungMitJahren } from '@/lib/journey/verbund-jahre'
 import { evaluateKmu, formatEUR, type Holding } from '@/lib/kmu'
@@ -13,8 +13,10 @@ import { CountUp } from './count-up'
 import { Fortschritt } from './fortschritt'
 import { KmuZusammenfassung } from './kmu-zusammenfassung'
 import { Konfetti } from './konfetti'
+import { SchrittBeantragungsweg } from './schritt-beantragungsweg'
 import { SchrittDeminimis } from './schritt-deminimis'
 import { SchrittKmu } from './schritt-kmu'
+import { SchrittSelbst } from './schritt-selbst'
 import { SchrittUebersicht } from './schritt-uebersicht'
 import { SchrittVollmacht } from './schritt-vollmacht'
 import { StepGenerisch } from './step-generisch'
@@ -46,7 +48,14 @@ export function Wizard({
   initialDaten: SchrittDaten
   startSchritt: string
 }) {
-  const initialIndex = Math.max(0, SCHRITTE.findIndex((s) => s.id === startSchritt))
+  /**
+   * Dynamische Klickstrecke: Der Beantragungsweg (Eingangs-Wahl) steuert,
+   * welche Schritte existieren. 'selbst' -> nur Übersicht, Wahl und die
+   * Unterlagen-Seite (kein Portal-Formular). Vertrag: aktiveSchritteFuer()
+   * in schritte.ts – alle Indices/Bounds laufen ueber aktiveSchritte.
+   */
+  const weg0 = (initialDaten['beantragungsweg']?.beantragungsweg as string | undefined)
+  const initialIndex = Math.max(0, aktiveSchritteFuer(weg0).findIndex((s) => s.id === startSchritt))
   const [idx, setIdx] = useState(initialIndex)
   const [daten, setDaten] = useState<SchrittDaten>(initialDaten)
   const [fehler, setFehler] = useState<Record<string, string>>({})
@@ -67,9 +76,13 @@ export function Wizard({
   }, [])
   const [busy, startTransition] = useTransition()
 
-  const schritt = SCHRITTE[idx]
+  // Live-Weg (kann sich nach dem Mount aendern) -> aktive Strecke neu ableiten
+  const weg = daten['beantragungsweg']?.beantragungsweg as string | undefined
+  const aktiveSchritte = aktiveSchritteFuer(weg)
+
+  const schritt = aktiveSchritte[Math.min(idx, aktiveSchritte.length - 1)]
   const schrittDaten = daten[schritt.id] ?? {}
-  const istLetzter = idx === SCHRITTE.length - 1
+  const istLetzter = idx === aktiveSchritte.length - 1
   const investSumme =
     (angebot.invest_software ?? 0) + (angebot.invest_messtechnik ?? 0) + (angebot.invest_steuerung ?? 0) || null
 
@@ -140,7 +153,13 @@ export function Wizard({
   }
 
   const validiereAktuellenSchritt = (): boolean => {
-    const res = schemaFuerSchritt(schritt).safeParse(schrittDaten)
+    // Querabhaengigkeit: der Beantragungsweg wird im Eingangsschritt gewaehlt,
+    // gehoert aber zum Vollmacht-Schema – bei der Pruefung einmischen.
+    const payload =
+      schritt.komponente === 'vollmacht'
+        ? { ...schrittDaten, beantragungsweg: schrittDaten.beantragungsweg ?? weg ?? 'eskalator' }
+        : schrittDaten
+    const res = schemaFuerSchritt(schritt).safeParse(payload)
     if (res.success) {
       setFehler({})
       return true
@@ -184,7 +203,7 @@ export function Wizard({
       return
     }
     speichern(() => {
-      setIdx((i) => Math.min(i + 1, SCHRITTE.length - 1))
+      setIdx((i) => Math.min(i + 1, aktiveSchritte.length - 1))
       window.scrollTo({ top: 0, behavior: 'smooth' })
     })
   }
@@ -199,19 +218,21 @@ export function Wizard({
 
   const onAbsenden = () => {
     if (!validiereAktuellenSchritt()) return
+    // Selbst-Weg: nichts einreichen – nur die Entscheidung dokumentieren.
+    const selbstWeg = schritt.id === 'selbst'
     startTransition(async () => {
       setHinweis(null)
-      const res = await schliesseJourneyAb(token, daten)
+      const res = selbstWeg ? await schliesseSelbstBeantragungAb(token) : await schliesseJourneyAb(token, daten)
       if (res.ok) {
         setAbgeschlossen(true)
         window.scrollTo({ top: 0 })
         return
       }
-      if (res.schrittFehler) {
+      if ('schrittFehler' in res && res.schrittFehler) {
         const zielId = Object.keys(res.schrittFehler)[0]
-        const zielIdx = SCHRITTE.findIndex((s) => s.id === zielId)
+        const zielIdx = aktiveSchritte.findIndex((s) => s.id === zielId)
         if (zielIdx >= 0) setIdx(zielIdx)
-        setHinweis(`${res.fehler} (${SCHRITTE[zielIdx]?.titel ?? zielId}: ${res.schrittFehler[zielId]})`)
+        setHinweis(`${res.fehler} (${aktiveSchritte[zielIdx]?.titel ?? zielId}: ${res.schrittFehler[zielId]})`)
       } else {
         setHinweis(res.fehler)
       }
@@ -220,20 +241,27 @@ export function Wizard({
 
   // Motivations-Zeile (Halbzeit + Zielgerade mit persoenlicher Ansprache)
   const vorname = (daten['ansprechpartner']?.ap_vorname as string | undefined)?.trim()
-  const restSchritte = SCHRITTE.length - idx
+  const restSchritte = aktiveSchritte.length - idx
   const motivation =
-    idx >= SCHRITTE.length - 2
+    idx >= aktiveSchritte.length - 2
       ? `Fast geschafft${vorname ? `, ${vorname}` : ''} – nur noch ${restSchritte === 1 ? 'ein Schritt' : `${restSchritte} Schritte`}!`
-      : idx === Math.floor(SCHRITTE.length / 2)
+      : idx === Math.floor(aktiveSchritte.length / 2)
         ? `Halbzeit${vorname ? `, ${vorname}` : ''} – stark! Ihre Angaben sind sicher gespeichert.`
         : null
 
   if (abgeschlossen)
-    return <Erfolg angebot={angebot} token={token} zuschuss={zuschussChip?.bisZu === false ? zuschussChip.betrag : null} />
+    return (
+      <Erfolg
+        angebot={angebot}
+        token={token}
+        zuschuss={zuschussChip?.bisZu === false ? zuschussChip.betrag : null}
+        modus={weg === 'selbst' ? 'selbst' : 'concierge'}
+      />
+    )
 
   return (
     <div>
-      <Fortschritt idx={idx} onSprung={onSprung} zuschuss={zuschussChip} />
+      <Fortschritt idx={idx} onSprung={onSprung} zuschuss={zuschussChip} schritte={aktiveSchritte} />
 
       {/* zusaetzlicher Platz unten, damit die mobile Sticky-Actionbar nichts verdeckt */}
       <div className="flex flex-col gap-6 pt-6 pb-32 sm:gap-8 sm:pt-8 md:pb-8">
@@ -270,6 +298,10 @@ export function Wizard({
         {/* Schritt-Inhalt (Registry ueber komponente) – animierter Uebergang */}
         <div key={schritt.id} className="flex flex-col gap-6 motion-safe:animate-step-in sm:gap-8">
         {schritt.komponente === 'uebersicht' && <SchrittUebersicht angebot={angebot} token={token} />}
+        {schritt.komponente === 'beantragungsweg' && (
+          <SchrittBeantragungsweg daten={schrittDaten} fehler={fehler} onChange={setze} />
+        )}
+        {schritt.komponente === 'selbst' && <SchrittSelbst angebot={angebot} token={token} />}
         {schritt.registerSuche && (
           <UnternehmenSuche
             token={token}
@@ -377,7 +409,11 @@ export function Wizard({
                 disabled={busy}
                 className="min-h-12 flex-1 rounded-xl bg-teal-600 px-6 py-3 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-teal-500 focus:outline-none focus-visible:ring-2 focus-visible:ring-teal-600/50 focus-visible:ring-offset-2 disabled:opacity-50 md:flex-none"
               >
-                {busy ? 'Wird gesendet …' : 'Verbindlich absenden ✓'}
+                {busy
+                  ? 'Wird gesendet …'
+                  : schritt.id === 'selbst'
+                    ? 'Alles notiert – ich reiche selbst ein ✓'
+                    : 'Verbindlich absenden ✓'}
               </button>
             ) : (
               <button
@@ -388,7 +424,7 @@ export function Wizard({
               >
                 {busy
                   ? 'Speichert …'
-                  : `Weiter: ${SCHRITTE[idx + 1]?.kurz ?? SCHRITTE[idx + 1]?.titel ?? ''} →`}
+                  : `Weiter: ${aktiveSchritte[idx + 1]?.kurz ?? aktiveSchritte[idx + 1]?.titel ?? ''} →`}
               </button>
             )}
           </div>
@@ -398,24 +434,50 @@ export function Wizard({
   )
 }
 
-function Erfolg({ angebot, token, zuschuss }: { angebot: Angebot; token: string; zuschuss: number | null }) {
-  const schritte = [
-    {
-      titel: 'Prüfung Ihrer Angaben',
-      text: 'Das Fördermittel-Team prüft Ihre Angaben auf Vollständigkeit und meldet sich bei offenen Punkten.',
-    },
-    {
-      titel: 'Antragstellung beim BAFA',
-      text:
-        angebot.status === 'eingereicht'
-          ? 'Ihr Antrag wird vorbereitet und im FZD-Portal eingereicht.'
-          : 'Ihr Antrag wird vorbereitet und eingereicht – Sie müssen nichts weiter tun.',
-    },
-    {
-      titel: 'Bewilligung & Umsetzung',
-      text: 'Nach dem Zuwendungsbescheid kann die Maßnahme starten. Der Zuschuss wird nach Verwendungsnachweis ausgezahlt.',
-    },
-  ]
+function Erfolg({
+  angebot,
+  token,
+  zuschuss,
+  modus = 'concierge',
+}: {
+  angebot: Angebot
+  token: string
+  zuschuss: number | null
+  modus?: 'concierge' | 'selbst'
+}) {
+  const schritte =
+    modus === 'selbst'
+      ? [
+          {
+            titel: 'Unterlagen herunterladen',
+            text: 'Systemkonzept und Ihr MABE-Angebot liegen auf der Unterlagen-Seite bereit – nehmen Sie sie mit.',
+          },
+          {
+            titel: 'ELSTER-Organisationszertifikat beantragen',
+            text: 'Für das BAFA-Portal zwingend nötig – die Ausstellung dauert mehrere Wochen, also früh beantragen.',
+          },
+          {
+            titel: 'Im BAFA-Portal einreichen',
+            text: 'Antrag online über fms.bafa.de stellen – mit Ihrer Checkliste sitzen Sie nur einmal am Formular.',
+          },
+        ]
+      : [
+          {
+            titel: 'Prüfung Ihrer Angaben',
+            text: 'Das Fördermittel-Team prüft Ihre Angaben auf Vollständigkeit und meldet sich bei offenen Punkten.',
+          },
+          {
+            titel: 'Antragstellung beim BAFA',
+            text:
+              angebot.status === 'eingereicht'
+                ? 'Ihr Antrag wird vorbereitet und im FZD-Portal eingereicht.'
+                : 'Ihr Antrag wird vorbereitet und eingereicht – Sie müssen nichts weiter tun.',
+          },
+          {
+            titel: 'Bewilligung & Umsetzung',
+            text: 'Nach dem Zuwendungsbescheid kann die Maßnahme starten. Der Zuschuss wird nach Verwendungsnachweis ausgezahlt.',
+          },
+        ]
 
   return (
     <div className="mx-auto flex max-w-2xl flex-col items-center gap-8 px-4 py-10 text-center sm:py-14">
@@ -427,14 +489,26 @@ function Erfolg({ angebot, token, zuschuss }: { angebot: Angebot; token: string;
       </span>
       <div className="flex flex-col gap-3">
         <h1 className="font-display text-2xl font-semibold text-balance text-mabe-900 sm:text-3xl">
-          Geschafft – Ihre Angaben sind vollständig!
+          {modus === 'selbst' ? 'Alles dokumentiert – viel Erfolg bei Ihrem Antrag!' : 'Geschafft – Ihre Angaben sind vollständig!'}
         </h1>
         <p className="text-sm/6 text-olive-600 sm:text-base/7">
-          Ihr Vorgang <strong className="text-mabe-900">{angebot.angebot_nr}</strong> wurde übermittelt.{' '}
-          {angebot.kunde_ansprechpartner
-            ? `${angebot.kunde_ansprechpartner} von MABE`
-            : 'Ihr Ansprechpartner bei MABE'}{' '}
-          und das Fördermittel-Team kümmern sich jetzt um alles Weitere.
+          {modus === 'selbst' ? (
+            <>
+              Ihr Vorgang <strong className="text-mabe-900">{angebot.angebot_nr}</strong> ist notiert. Ihre Unterlagen
+              (Systemkonzept, MABE-Angebot) und die Checkliste bleiben über diesen Link verfügbar.{' '}
+              {angebot.kunde_ansprechpartner
+                ? `Bei Fragen hilft ${angebot.kunde_ansprechpartner} von MABE gerne weiter.`
+                : 'Bei Fragen hilft Ihr MABE-Ansprechpartner gerne weiter.'}
+            </>
+          ) : (
+            <>
+              Ihr Vorgang <strong className="text-mabe-900">{angebot.angebot_nr}</strong> wurde übermittelt.{' '}
+              {angebot.kunde_ansprechpartner
+                ? `${angebot.kunde_ansprechpartner} von MABE`
+                : 'Ihr Ansprechpartner bei MABE'}{' '}
+              und das Fördermittel-Team kümmern sich jetzt um alles Weitere.
+            </>
+          )}
         </p>
       </div>
 
@@ -451,13 +525,16 @@ function Erfolg({ angebot, token, zuschuss }: { angebot: Angebot; token: string;
         </div>
       )}
 
-      {/* Sofort-Download: die eigene Zusammenfassung „in der Hand" (Besitz-Effekt) */}
-      <a
-        href={`/v/${token}/zusammenfassung.pdf`}
-        className="flex min-h-12 w-full items-center justify-center gap-2 rounded-xl border-2 border-teal-600 bg-white px-6 py-3 text-sm font-semibold text-teal-700 transition-colors hover:bg-teal-50 sm:w-auto"
-      >
-        📄 Meine Antrags-Zusammenfassung als PDF herunterladen
-      </a>
+      {/* Sofort-Download: die eigene Zusammenfassung „in der Hand" (nur Concierge-Weg,
+          im Selbst-Weg wurden keine Daten erhoben) */}
+      {modus === 'concierge' && (
+        <a
+          href={`/v/${token}/zusammenfassung.pdf`}
+          className="flex min-h-12 w-full items-center justify-center gap-2 rounded-xl border-2 border-teal-600 bg-white px-6 py-3 text-sm font-semibold text-teal-700 transition-colors hover:bg-teal-50 sm:w-auto"
+        >
+          📄 Meine Antrags-Zusammenfassung als PDF herunterladen
+        </a>
+      )}
 
       {/* Wie geht es weiter? */}
       <ol className="flex w-full flex-col gap-3 text-left">

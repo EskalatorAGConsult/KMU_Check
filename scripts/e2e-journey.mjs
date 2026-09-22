@@ -53,6 +53,25 @@ if (await banner.isVisible().catch(() => false)) await banner.click()
 await checkpoint('uebersicht')
 await weiter()
 
+// 1 · Beantragungsweg (Eingangs-Wahl): SELBST_WEG=1 -> Selbst-Abkuerzung
+const SELBST = process.env.SELBST_WEG === '1'
+if (SELBST) {
+  await page.getByRole('button', { name: /Wir reichen selbst beim BAFA ein/ }).click()
+}
+await checkpoint('beantragungsweg')
+await weiter()
+
+if (SELBST) {
+  // Selbst-Weg: Unterlagen-Seite (kein Portal-Formular!) -> Abschluss-Button
+  await checkpoint('selbst-unterlagen')
+  await page.getByRole('button', { name: /ich reiche selbst ein/ }).click()
+  await page.getByText(/Alles dokumentiert/).waitFor({ timeout: 30_000 })
+  await checkpoint('erfolg-selbst')
+  console.log(process.exitCode ? '\nE2E SELBST MIT OVERFLOW-BEFUNDEN' : '\nE2E SELBST komplett: Unterlagen-Seite + Abschluss, keine Overflows')
+  await browser.close()
+  process.exit(process.exitCode ?? 0)
+}
+
 // 1 · Unternehmen
 await page.locator('#f-unternehmensname').fill('E2E-Test GmbH')
 await page.locator('#f-land').selectOption('Deutschland')
@@ -105,6 +124,7 @@ await page.locator('input[type=file]').setInputFiles('docs/vorlagen/eew_formular
 await page.getByText('Signierte Vollmacht hochgeladen').waitFor({ timeout: 30_000 })
 await checkpoint('vollmacht-upload')
 
+await page.getByRole('checkbox', { name: /Bestätigung Systemkonzept/ }).click()
 await page.getByRole('checkbox', { name: /Vorhabenbeginn/ }).click()
 await page.getByRole('checkbox', { name: /alle Angaben in diesem Vorgang/ }).click()
 await page.getByRole('checkbox', { name: /Datenschutz:/ }).click()

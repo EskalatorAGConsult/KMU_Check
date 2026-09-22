@@ -112,6 +112,31 @@ function jaNeinZuBoolean(v: unknown): boolean {
   return v === 'ja' || v === true
 }
 
+/**
+ * Abschluss des Selbst-Wegs: Kund:in reicht selbst beim BAFA ein – das Portal
+ * wird nicht ausgefuellt. Dokumentiert die Entscheidung (Audit + Status
+ * 'abgeschlossen' = an den Kunden uebergeben), damit Admins den Vorgang
+ * einordnen koennen. Kein Daten-Transfer in die fachlichen Tabellen.
+ */
+export async function schliesseSelbstBeantragungAb(klartextToken: string): Promise<ActionErgebnis> {
+  const kontext = await validiereToken(klartextToken)
+  if (!kontext) return { ok: false, fehler: 'Der Link ist ungültig oder abgelaufen.' }
+  const { angebot, token } = kontext
+  if (angebot.status === 'eingereicht' || angebot.status === 'abgeschlossen') {
+    return { ok: false, fehler: 'Dieser Vorgang wurde bereits eingereicht.' }
+  }
+
+  try {
+    await setzeAngebotStatus(angebot.id, 'abgeschlossen')
+    await audit(angebot.id, `kunde:${token.id}`, 'selbst_beantragung_gewaehlt', {
+      angebot_nr: angebot.angebot_nr,
+    })
+    return { ok: true }
+  } catch (e) {
+    return { ok: false, fehler: e instanceof Error ? e.message : 'Speichern fehlgeschlagen.' }
+  }
+}
+
 /** Finale Validierung aller Schritte + Ueberfuehrung in die fachlichen Tabellen. */
 export async function schliesseJourneyAb(
   klartextToken: string,
@@ -125,10 +150,17 @@ export async function schliesseJourneyAb(
   }
 
   // 1 · Alle Schritte vollstaendig validieren
+  // Querabhaengigkeit: der Beantragungsweg wird im Eingangsschritt gewaehlt,
+  // gehoert aber fachlich zur Vollmacht – vor der Validierung einmischen
+  // (Feld im Vollmacht-Draft gewinnt, falls vorhanden).
+  const weg = alleDaten['beantragungsweg']?.beantragungsweg
+  if (weg && !alleDaten['vollmacht']?.beantragungsweg) {
+    alleDaten['vollmacht'] = { ...(alleDaten['vollmacht'] ?? {}), beantragungsweg: weg }
+  }
   const validiert: Record<string, unknown> = {}
   const schrittFehler: Record<string, string> = {}
   for (const schritt of SCHRITTE) {
-    if (schritt.komponente === 'uebersicht') continue
+    if (schritt.komponente === 'uebersicht' || schritt.komponente === 'selbst') continue
     const roh = alleDaten[schritt.id] ?? {}
     const res = schemaFuerSchritt(schritt).safeParse(roh)
     if (!res.success) {

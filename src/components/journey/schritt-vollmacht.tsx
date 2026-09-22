@@ -37,7 +37,8 @@ export function SchrittVollmacht({
   /** Vorschlag fuer den Unterzeichner-Namen (Ansprechpartner aus der Journey). */
   nameVorschlag?: string
 }) {
-  const weg = (daten.beantragungsweg as string | undefined) ?? 'eskalator'
+  // Der Beantragungsweg wird jetzt im EINGANGSSCHITT gewaehlt (nicht mehr
+  // hier) – dieser Schritt ist immer der Concierge-Abschluss.
   const uploadPfad = (daten.vollmacht_upload_pfad as string | undefined) ?? null
   const [modus, setModus] = useState<'canvas' | 'upload'>(
     ONLINE_SIGNATUR_AKTIV ? (uploadPfad ? 'upload' : 'canvas') : 'upload',
@@ -55,17 +56,6 @@ export function SchrittVollmacht({
     const frame = requestAnimationFrame(() => onChange('unterschrift_name', nameVorschlag))
     return () => cancelAnimationFrame(frame)
     // eslint-disable-next-line react-hooks/exhaustive-deps -- einmalig beim Mount; spaetere eigene Eingaben gewinnen
-  }, [])
-
-  // Smart Default: „Antrag durch die WissensReich Academy" ist vorangewaehlt.
-  // Die Karte darunter rendert den Fallback 'eskalator' nur optisch – ohne
-  // diesen Effekt bliebe der Draft undefiniert und der Absende-Schritt
-  // meldete eine Fehlermeldung, obwohl nichts zu waehlen war.
-  useEffect(() => {
-    if (daten.beantragungsweg) return
-    const frame = requestAnimationFrame(() => onChange('beantragungsweg', 'eskalator'))
-    return () => cancelAnimationFrame(frame)
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- einmalig beim Mount; eigene Auswahl gewinnt immer
   }, [])
 
   const waehleModus = (m: 'canvas' | 'upload') => {
@@ -92,98 +82,10 @@ export function SchrittVollmacht({
     })
   }
 
-  const karte = (
-    wert: 'eskalator' | 'selbst',
-    titel: string,
-    beschreibung: string,
-    badges: { label: string; cls: string }[],
-  ) => {
-    const aktiv = weg === wert
-    return (
-      <button
-        type="button"
-        onClick={() => onChange('beantragungsweg', wert)}
-        aria-pressed={aktiv}
-        className={`relative flex flex-col gap-2 rounded-2xl border-2 p-5 pt-6 text-left transition-colors ${
-          aktiv ? 'border-teal-600 bg-teal-50/60' : 'border-olive-200 bg-white hover:border-teal-400'
-        }`}
-      >
-        {badges.length > 0 && (
-          <span className="absolute -top-3 left-4 flex flex-wrap gap-1.5">
-            {badges.map((b) => (
-              <span key={b.label} className={`rounded-full px-2.5 py-0.5 text-xs font-bold tracking-wide ${b.cls}`}>
-                {b.label}
-              </span>
-            ))}
-          </span>
-        )}
-        <span className="text-base font-semibold text-mabe-900">{titel}</span>
-        <span className="text-sm/6 text-olive-600">{beschreibung}</span>
-      </button>
-    )
-  }
-
   return (
     <div className="flex flex-col gap-6">
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-        {karte(
-          'eskalator',
-          'Beantragung durch den Fördermittel-Concierge der WissensReich Academy',
-          'Die WissensReich Academy UG stellt den Antrag in Ihrem Namen, beantwortet Rückfragen der Bewilligungsstelle und begleitet Sie bis zur Bewilligung – für Sie völlig kostenlos. Dafür erteilen Sie eine digitale Vollmacht.',
-          [
-            { label: '⭐ Unsere Empfehlung', cls: 'bg-teal-600 text-white' },
-            { label: 'KOSTENLOS', cls: 'bg-amber-400 text-mabe-900 ring-1 ring-amber-500' },
-          ],
-        )}
-        {karte(
-          'selbst',
-          'Beantragung durch unser Unternehmen selbst',
-          'Sie erhalten alle Unterlagen fertig vorbereitet zum Download und reichen selbst im BAFA-Portal ein. Hinweis: Dafür brauchen Sie ein ELSTER-Organisationszertifikat – die Beantragung dauert dort mehrere Wochen.',
-          [],
-        )}
-      </div>
-      {fehler.beantragungsweg && <p className="text-xs/5 font-medium text-red-700">{fehler.beantragungsweg}</p>}
-
-      {/* Vergleich auf einen Blick: informierte statt „verkaufte" Entscheidung.
-          Mobil bewusst seitlich scrollbar (Nur-Lese-Vergleich, min-w reduziert)
-          + Wisch-Hinweis (Mobile-Audit). */}
-      <p className="text-center text-[11px] text-olive-400 sm:hidden" aria-hidden>
-        Vergleichstabelle ↔ seitlich wischen
-      </p>
-      <div className="overflow-x-auto rounded-2xl border border-olive-200 bg-white">
-        <table className="w-full min-w-[26rem] border-collapse text-left text-sm">
-          <thead>
-            <tr className="bg-olive-50 text-xs text-olive-500">
-              <th className="px-4 py-2.5 font-semibold"></th>
-              <th className="px-4 py-2.5 font-semibold text-teal-800">WissensReich-Concierge ⭐</th>
-              <th className="px-4 py-2.5 font-semibold text-olive-600">Selbst beantragen</th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-olive-100 text-sm">
-            {(
-              [
-                ['Wer stellt den Antrag im BAFA-Portal?', 'Wir – komplett für Sie', 'Sie selbst (ELSTER-Zertifikat nötig)'],
-                ['Wer beantwortet Rückfragen der Behörde?', 'Wir – bis zur Bewilligung', 'Sie selbst'],
-                ['Kosten für Sie', '0 € (kostenlos)', '0 €, aber Ihr Zeitaufwand'],
-                ['Ihr Aufwand', 'Vollmacht herunterladen, unterschreiben, hochladen – fertig', 'Portal-Anmeldung + komplette Antragstellung'],
-              ] as const
-            ).map(([frage, eskalator, selbst]) => (
-              <tr key={frage}>
-                <th className="px-4 py-2.5 font-medium text-mabe-900">{frage}</th>
-                <td className="px-4 py-2.5 text-teal-800">
-                  <span className="mr-1.5 text-teal-600" aria-hidden>✓</span>
-                  {eskalator}
-                </td>
-                <td className="px-4 py-2.5 text-olive-600">{selbst}</td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
-
-      {weg === 'eskalator' && (
-        <div className="flex flex-col gap-4">
-          <EskalatorBlock />
+      <div className="flex flex-col gap-4">
+        <EskalatorBlock />
 
           {/* Signatur-Modus-Toggle nur mit aktivierter Online-Signatur zeigen;
               derzeit (BAFA: handschriftliche Unterschrift) ist der Ablauf
@@ -420,7 +322,6 @@ export function SchrittVollmacht({
             )}
           </div>
         </div>
-      )}
 
       {/* Systemkonzept (BAFA-Pflichtanlage): Ansicht + Bestaetigung.
           Gilt fuer beide Beantragungswege – das Dokument wird in jedem
