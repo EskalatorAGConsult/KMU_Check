@@ -1,3 +1,4 @@
+import { pgSsl } from './pg-ssl.mjs'
 /**
  * E2E-Testdaten: legt ein Test-Angebot + Journey-Token an (Rolle des
  * Admin-Flows simulierend) und gibt den Link aus.
@@ -12,7 +13,7 @@ for (const line of readFileSync('.env.local', 'utf8').split('\n')) {
   if (m && !process.env[m[1]]) process.env[m[1]] = m[2]
 }
 
-const c = new pg.Client({ connectionString: process.env.DATABASE_URL, ssl: { rejectUnauthorized: false } })
+const c = new pg.Client({ connectionString: process.env.DATABASE_URL, ssl: pgSsl() })
 await c.connect()
 const { rows: [u] } = await c.query('select id from "user" limit 1')
 const { rows: [a] } = await c.query(

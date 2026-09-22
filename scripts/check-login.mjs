@@ -1,3 +1,4 @@
+import { pgSsl } from './pg-ssl.mjs'
 /**
  * Verifiziert ein Login (E-Mail + Passwort) gegen Better Auth und prueft
  * die Rolle. Legt keine dauerhaften Daten an (Test-Session wird aufgeraeumt).
@@ -18,7 +19,7 @@ if (!email || !passwort) {
   process.exit(1)
 }
 
-const pool = new pg.Pool({ connectionString: process.env.DATABASE_URL, ssl: { rejectUnauthorized: false } })
+const pool = new pg.Pool({ connectionString: process.env.DATABASE_URL, ssl: pgSsl() })
 const auth = betterAuth({
   secret: process.env.BETTER_AUTH_SECRET,
   database: pool,

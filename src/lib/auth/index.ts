@@ -1,6 +1,7 @@
 import { betterAuth } from 'better-auth'
 import { Pool } from 'pg'
 
+import { pgSsl } from '@/lib/db/ssl'
 import { sendePasswortReset, sendeWillkommen } from '@/lib/email/notify'
 
 /**
@@ -21,8 +22,8 @@ export const auth = betterAuth({
   secret: process.env.BETTER_AUTH_SECRET,
   database: new Pool({
     connectionString: process.env.DATABASE_URL,
-    // Supabase erzwingt TLS; CA-Pinning kann bei Bedarf nachgezogen werden.
-    ssl: { rejectUnauthorized: false },
+    // verify-full mit gepinnter Supabase-Root-CA (certs/supabase-prod-ca.crt)
+    ssl: pgSsl(),
     max: 5,
   }),
   emailAndPassword: {

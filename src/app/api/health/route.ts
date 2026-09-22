@@ -1,6 +1,8 @@
 import { NextResponse } from 'next/server'
 import pg from 'pg'
 
+import { pgSsl } from '@/lib/db/ssl'
+
 /**
  * Ops-Healthcheck: meldet, welche serverseitigen Umgebungsvariablen gesetzt
  * sind (nur true/false, NIE Werte) und ob die Postgres-Verbindung
@@ -38,7 +40,7 @@ export async function GET() {
   if (env.DATABASE_URL) {
     const pool = new pg.Pool({
       connectionString: process.env.DATABASE_URL,
-      ssl: { rejectUnauthorized: false },
+      ssl: pgSsl(),
       max: 1,
       connectionTimeoutMillis: 5000,
     })

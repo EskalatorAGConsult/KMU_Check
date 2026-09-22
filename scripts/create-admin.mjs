@@ -1,3 +1,4 @@
+import { pgSsl } from './pg-ssl.mjs'
 /**
  * Legt ein Vertriebskonto an (erster Aufruf: Rolle 'admin').
  * Nutzung: node scripts/create-admin.mjs <email> [passwort]
@@ -20,7 +21,7 @@ if (!email) {
 }
 const passwort = passwortArg ?? randomBytes(12).toString('base64url')
 
-const pool = new pg.Pool({ connectionString: process.env.DATABASE_URL, ssl: { rejectUnauthorized: false } })
+const pool = new pg.Pool({ connectionString: process.env.DATABASE_URL, ssl: pgSsl() })
 const auth = betterAuth({
   secret: process.env.BETTER_AUTH_SECRET,
   database: pool,

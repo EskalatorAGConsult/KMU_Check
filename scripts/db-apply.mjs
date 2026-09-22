@@ -1,3 +1,4 @@
+import { pgSsl } from './pg-ssl.mjs'
 /**
  * Wendet das deklarative Schema aus supabase/schemas/ auf die Datenbank an.
  * Nutzung: node scripts/db-apply.mjs
@@ -25,7 +26,7 @@ const files = readdirSync(dir)
 
 const client = new pg.Client({
   connectionString: process.env.DATABASE_URL,
-  ssl: { rejectUnauthorized: false },
+  ssl: pgSsl(),
 })
 
 await client.connect()

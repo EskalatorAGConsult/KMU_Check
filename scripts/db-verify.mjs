@@ -1,3 +1,4 @@
+import { pgSsl } from './pg-ssl.mjs'
 /**
  * Verifiziert das Schema gegen die Datenbank (CHECK-Phase):
  *  1. Tabellen + RLS-Status
@@ -17,7 +18,7 @@ for (const line of readFileSync('.env.local', 'utf8').split('\n')) {
 
 const client = new pg.Client({
   connectionString: process.env.DATABASE_URL,
-  ssl: { rejectUnauthorized: false },
+  ssl: pgSsl(),
 })
 await client.connect()
 
