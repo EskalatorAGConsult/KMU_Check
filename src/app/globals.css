@@ -11,6 +11,9 @@
   /* Sanfte, kompositor-freundliche Übergänge (120 Hz / ProMotion). */
   --ease-out-smooth: cubic-bezier(0.22, 1, 0.36, 1);
 
+  /* Hallmark (App-Run Journey): Actionbar-Elevation als Token statt Literal. */
+  --shadow-actionbar: 0 -4px 16px oklch(23% 0.05 258 / 0.06);
+
   /* ------------------------------------------------------------------ */
   /*  Neutral ramp (re-skin of the Oatmeal "olive" tokens)              */
   /*  Warm olive -> cool industrial steel/slate, on-brand for MABE      */

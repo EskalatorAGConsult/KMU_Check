@@ -31,13 +31,13 @@ export function EskalatorBlock() {
         <div className="min-w-0">
           <p className="text-sm font-semibold text-mabe-900">WissensReich Academy UG (haftungsbeschränkt)</p>
           <p className="text-xs/5 text-olive-500">Ihr Fördermittel-Partner</p>
-          <p className="text-xs/5 text-olive-500">Weinsbergstraße 190 · 50825 Köln</p>
+          <p className="text-xs/5 text-olive-500">Weinsbergstraße 190, 50825 Köln</p>
           <p className="text-xs/5 text-olive-500">Ihr Ansprechpartner: Florian Domin</p>
         </div>
       </div>
 
       <p className="text-sm/6 text-olive-700">
-        Die WissensReich Academy begleitet Unternehmen durch den gesamten Fördermittel-Prozess – von der ersten
+        Die WissensReich Academy begleitet Unternehmen durch den gesamten Fördermittel-Prozess, von der ersten
         Prüfung über die Antragstellung bis zur Bewilligung. Ihr{' '}
         <strong className="text-mabe-900">Fördermittel-Concierge</strong> übernimmt dabei die komplette
         Kommunikation mit der Bewilligungsstelle: Antrag einreichen, Rückfragen beantworten, Unterlagen
@@ -47,7 +47,7 @@ export function EskalatorBlock() {
       <div className="rounded-xl bg-olive-50 px-4 py-3 text-xs/5 text-olive-600">
         <p>
           Deutsche Gesellschaft (Geschäftsführer: Hermann Fürstenau &amp; Florian Domin ·{' '}
-          info@wissensreich.academy) – als bevollmächtigte Organisation nach § 14 VwVfG reicht sie Ihren Antrag
+          info@wissensreich.academy), als bevollmächtigte Organisation nach § 14 VwVfG reicht sie Ihren Antrag
           beim BAFA ein.
         </p>
         <p className="mt-1.5">

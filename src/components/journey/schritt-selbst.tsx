@@ -52,7 +52,7 @@ function PdfRahmen({
       )}
       <a
         href={href}
-        className="flex min-h-11 items-center justify-center gap-2 rounded-xl bg-mabe-900 px-4 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-mabe-800"
+        className="flex min-h-11 items-center justify-center gap-2 rounded-xl bg-mabe-900 px-4 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-mabe-800 focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-teal-400 active:brightness-90"
       >
         <svg viewBox="0 0 20 20" fill="currentColor" className="size-4" aria-hidden>
           <path d="M10.75 2.75a.75.75 0 0 0-1.5 0v8.69L6.7 8.9a.75.75 0 1 0-1.06 1.06l3.75 3.75c.3.3.77.3 1.06 0l3.75-3.75a.75.75 0 1 0-1.06-1.06l-2.54 2.54V2.75Z" />
@@ -126,14 +126,14 @@ export function SchrittSelbst({ angebot, token }: { angebot: Angebot; token: str
         <p className="text-sm font-semibold">Einreichen beim BAFA</p>
         <p className="text-sm/6 text-olive-200">
           Das elektronische Antragsformular für Modul 3 finden Sie im BAFA-Portal. Für die Anmeldung brauchen Sie
-          ein <strong className="text-white">ELSTER-Organisationszertifikat</strong> – beantragen Sie es frühzeitig,
+          ein <strong className="text-white">ELSTER-Organisationszertifikat</strong>. Beantragen Sie es frühzeitig,
           die Ausstellung dauert mehrere Wochen.
         </p>
         <a
           href="https://fms.bafa.de/BafaFrame/eew"
           target="_blank"
           rel="noopener noreferrer"
-          className="flex min-h-12 items-center justify-center gap-2 rounded-xl bg-teal-600 px-5 py-3 text-sm font-semibold text-white transition-colors hover:bg-teal-500"
+          className="flex min-h-12 items-center justify-center gap-2 rounded-xl bg-teal-600 px-5 py-3 text-sm font-semibold text-white transition-colors hover:bg-teal-500 focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-teal-700 active:brightness-90"
         >
           Zum BAFA-Antragsformular (fms.bafa.de) ↗
         </a>

@@ -40,14 +40,14 @@ export function SchrittBeantragungsweg({
         type="button"
         onClick={() => onChange('beantragungsweg', wert)}
         aria-pressed={aktiv}
-        className={`relative flex flex-col gap-2 rounded-2xl border-2 p-5 pt-6 text-left transition-colors ${
+        className={`relative flex flex-col gap-2 rounded-2xl border-2 p-5 pt-6 text-left transition-colors focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-teal-700 active:brightness-95 ${
           aktiv ? 'border-teal-600 bg-teal-50/60' : 'border-olive-200 bg-white hover:border-teal-400'
         }`}
       >
         {badges.length > 0 && (
           <span className="absolute -top-3 left-4 flex flex-wrap gap-1.5">
             {badges.map((b) => (
-              <span key={b.label} className={`rounded-full px-2.5 py-0.5 text-xs font-bold tracking-wide ${b.cls}`}>
+              <span key={b.label} className={`rounded-full px-2.5 py-0.5 text-xs font-semibold ${b.cls}`}>
                 {b.label}
               </span>
             ))}
@@ -65,16 +65,16 @@ export function SchrittBeantragungsweg({
         {karte(
           'eskalator',
           'Unser Fördermittel-Team beantragt für Sie',
-          'Die WissensReich Academy (in Kooperation mit der Eskalator AG) stellt den Antrag in Ihrem Namen, beantwortet Rückfragen des BAFA und begleitet Sie bis zur Bewilligung – für Sie völlig kostenlos. Dafür erteilen Sie eine Vollmacht.',
+          'Die WissensReich Academy (in Kooperation mit der Eskalator AG) stellt den Antrag in Ihrem Namen, beantwortet Rückfragen des BAFA und begleitet Sie bis zur Bewilligung, für Sie völlig kostenlos. Dafür erteilen Sie eine Vollmacht.',
           [
-            { label: '⭐ Unsere Empfehlung', cls: 'bg-teal-600 text-white' },
-            { label: 'KOSTENLOS', cls: 'bg-amber-400 text-mabe-900 ring-1 ring-amber-500' },
+            { label: 'Unsere Empfehlung', cls: 'bg-teal-600 text-white' },
+            { label: 'Kostenlos', cls: 'bg-amber-400 text-mabe-900 ring-1 ring-amber-500' },
           ],
         )}
         {karte(
           'selbst',
           'Wir reichen selbst beim BAFA ein',
-          'Sie bekommen sofort eine klare Checkliste und alle Unterlagen (Systemkonzept, Ihr Angebot) zum Download – Sie füllen dieses Portal nicht aus.',
+          'Sie bekommen sofort eine klare Checkliste und alle Unterlagen (Systemkonzept, Ihr Angebot) zum Download, Sie füllen dieses Portal nicht aus.',
           [],
         )}
       </div>
@@ -86,15 +86,15 @@ export function SchrittBeantragungsweg({
           <thead>
             <tr className="bg-olive-50 text-xs text-olive-500">
               <th className="px-4 py-2.5 font-semibold"></th>
-              <th className="px-4 py-2.5 font-semibold text-teal-800">Fördermittel-Team ⭐</th>
+              <th className="px-4 py-2.5 font-semibold text-teal-800">Fördermittel-Team</th>
               <th className="px-4 py-2.5 font-semibold text-olive-600">Selbst beantragen</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-olive-100 text-sm">
             {(
               [
-                ['Wer stellt den Antrag im BAFA-Portal?', 'Wir – komplett für Sie', 'Sie selbst (ELSTER-Zertifikat nötig)'],
-                ['Wer beantwortet Rückfragen der Behörde?', 'Wir – bis zur Bewilligung', 'Sie selbst'],
+                ['Wer stellt den Antrag im BAFA-Portal?', 'Wir, komplett für Sie', 'Sie selbst (ELSTER-Zertifikat nötig)'],
+                ['Wer beantwortet Rückfragen der Behörde?', 'Wir, bis zur Bewilligung', 'Sie selbst'],
                 ['Kosten für Sie', '0 € (kostenlos)', '0 €, aber Ihr Zeitaufwand'],
                 ['Ihr Aufwand', 'ca. 10 Minuten hier im Portal', 'Portal-Anmeldung + komplette Antragstellung'],
               ] as const

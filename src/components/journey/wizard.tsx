@@ -244,9 +244,9 @@ export function Wizard({
   const restSchritte = aktiveSchritte.length - idx
   const motivation =
     idx >= aktiveSchritte.length - 2
-      ? `Fast geschafft${vorname ? `, ${vorname}` : ''} – nur noch ${restSchritte === 1 ? 'ein Schritt' : `${restSchritte} Schritte`}!`
+      ? `Fast geschafft${vorname ? `, ${vorname}` : ''}, nur noch ${restSchritte === 1 ? 'ein Schritt' : `${restSchritte} Schritte`}!`
       : idx === Math.floor(aktiveSchritte.length / 2)
-        ? `Halbzeit${vorname ? `, ${vorname}` : ''} – stark! Ihre Angaben sind sicher gespeichert.`
+        ? `Halbzeit${vorname ? `, ${vorname}` : ''}, stark! Ihre Angaben sind sicher gespeichert.`
         : null
 
   if (abgeschlossen)
@@ -290,7 +290,7 @@ export function Wizard({
           )}
           {motivation && (
             <p className="rounded-xl bg-mabe-900 px-4 py-2.5 text-sm font-semibold text-white motion-safe:animate-check-pop">
-              💪 {motivation}
+              {motivation}
             </p>
           )}
         </header>
@@ -369,17 +369,17 @@ export function Wizard({
                 />
               </svg>
             </span>
-            Automatisch gespeichert{gespeichertAm ? ` · ${gespeichertAm.toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' })} Uhr` : ''}{' '}
-            – Sie können den Link jederzeit wieder öffnen und fortsetzen.
+            Automatisch gespeichert{gespeichertAm ? `, ${gespeichertAm.toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' })} Uhr` : ''}{' '}
+            Sie können den Link jederzeit wieder öffnen und fortsetzen.
           </p>
         )}
 
         {/* Navigation: mobil sticky unten (Daumen-Reichweite), ab md klassisch im Fluss.
             Ragt ueber den Consent-Banner hinaus, solange keine Einwilligungs-
-            Entscheidung vorliegt – sonst ist „Weiter" auf dem iPhone verdeckt. */}
+            Entscheidung vorliegt, sonst ist „Weiter" auf dem iPhone verdeckt. */}
         <div
-          className={`fixed inset-x-0 z-30 border-t border-olive-200 bg-white/95 px-4 py-3 backdrop-blur-md transition-[bottom] md:static md:border-0 md:bg-transparent md:p-0 md:backdrop-blur-none ${
-            consentOffen ? 'bottom-44' : 'bottom-0'
+          className={`fixed inset-x-0 bottom-0 z-30 border-t border-olive-200 bg-white px-4 py-3 shadow-actionbar transition-transform duration-300 motion-reduce:transition-none md:static md:border-0 md:bg-transparent md:p-0 md:shadow-none md:transform-none ${
+            consentOffen ? '-translate-y-44' : 'translate-y-0'
           }`}
         >
           <div className="mx-auto flex max-w-3xl items-center gap-2.5 sm:gap-3">
@@ -387,7 +387,7 @@ export function Wizard({
               type="button"
               onClick={() => speichern(() => setIdx((i) => Math.max(i - 1, 0)))}
               disabled={idx === 0 || busy}
-              className="min-h-12 shrink-0 rounded-xl px-4 py-3 text-sm font-semibold text-olive-600 transition-colors hover:bg-olive-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-teal-600/40 disabled:opacity-40"
+              className="min-h-12 shrink-0 rounded-xl px-4 py-3 text-sm font-semibold text-olive-600 transition-colors hover:bg-olive-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-teal-600/40 active:brightness-90 disabled:opacity-40"
             >
               ← Zurück
             </button>
@@ -397,8 +397,8 @@ export function Wizard({
                 speichern(() => setHinweis(null))
               }
               disabled={busy}
-              className="hidden min-h-12 shrink-0 rounded-xl px-3 py-3 text-xs font-semibold text-teal-700 transition-colors hover:bg-teal-50 disabled:opacity-40 sm:block"
-              title="Ihre Eingaben werden gespeichert – Sie können den Link später erneut öffnen und fortsetzen."
+              className="hidden min-h-12 shrink-0 rounded-xl px-3 py-3 text-xs font-semibold whitespace-nowrap text-teal-700 transition-colors hover:bg-teal-50 focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-teal-700 active:brightness-90 disabled:opacity-40 sm:block"
+              title="Ihre Eingaben werden gespeichert, Sie können den Link später erneut öffnen und fortsetzen."
             >
               Speichern & später fortfahren
             </button>
@@ -407,12 +407,12 @@ export function Wizard({
                 type="button"
                 onClick={onAbsenden}
                 disabled={busy}
-                className="min-h-12 flex-1 rounded-xl bg-teal-600 px-6 py-3 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-teal-500 focus:outline-none focus-visible:ring-2 focus-visible:ring-teal-600/50 focus-visible:ring-offset-2 disabled:opacity-50 md:flex-none"
+                className="min-h-12 flex-1 rounded-xl bg-teal-600 px-6 py-3 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-teal-500 focus:outline-none focus-visible:ring-2 focus-visible:ring-teal-600/50 focus-visible:ring-offset-2 active:brightness-90 disabled:opacity-50 md:flex-none"
               >
                 {busy
                   ? 'Wird gesendet …'
                   : schritt.id === 'selbst'
-                    ? 'Alles notiert – ich reiche selbst ein ✓'
+                    ? 'Alles notiert, ich reiche selbst ein ✓'
                     : 'Verbindlich absenden ✓'}
               </button>
             ) : (
@@ -420,7 +420,7 @@ export function Wizard({
                 type="button"
                 onClick={onWeiter}
                 disabled={busy}
-                className="min-h-12 flex-1 rounded-xl bg-mabe-900 px-6 py-3 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-mabe-800 focus:outline-none focus-visible:ring-2 focus-visible:ring-mabe-900/40 focus-visible:ring-offset-2 disabled:opacity-50 md:flex-none"
+                className="min-h-12 flex-1 rounded-xl bg-mabe-900 px-6 py-3 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-mabe-800 focus:outline-none focus-visible:ring-2 focus-visible:ring-mabe-900/40 focus-visible:ring-offset-2 active:brightness-90 disabled:opacity-50 md:flex-none"
               >
                 {busy
                   ? 'Speichert …'
@@ -450,15 +450,15 @@ function Erfolg({
       ? [
           {
             titel: 'Unterlagen herunterladen',
-            text: 'Systemkonzept und Ihr MABE-Angebot liegen auf der Unterlagen-Seite bereit – nehmen Sie sie mit.',
+            text: 'Systemkonzept und Ihr MABE-Angebot liegen auf der Unterlagen-Seite bereit, nehmen Sie sie mit.',
           },
           {
             titel: 'ELSTER-Organisationszertifikat beantragen',
-            text: 'Für das BAFA-Portal zwingend nötig – die Ausstellung dauert mehrere Wochen, also früh beantragen.',
+            text: 'Für das BAFA-Portal zwingend nötig, die Ausstellung dauert mehrere Wochen, also früh beantragen.',
           },
           {
             titel: 'Im BAFA-Portal einreichen',
-            text: 'Antrag online über fms.bafa.de stellen – mit Ihrer Checkliste sitzen Sie nur einmal am Formular.',
+            text: 'Antrag online über fms.bafa.de stellen, mit Ihrer Checkliste sitzen Sie nur einmal am Formular.',
           },
         ]
       : [
@@ -471,7 +471,7 @@ function Erfolg({
             text:
               angebot.status === 'eingereicht'
                 ? 'Ihr Antrag wird vorbereitet und im FZD-Portal eingereicht.'
-                : 'Ihr Antrag wird vorbereitet und eingereicht – Sie müssen nichts weiter tun.',
+                : 'Ihr Antrag wird vorbereitet und eingereicht, Sie müssen nichts weiter tun.',
           },
           {
             titel: 'Bewilligung & Umsetzung',
@@ -483,13 +483,13 @@ function Erfolg({
     <div className="mx-auto flex max-w-2xl flex-col items-center gap-8 px-4 py-10 text-center sm:py-14">
       <Konfetti />
       <span className="animate-check-pop flex size-16 items-center justify-center rounded-full bg-teal-50 text-teal-700 ring-1 ring-teal-600/20 sm:size-20">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} className="size-8 sm:size-10">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} className="size-8 sm:size-10" aria-hidden>
           <path strokeLinecap="round" strokeLinejoin="round" d="m4.5 12.75 6 6 9-13.5" />
         </svg>
       </span>
       <div className="flex flex-col gap-3">
         <h1 className="font-display text-2xl font-semibold text-balance text-mabe-900 sm:text-3xl">
-          {modus === 'selbst' ? 'Alles dokumentiert – viel Erfolg bei Ihrem Antrag!' : 'Geschafft – Ihre Angaben sind vollständig!'}
+          {modus === 'selbst' ? 'Alles dokumentiert, viel Erfolg bei Ihrem Antrag!' : 'Geschafft, Ihre Angaben sind vollständig!'}
         </h1>
         <p className="text-sm/6 text-olive-600 sm:text-base/7">
           {modus === 'selbst' ? (
@@ -515,13 +515,11 @@ function Erfolg({
       {/* Hero-Zahl: der emotionale Abschluss-Moment (Count-up) */}
       {zuschuss != null && zuschuss > 0 && (
         <div className="flex w-full flex-col items-center gap-1.5 rounded-2xl bg-mabe-900 px-6 py-7 text-white shadow-lg">
-          <p className="text-xs font-semibold tracking-wide text-olive-300 uppercase">
-            Ihre voraussichtliche Förderung
-          </p>
+          <p className="text-xs font-semibold text-olive-300">Ihre voraussichtliche Förderung</p>
           <p className="font-display font-semibold text-teal-300" style={{ fontSize: 'clamp(2rem, 7vw, 3.2rem)', lineHeight: 1.1 }}>
             <CountUp ziel={zuschuss} format={(v) => `bis zu ${formatEUR(Math.round(v))}`} />
           </p>
-          <p className="text-xs/5 text-olive-400">Unverbindliche Orientierung – verbindlich prüft das BAFA.</p>
+          <p className="text-xs/5 text-olive-400">Unverbindliche Orientierung, verbindlich prüft das BAFA.</p>
         </div>
       )}
 
@@ -532,13 +530,13 @@ function Erfolg({
           href={`/v/${token}/zusammenfassung.pdf`}
           className="flex min-h-12 w-full items-center justify-center gap-2 rounded-xl border-2 border-teal-600 bg-white px-6 py-3 text-sm font-semibold text-teal-700 transition-colors hover:bg-teal-50 sm:w-auto"
         >
-          📄 Meine Antrags-Zusammenfassung als PDF herunterladen
+          Meine Antrags-Zusammenfassung als PDF herunterladen
         </a>
       )}
 
       {/* Wie geht es weiter? */}
       <ol className="flex w-full flex-col gap-3 text-left">
-        <p className="text-xs font-semibold tracking-wide text-olive-500 uppercase">Wie geht es jetzt weiter?</p>
+        <p className="text-xs font-semibold text-olive-500">Wie geht es jetzt weiter?</p>
         {schritte.map((s, i) => (
           <li key={s.titel} className="flex gap-4 rounded-2xl border border-olive-200 bg-white p-4 sm:p-5">
             <span className="flex size-8 shrink-0 items-center justify-center rounded-full bg-mabe-900 text-sm font-bold text-white">
@@ -553,7 +551,7 @@ function Erfolg({
       </ol>
 
       <p className="text-xs/5 text-olive-500">
-        Bewahren Sie diesen Link auf – er dokumentiert Ihren Vorgang. Bei Rückfragen genügt die Angabe der
+        Bewahren Sie diesen Link auf, er dokumentiert Ihren Vorgang. Bei Rückfragen genügt die Angabe der
         Angebotsnummer.
       </p>
 
@@ -561,7 +559,7 @@ function Erfolg({
       <div className="flex w-full flex-col items-center gap-3 rounded-2xl bg-mabe-900 p-6 text-white">
         <p className="text-base font-semibold">Status jederzeit im Blick behalten</p>
         <p className="max-w-md text-sm/6 text-olive-200">
-          Legen Sie ein kostenloses Konto an und öffnen Sie danach diesen Link erneut – Ihr Vorgang wird dann
+          Legen Sie ein kostenloses Konto an und öffnen Sie danach diesen Link erneut, Ihr Vorgang wird dann
           automatisch Ihrem Konto zugeordnet. Sie sehen dort Status und eingereichte Angaben jederzeit auf einen
           Blick.
         </p>
@@ -569,7 +567,7 @@ function Erfolg({
           href="/konto/registrieren"
           className="min-h-12 rounded-xl bg-teal-600 px-6 py-3 text-sm font-semibold text-white transition-colors hover:bg-teal-500"
         >
-          Kostenloses Konto anlegen →
+          Kostenloses Konto anlegen
         </a>
       </div>
     </div>

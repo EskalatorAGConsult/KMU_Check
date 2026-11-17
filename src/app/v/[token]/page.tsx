@@ -24,7 +24,7 @@ export default async function JourneyPage({ params }: { params: Promise<{ token:
           Dieser Link ist nicht mehr gültig.
         </h1>
         <p className="text-sm/6 text-olive-600 sm:text-base/7">
-          Er ist abgelaufen oder wurde widerrufen. Bitte wenden Sie sich an Ihren Ansprechpartner bei MABE – Sie
+          Er ist abgelaufen oder wurde widerrufen. Bitte wenden Sie sich an Ihren Ansprechpartner bei MABE, Sie
           erhalten umgehend einen neuen Link.
         </p>
         <Link href="/" className="text-sm font-semibold text-teal-700 hover:underline">
@@ -94,7 +94,7 @@ export default async function JourneyPage({ params }: { params: Promise<{ token:
         {/* Kontext-Sidebar: nur auf sehr breiten Viewports (16:9 gross / 21:9) */}
         <aside className="sticky top-6 mt-7 hidden flex-col gap-4 2xl:flex">
           <div className="rounded-2xl border border-olive-200 bg-white p-5">
-            <p className="text-xs font-semibold tracking-wide text-olive-500 uppercase">Ihr Vorhaben</p>
+            <p className="text-xs font-semibold text-olive-500">Ihr Vorhaben</p>
             <p className="mt-2 text-sm font-semibold text-mabe-900">{angebot.angebot_nr}</p>
             <p className="text-sm/6 text-olive-600">{angebot.kunde_firma}</p>
             {investSumme > 0 && (

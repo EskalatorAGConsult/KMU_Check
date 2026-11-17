@@ -27,15 +27,15 @@ export function SchrittUebersicht({ angebot, token }: { angebot: Angebot; token:
           <strong>Guten Tag{angebot.kunde_ansprechpartner ? ` ${angebot.kunde_ansprechpartner}` : ''},</strong>
         </p>
         <p className="mt-1 text-sm/6 text-olive-700">
-          Ihr Angebot von MABE liegt bereit{angebot.angebot_pdf_path ? ' – das PDF können Sie unten rechts neben der Angebotsnummer herunterladen' : ''}.{' '}
+          Ihr Angebot von MABE liegt bereit{angebot.angebot_pdf_path ? ', das PDF können Sie unten rechts neben der Angebotsnummer herunterladen' : ''}.{' '}
           Jetzt geht es um das Beste daran: die <strong className="text-mabe-900">staatliche Förderung</strong>. Damit
           Ihr Vorhaben gefördert wird, reichen wir für{' '}
-          <strong className="text-mabe-900">{angebot.kunde_firma}</strong> einen Antrag im BAFA-Programm ein – Sie
+          <strong className="text-mabe-900">{angebot.kunde_firma}</strong> einen Antrag im BAFA-Programm ein, Sie
           begleiten uns nur mit den Angaben, die der Antrag braucht. Der Fördermittel-Concierge übernimmt den
           gesamten Behördenteil.
         </p>
         <p className="mt-2 text-sm/6 text-olive-700">
-          In etwa <strong className="text-mabe-900">10 Minuten</strong> ist alles erledigt – Zwischenspeichern und
+          In etwa <strong className="text-mabe-900">10 Minuten</strong> ist alles erledigt. Zwischenspeichern und
           später Fortsetzen ist jederzeit möglich.
         </p>
       </div>
@@ -44,8 +44,8 @@ export function SchrittUebersicht({ angebot, token }: { angebot: Angebot; token:
         <div className="border-b border-olive-100 bg-olive-50/60 px-6 py-4">
           <div className="flex flex-wrap items-start justify-between gap-3">
             <div className="min-w-0">
-              <p className="text-xs font-semibold tracking-wide text-olive-500 uppercase">
-                Ihr Angebot {angebot.angebot_pdf_path && <span aria-hidden>· 📄 PDF</span>}
+              <p className="text-xs font-semibold text-olive-500">
+                Ihr Angebot{angebot.angebot_pdf_path ? ', als PDF unten rechts' : ''}
               </p>
               <p className="mt-1 text-lg font-semibold text-mabe-900">
                 {angebot.angebot_nr} · {new Date(angebot.angebot_datum).toLocaleDateString('de-DE')}
@@ -113,7 +113,7 @@ export function SchrittUebersicht({ angebot, token }: { angebot: Angebot; token:
           KMU-Status <strong className="text-teal-300">bis zu 45 % Zuschuss</strong> möglich
           {investSumme > 0 && (
             <>
-              {' '}– bei Ihrem Angebot also bis zu{' '}
+              {', bei Ihrem Angebot also bis zu '}
               <strong className="text-teal-300">{formatEUR(investSumme * 0.45)}</strong>
             </>
           )}
@@ -124,7 +124,7 @@ export function SchrittUebersicht({ angebot, token }: { angebot: Angebot; token:
       <ul className="grid grid-cols-1 gap-2 text-sm text-olive-600 sm:grid-cols-3">
         {['ca. 10 Minuten', 'Speichern & später fortfahren möglich', 'Alle Angaben jederzeit korrigierbar'].map((t) => (
           <li key={t} className="flex items-center gap-2">
-            <svg viewBox="0 0 20 20" fill="currentColor" className="size-4 shrink-0 text-teal-600">
+            <svg viewBox="0 0 20 20" fill="currentColor" className="size-4 shrink-0 text-teal-600" aria-hidden>
               <path
                 fillRule="evenodd"
                 d="M16.704 4.153a.75.75 0 0 1 .143 1.052l-8 10.5a.75.75 0 0 1-1.127.075l-4.5-4.5a.75.75 0 0 1 1.06-1.06l3.894 3.893 7.48-9.817a.75.75 0 0 1 1.05-.143Z"

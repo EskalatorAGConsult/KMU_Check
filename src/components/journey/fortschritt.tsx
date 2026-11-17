@@ -31,7 +31,7 @@ export function Fortschritt({
   const aktuell = liste[Math.min(idx, liste.length - 1)]
 
   return (
-    <div className="sticky top-(--scroll-padding-top) z-30 -mx-4 border-b border-olive-100 bg-white/90 px-4 py-3 shadow-sm backdrop-blur-md sm:-mx-6 sm:px-6">
+    <div className="sticky top-(--scroll-padding-top) z-30 -mx-4 border-b border-olive-100 bg-white px-4 py-3 shadow-sm sm:-mx-6 sm:px-6">
       <div className="flex items-center justify-between gap-3">
         <p className="min-w-0 truncate text-sm text-olive-600">
           <span className="font-semibold text-mabe-900">
@@ -46,7 +46,7 @@ export function Fortschritt({
           {zuschuss && zuschuss.betrag > 0 && (
             <span
               className="hidden items-center gap-1.5 rounded-full bg-teal-600 px-3 py-1 text-xs font-bold text-white shadow-sm motion-safe:animate-check-pop sm:inline-flex"
-              title="Ihr voraussichtlicher Zuschuss – ermittelt aus Ihren bisherigen Angaben"
+              title="Ihr voraussichtlicher Zuschuss, ermittelt aus Ihren bisherigen Angaben"
             >
               <svg viewBox="0 0 20 20" fill="currentColor" className="size-3.5" aria-hidden>
                 <path d="M10 1a.75.75 0 0 1 .75.75v1.5a.75.75 0 0 1-1.5 0v-1.5A.75.75 0 0 1 10 1ZM5.05 3.05a.75.75 0 0 1 1.06 0l1.062 1.06A.75.75 0 1 1 6.11 5.173L5.05 4.11a.75.75 0 0 1 0-1.06Zm9.9 0a.75.75 0 0 1 0 1.06l-1.06 1.062a.75.75 0 0 1-1.062-1.061l1.061-1.06a.75.75 0 0 1 1.06 0ZM3 8a7 7 0 1 1 14 0v6a3 3 0 0 1-3 3H6a3 3 0 0 1-3-3V8Z" />
@@ -68,11 +68,11 @@ export function Fortschritt({
         aria-valuenow={info.prozent}
         aria-valuemin={0}
         aria-valuemax={100}
-        aria-label={`Fortschritt: ${info.prozent} Prozent – ${info.erledigt} von ${SCHRITTE.length} Schritten geschafft`}
+        aria-label={`Fortschritt: ${info.prozent} Prozent, ${info.erledigt} von ${SCHRITTE.length} Schritten geschafft`}
       >
         <div
-          className="h-full rounded-full bg-gradient-to-r from-teal-600 to-teal-500 transition-[width] duration-700 ease-out"
-          style={{ width: `${info.prozent}%` }}
+          className="h-full w-full origin-left rounded-full bg-gradient-to-r from-teal-600 to-teal-500 transition-transform duration-700 ease-out motion-reduce:transition-none"
+          style={{ transform: `scaleX(${info.prozent / 100})` }}
         />
         <div
           key={info.erledigt}
@@ -89,7 +89,7 @@ export function Fortschritt({
               {!info.fertig && <span> · noch ca. {info.restMinuten} Min.</span>}
             </>
           ) : (
-            <span>Los geht&apos;s – jeder Schritt wird automatisch gespeichert.</span>
+            <span>Los geht&apos;s, jeder Schritt wird automatisch gespeichert.</span>
           )}
         </p>
         {/* Mobile-Zuschuss-Chip (Desktop steht er oben rechts) */}
@@ -102,7 +102,7 @@ export function Fortschritt({
       </div>
 
       {/* Klickbare Schritt-Kette (nur grosszuegige Viewports): horizontal
-          scrollbar statt Ueberlappung – Labels duerfen nie in den Nachbarn
+          scrollbar statt Ueberlappung, Labels duerfen nie in den Nachbarn
           laufen, der letzte Schritt nie abgeschnitten werden. */}
       <div className="mt-2.5 -mx-1 hidden lg:block">
         <ol
@@ -120,7 +120,7 @@ export function Fortschritt({
                   onClick={() => onSprung(i)}
                   aria-current={aktiv ? 'step' : undefined}
                   title={s.titel}
-                  className={`flex min-h-8 items-center gap-1.5 rounded-lg px-2 py-1 text-xs font-medium whitespace-nowrap transition-colors ${
+                  className={`flex min-h-8 items-center gap-1.5 rounded-lg px-2 py-1 text-xs font-medium whitespace-nowrap transition-colors active:brightness-90 ${
                     aktiv
                       ? 'bg-mabe-900 text-white'
                       : erreicht

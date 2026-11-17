@@ -68,9 +68,9 @@ export function KmuZusammenfassung({
       className="overflow-hidden rounded-2xl border border-teal-600/25 bg-white shadow-sm"
     >
       <div className="border-b border-teal-600/15 bg-teal-50/60 px-5 py-4 sm:px-6">
-        <h2 className="text-base font-semibold text-mabe-900">Ihre KMU-Einstufung – das reichen wir ein</h2>
+        <h2 className="text-base font-semibold text-mabe-900">Ihre KMU-Einstufung, das reichen wir ein</h2>
         <p className="mt-0.5 text-xs/5 text-olive-600">
-          Auf Basis Ihrer Angaben (Geschäftsjahr {geschaeftsjahr ?? '–'}, inkl. Verbundrechnung nach EU-Empfehlung 2003/361/EG).
+          Auf Basis Ihrer Angaben (Geschäftsjahr {geschaeftsjahr ?? 'offen'}, inkl. Verbundrechnung nach EU-Empfehlung 2003/361/EG).
         </p>
       </div>
 
@@ -105,7 +105,7 @@ export function KmuZusammenfassung({
             Förderquote beträgt <strong className="text-teal-700">{ergebnis.fundingRatePct} %</strong>
             {zuschuss != null && (
               <>
-                {' '}– bei Ihrer Investition also voraussichtlich{' '}
+                {', bei Ihrer Investition also voraussichtlich'}
                 <strong className="text-teal-700">{formatEUR(zuschuss)} Zuschuss</strong>
               </>
             )}
