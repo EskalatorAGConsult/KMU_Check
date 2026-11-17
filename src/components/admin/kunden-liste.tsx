@@ -77,7 +77,7 @@ export function KundenListe({ kunden }: { kunden: KundeUebersicht[] }) {
                 className="flex min-h-14 min-w-0 flex-1 flex-col gap-2 p-4 text-left transition-colors hover:bg-olive-50/60 focus-visible:bg-teal-50 focus-visible:outline-none sm:flex-row sm:items-center sm:gap-4"
               >
                 <span
-                  className={`flex size-8 shrink-0 items-center justify-center rounded-full transition-transform ${
+                  className={`flex size-8 shrink-0 items-center justify-center rounded-full motion-safe:transition-transform motion-reduce:transition-none ${
                     istOffen ? 'rotate-90 bg-mabe-900 text-white' : 'bg-olive-100 text-olive-600'
                   }`}
                   aria-hidden
@@ -149,7 +149,7 @@ export function KundenListe({ kunden }: { kunden: KundeUebersicht[] }) {
                     {akt.kunde.vorgaenge.map((v, i) => (
                       <div key={v.angebot.id}>
                         {akt.kunde.vorgaenge.length > 1 && (
-                          <p className="mb-2 text-xs font-semibold tracking-wide text-olive-500 uppercase">
+                          <p className="mb-2 text-xs font-semibold text-olive-500">
                             Vorgang {i + 1} von {akt.kunde.vorgaenge.length}
                           </p>
                         )}

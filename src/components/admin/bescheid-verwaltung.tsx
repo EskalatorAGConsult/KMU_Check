@@ -136,7 +136,7 @@ function Kachel({
           : 'border-olive-200 bg-white'
   return (
     <div className={`rounded-xl border px-4 py-3 ${cls}`} title={hinweis}>
-      <p className="text-[11px] font-semibold tracking-wide text-olive-500 uppercase">{label}</p>
+      <p className="text-xs font-semibold text-olive-500">{label}</p>
       <p className="mt-1 text-sm font-semibold text-mabe-900">{wert}</p>
       {hinweis && <p className="mt-0.5 text-xs text-olive-500">{hinweis}</p>}
     </div>

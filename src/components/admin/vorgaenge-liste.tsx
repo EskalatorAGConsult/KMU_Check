@@ -194,7 +194,7 @@ export function VorgaengeListe({ angebote }: { angebote: AngebotListeItem[] }) {
                     <p className="text-sm text-olive-700">
                       {a.angebot_nr}
                       <span className="text-olive-400"> · {new Date(a.angebot_datum).toLocaleDateString('de-DE')}</span>
-                      <span className="ml-2 font-semibold text-teal-700">Details →</span>
+                      <span className="ml-2 font-semibold text-teal-700">Details öffnen</span>
                     </p>
                   </Link>
                 </li>
@@ -256,7 +256,7 @@ export function VorgaengeListe({ angebote }: { angebote: AngebotListeItem[] }) {
                       </td>
                       <td className="p-0">
                         <Link href={href} className={`${linkCls} text-right font-semibold text-teal-700`} tabIndex={-1} aria-hidden>
-                          Details →
+                          Details öffnen
                         </Link>
                       </td>
                     </tr>
@@ -270,7 +270,7 @@ export function VorgaengeListe({ angebote }: { angebote: AngebotListeItem[] }) {
           {seiten > 1 && (
             <nav className="flex flex-wrap items-center justify-between gap-3" aria-label="Vorgänge blättern">
               <p className="text-xs text-olive-500 tabular-nums">
-                {von + 1}–{Math.min(von + proSeite, gefiltert.length)} von {gefiltert.length}
+                {von + 1} bis {Math.min(von + proSeite, gefiltert.length)} von {gefiltert.length}
               </p>
               <div className="flex items-center gap-1">
                 <button
@@ -310,7 +310,7 @@ export function VorgaengeListe({ angebote }: { angebote: AngebotListeItem[] }) {
                   className="min-h-10 rounded-lg border border-olive-300 px-3 text-sm font-semibold text-mabe-900 hover:bg-olive-100 disabled:opacity-40"
                   aria-label="Nächste Seite"
                 >
-                  →
+                  Weiter
                 </button>
               </div>
             </nav>

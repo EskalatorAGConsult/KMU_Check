@@ -32,7 +32,7 @@ import {
  * Vollstaendiges Datenblatt eines Vorgangs fuer den Admin-Arbeitsplatz:
  * alle eingereichten Kundendaten in der Reihenfolge des BAFA-Modul-3-
  * Formulars, plus Entwuerfe, Dokumente, Webhook-Uebergaben und Audit-Trail.
- * Server Component – keine clientseitige Logik ausser den Aktions-Buttons.
+ * Server Component, keine clientseitige Logik ausser den Aktions-Buttons.
  */
 
 const STATUS_CLS: Record<AngebotStatus, string> = {
@@ -79,7 +79,7 @@ function Sektion({ titel, hinweis, children }: { titel: string; hinweis?: string
 
 function Untertitel({ children }: { children: ReactNode }) {
   return (
-    <p className="mt-4 mb-1 text-xs font-semibold tracking-wide text-olive-500 uppercase first:mt-0">{children}</p>
+    <p className="mt-4 mb-1 text-xs font-semibold text-olive-500 first:mt-0">{children}</p>
   )
 }
 
@@ -185,10 +185,10 @@ export function VorgangDatenblatt({
     })),
   )
   const verbundZeileZu = (name: string) => verbundZeilen.find((z) => z.name === name.trim())
-  // Verbund-Kennzahlen beider BAFA-Jahre anzeigen (2025 UND 2024 – das
+  // Verbund-Kennzahlen beider BAFA-Jahre anzeigen (2025 UND 2024, das
   // Portal fragt beide ab): Zelle „neuestes / Vorjahr", Tooltip mit Klarheit.
   // Alt-Bestände ohne kennzahlen fallen auf die Skalarwerte zurueck (dann
-  // identisch in beiden Jahren – historischer Zustand, nicht neu erfunden).
+  // identisch in beiden Jahren, historischer Zustand, nicht neu erfunden).
   const gjNeu = kmuAktuell?.geschaeftsjahr ?? null
   const gjAlt = v.kmuBewertungen[1]?.geschaeftsjahr ?? null
   const beteiligungsWert = (
@@ -211,7 +211,7 @@ export function VorgangDatenblatt({
   const invest = (a.invest_software ?? 0) + (a.invest_messtechnik ?? 0) + (a.invest_steuerung ?? 0)
   const zuschuss = kmuAktuell?.foerderquote_pct ? (invest * kmuAktuell.foerderquote_pct) / 100 : null
   const eingereicht = !!sd
-  // Einreichungsreife (Vertrag: src/lib/vollstaendigkeit.ts) – Badge + Checkliste
+  // Einreichungsreife (Vertrag: src/lib/vollstaendigkeit.ts), Badge + Checkliste
   const check = pruefeVollstaendigkeit({
     stammdaten: sd,
     kmuBewertungen: v.kmuBewertungen,
@@ -258,13 +258,13 @@ export function VorgangDatenblatt({
 
         <div className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-4">
           <div className="rounded-xl bg-olive-50 px-3.5 py-2.5">
-            <p className="text-[11px] font-semibold tracking-wide text-olive-500 uppercase">Investition</p>
+            <p className="text-xs font-semibold text-olive-500">Investition</p>
             <p className="mt-0.5 text-sm font-semibold text-mabe-900 tabular-nums">
               {invest > 0 ? formatEUR(invest) : fehlt}
             </p>
           </div>
           <div className="rounded-xl bg-olive-50 px-3.5 py-2.5">
-            <p className="text-[11px] font-semibold tracking-wide text-olive-500 uppercase">KMU-Einstufung</p>
+            <p className="text-xs font-semibold text-olive-500">KMU-Einstufung</p>
             <p className="mt-0.5 text-sm font-semibold text-mabe-900">
               {kmuAktuell?.kategorie
                 ? (CATEGORY_LABELS[kmuAktuell.kategorie as Category] ?? kmuAktuell.kategorie)
@@ -272,13 +272,13 @@ export function VorgangDatenblatt({
             </p>
           </div>
           <div className="rounded-xl bg-olive-50 px-3.5 py-2.5">
-            <p className="text-[11px] font-semibold tracking-wide text-olive-500 uppercase">Förderquote</p>
+            <p className="text-xs font-semibold text-olive-500">Förderquote</p>
             <p className="mt-0.5 text-sm font-semibold text-teal-700 tabular-nums">
               {kmuAktuell?.foerderquote_pct ? `${kmuAktuell.foerderquote_pct} %` : fehlt}
             </p>
           </div>
           <div className="rounded-xl bg-teal-50 px-3.5 py-2.5">
-            <p className="text-[11px] font-semibold tracking-wide text-teal-700 uppercase">Voraussichtl. Zuschuss</p>
+            <p className="text-xs font-semibold text-teal-700">Voraussichtl. Zuschuss</p>
             <p className="mt-0.5 text-sm font-semibold text-teal-800 tabular-nums">
               {zuschuss != null ? formatEUR(zuschuss) : fehlt}
             </p>
@@ -322,7 +322,7 @@ export function VorgangDatenblatt({
       {/* Interne Berater-Notizen & Wiedervorlage (Migration 21) */}
       <Sektion
         titel="Interne Notizen & Wiedervorlage"
-        hinweis="Nur für Admins sichtbar – Telefonate, Absprachen, fehlende Unterlagen dokumentieren."
+        hinweis="Nur für Admins sichtbar, Telefonate, Absprachen, fehlende Unterlagen dokumentieren."
       >
         <VorgangNotizen
           angebotId={a.id}
@@ -335,7 +335,7 @@ export function VorgangDatenblatt({
       {/* BAFA 7 · Technische Maßnahme (aus dem Angebot) */}
       <Sektion
         titel="Technische Maßnahme (BAFA Abschnitt 7)"
-        hinweis="Stammt aus dem MABE-Angebot – vom Vertrieb erfasst bzw. per KI aus dem Angebots-PDF vorbefüllt."
+        hinweis="Stammt aus dem MABE-Angebot, vom Vertrieb erfasst bzw. per KI aus dem Angebots-PDF vorbefüllt."
       >
         <dl className="divide-y divide-olive-100">
           <Zeile label="Technologien" wert={a.technologien.map((t) => TECHNOLOGIE_LABELS[t]).join(', ')} />
@@ -377,13 +377,13 @@ export function VorgangDatenblatt({
         titel="Stammdaten des Antragstellers (BAFA Abschnitte 1–4, 6)"
         hinweis={
           eingereicht
-            ? `Eingereicht am ${fmtZeit(sd.updated_at)} – DSGVO-Einwilligung erteilt am ${fmtZeit(sd.dsgvo_einwilligung_at)}.`
+            ? `Eingereicht am ${fmtZeit(sd.updated_at)}, DSGVO-Einwilligung erteilt am ${fmtZeit(sd.dsgvo_einwilligung_at)}.`
             : 'Der Kunde hat die Journey noch nicht abgeschlossen.'
         }
       >
         {sd ? (
           <div>
-            <Untertitel>1 · Unternehmen</Untertitel>
+            <Untertitel>Unternehmen</Untertitel>
             <dl className="divide-y divide-olive-100">
               <Zeile label="Unternehmensname" wert={sd.unternehmensname} />
               <Zeile label="Adresse" wert={`${sd.strasse}, ${sd.plz} ${sd.ort}, ${sd.land}`} />
@@ -411,7 +411,7 @@ export function VorgangDatenblatt({
               )}
             </dl>
 
-            <Untertitel>2 · Ansprechpartner</Untertitel>
+            <Untertitel>Ansprechpartner</Untertitel>
             <dl className="divide-y divide-olive-100">
               <Zeile label="Rolle / Position" wert={sd.ap_rolle ?? fehlt} />
               <Zeile
@@ -421,7 +421,7 @@ export function VorgangDatenblatt({
               <Zeile label="E-Mail (Ansprechpartner)" wert={sd.ap_email ?? fehlt} />
             </dl>
 
-            <Untertitel>3–4 · Antrag & Bankverbindung</Untertitel>
+            <Untertitel>Antrag und Bankverbindung</Untertitel>
             <dl className="divide-y divide-olive-100">
               <Zeile label="Gruppenzugehörigkeit" wert={GRUPPENZUGEHOERIGKEIT_LABELS[sd.gruppenzugehoerigkeit]} />
               <Zeile label="Wirtschaftlich tätig" wert={jaNein(sd.wirtschaftlich_taetig)} />
@@ -445,7 +445,7 @@ export function VorgangDatenblatt({
         ) : (
           <LeerHinweis>
             Noch keine Stammdaten eingereicht
-            {v.entwurf ? ' – Entwurfsdaten aus der laufenden Journey siehe unten.' : '.'}
+            {v.entwurf ? ', Entwurfsdaten aus der laufenden Journey siehe unten.' : '.'}
           </LeerHinweis>
         )}
       </Sektion>
@@ -495,7 +495,7 @@ export function VorgangDatenblatt({
 
             {berechnung && (
               <div className="rounded-xl bg-olive-50/60 p-4">
-                <p className="text-xs font-semibold tracking-wide text-olive-600 uppercase">
+                <p className="text-xs font-semibold text-olive-600">
                   Verbundrechnung (konsolidierte Werte, Geschäftsjahr {kmuAktuell?.geschaeftsjahr})
                 </p>
                 <div className="mt-2 overflow-x-auto">
@@ -625,7 +625,7 @@ export function VorgangDatenblatt({
         ) : (
           sd?.unternehmensart === 'eigenstaendig' && (
             <p className="mt-3 text-sm text-olive-600">
-              Eigenständiges Unternehmen – keine Partner-/verbundenen Unternehmen angegeben.
+              Eigenständiges Unternehmen, keine Partner-/verbundenen Unternehmen angegeben.
             </p>
           )
         )}
@@ -715,7 +715,7 @@ export function VorgangDatenblatt({
       {/* Migration 25 · Bewilligung & Verwendungsnachweis */}
       <Sektion
         titel="Bewilligung & Verwendungsnachweis"
-        hinweis="Bescheid-Upload, Fristen (OCR) und VNW-Belege – aktiv mit dem ersten Bescheid."
+        hinweis="Bescheid-Upload, Fristen (OCR) und VNW-Belege, aktiv mit dem ersten Bescheid."
       >
         <BescheidVerwaltung
           angebotId={a.id}
@@ -765,23 +765,23 @@ export function VorgangDatenblatt({
       {/* Kunden-Zugriffsprotokoll (Migration 20) */}
       <Sektion
         titel="Kunden-Zugriffe (Login-Protokoll)"
-        hinweis="Jeder Aufruf des persönlichen Journey-Links – Nachweis, wann der Kunde den Vorgang geöffnet hat."
+        hinweis="Jeder Aufruf des persönlichen Journey-Links, Nachweis, wann der Kunde den Vorgang geöffnet hat."
       >
         {v.zugriffe.anzahl > 0 ? (
           <div className="flex flex-col gap-4">
             <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
               <div className="rounded-xl bg-olive-50 px-3.5 py-2.5">
-                <p className="text-[11px] font-semibold tracking-wide text-olive-500 uppercase">Aufrufe gesamt</p>
+                <p className="text-xs font-semibold text-olive-500">Aufrufe gesamt</p>
                 <p className="mt-0.5 text-sm font-semibold text-mabe-900 tabular-nums">{v.zugriffe.anzahl}</p>
               </div>
               <div className="rounded-xl bg-olive-50 px-3.5 py-2.5">
-                <p className="text-[11px] font-semibold tracking-wide text-olive-500 uppercase">Zuletzt aufgerufen</p>
+                <p className="text-xs font-semibold text-olive-500">Zuletzt aufgerufen</p>
                 <p className="mt-0.5 text-sm font-semibold text-mabe-900 tabular-nums">
                   {fmtZeit(v.zugriffe.liste[0]?.created_at)}
                 </p>
               </div>
               <div className="rounded-xl bg-olive-50 px-3.5 py-2.5">
-                <p className="text-[11px] font-semibold tracking-wide text-olive-500 uppercase">
+                <p className="text-xs font-semibold text-olive-500">
                   Unterschiedliche IPs (letzte {v.zugriffe.liste.length})
                 </p>
                 <p className="mt-0.5 text-sm font-semibold text-mabe-900 tabular-nums">
