@@ -143,3 +143,50 @@ export async function speichereLeadEmpfaenger(wert: string): Promise<Einstellung
     return { ok: false, fehler: e instanceof Error ? e.message : 'Speichern fehlgeschlagen.' }
   }
 }
+
+// ---------- Fristen-Erinnerungen (Migration 26) ----------
+
+const TAGE_RE = /^[1-9][0-9]{0,2}$/
+
+/** Speichert die Vorlauf-Zeiten der Fristen-Erinnerungen (1–180 Tage, je Fristart). */
+export async function speichereFristErinnerungen(
+  zeitraumTage: string,
+  vnwTage: string,
+): Promise<EinstellungErgebnis> {
+  const session = await requireAdmin()
+  if (!TAGE_RE.test(zeitraumTage.trim()) || !TAGE_RE.test(vnwTage.trim())) {
+    return { ok: false, fehler: 'Beide Vorlauf-Zeiten müssen ganze Zahlen zwischen 1 und 180 (Tage) sein.' }
+  }
+  const z = Number(zeitraumTage.trim())
+  const v = Number(vnwTage.trim())
+  if (z > 180 || v > 180) {
+    return { ok: false, fehler: 'Der Vorlauf darf höchstens 180 Tage betragen.' }
+  }
+  try {
+    const { EINSTELLUNG_ZEITRAUM, EINSTELLUNG_VNW } = await import('@/lib/bescheid/fristen')
+    await setzeEinstellung(EINSTELLUNG_ZEITRAUM, String(z), session.user.id)
+    await setzeEinstellung(EINSTELLUNG_VNW, String(v), session.user.id)
+    await audit(null, `admin:${session.user.id}`, 'einstellung_frist_erinnerungen', { zeitraum_tage: z, vnw_tage: v })
+    revalidatePath('/admin/einstellungen')
+    return {
+      ok: true,
+      hinweis: `Erinnerung jetzt ${z} Tage vor Ende des Durchführungszeitraums und ${v} Tage vor der VNW-Vorlagefrist.`,
+    }
+  } catch (e) {
+    return { ok: false, fehler: e instanceof Error ? e.message : 'Speichern fehlgeschlagen.' }
+  }
+}
+
+export type FristTestErgebnis = { ok: true; hinweis: string } | { ok: false; fehler: string }
+
+/** Manueller Lauf der Fristen-Erinnerung (gleiche Kernfunktion wie der Tages-Cron). */
+export async function pruefeFristenJetzt(): Promise<FristTestErgebnis> {
+  const session = await requireAdmin()
+  try {
+    const { pruefeUndErinnere } = await import('@/lib/bescheid/fristen')
+    const erg = await pruefeUndErinnere(`admin:${session.user.id}`)
+    return { ok: true, hinweis: erg.hinweis }
+  } catch (e) {
+    return { ok: false, fehler: e instanceof Error ? e.message : 'Prüfung fehlgeschlagen.' }
+  }
+}

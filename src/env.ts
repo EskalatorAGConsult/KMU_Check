@@ -66,6 +66,8 @@ const schema = createEnv({
       .optional(),
     /** Komma-/Semikolon-Liste von Lead-Empfaengern (Fallback der DB-Einstellung). */
     LEAD_EMAIL_AN: z.string().optional(),
+    /** Vercel Cron-Secret (Bearer) für /api/cron/fristen; fehlt = Cron fail-closed. */
+    CRON_SECRET: z.string().min(8).optional(),
   },
   runtimeEnv: process.env,
   skipValidation: !!process.env.SKIP_ENV_VALIDATION,

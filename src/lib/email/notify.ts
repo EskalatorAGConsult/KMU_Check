@@ -328,7 +328,7 @@ export async function sendeBescheidHinweisAnAdmins(daten: {
   }
   const fristText = daten.fristAm
     ? new Date(`${daten.fristAm}T00:00:00`).toLocaleDateString('de-DE')
-    : 'noch nicht erkannt – bitte im Portal prüfen'
+    : 'noch nicht erkannt, bitte im Portal prüfen'
   const html = layout(
     `Zuwendungsbescheid eingetroffen: ${daten.kundeFirma}`,
     [
@@ -339,11 +339,59 @@ export async function sendeBescheidHinweisAnAdmins(daten: {
           `und Verwendungsnachweis sind im Portal aktiviert.`,
       ),
       infoBox(
-        `Gelesene VNW-Vorlagefrist: <strong>${fristText}</strong> – Fristversäumnis kann zum Widerruf führen ` +
+        `Gelesene VNW-Vorlagefrist: <strong>${fristText}</strong>, Fristversäumnis kann zum Widerruf führen ` +
           `(BAFA-Merkblatt: regelmäßig 3 Monate nach Ablauf des Bewilligungszeitraums). Bitte OCR-Werte in der ` +
           `Fallakte prüfen und bestätigen.`,
       ),
     ].join(''),
   )
   return sendeMail(empfaenger, `Zuwendungsbescheid: ${daten.kundeFirma} (${daten.angebotNr})`, html)
+}
+
+/**
+ * 10 · Fristen-Erinnerung (intern, Migration 26): konfigurierbarer Vorlauf
+ * vor Ende des Durchführungszeitraums und vor der VNW-Vorlagefrist.
+ * Versand ausschließlich bei NEUER Erinnerung (idempotent, siehe fristen.ts).
+ */
+export async function sendeFristErinnerungAnTeam(daten: {
+  angebotId: string
+  angebotNr: string
+  kundeFirma: string
+  art: 'zeitraum_ende' | 'vnw_frist'
+  fristAm: string
+  tageRest: number
+}): Promise<VersandErgebnis> {
+  const { ermittleLeadEmpfaenger } = await import('@/lib/db/repositories/einstellungen')
+  const { empfaenger } = await ermittleLeadEmpfaenger()
+  if (empfaenger.length === 0) {
+    return { ok: false, grund: 'Keine Empfänger konfiguriert (Einstellungen)' }
+  }
+  const fristText = new Date(`${daten.fristAm}T00:00:00`).toLocaleDateString('de-DE')
+  const istZeitraum = daten.art === 'zeitraum_ende'
+  const fristLabel = istZeitraum ? 'Ende des Durchführungszeitraums' : 'Vorlagefrist Verwendungsnachweis'
+  const tageText =
+    daten.tageRest >= 0 ? `noch ${daten.tageRest} Tag(e)` : `seit ${Math.abs(daten.tageRest)} Tag(en) überfällig`
+  const handlung = istZeitraum
+    ? 'Bitte Umsetzungsstand mit dem Kunden klären und ggf. eine Fristverlängerung beim BAFA beantragen.'
+    : 'Bitte den Verwendungsnachweis beim Kunden nachfassen, Fristversäumnis kann zum Widerruf des Bescheids führen.'
+  const html = layout(
+    `${istZeitraum ? 'Durchführungszeitraum endet' : 'Verwendungsnachweis fällig'}: ${daten.kundeFirma}`,
+    [
+      h1(istZeitraum ? 'Durchführungszeitraum läuft ab' : 'Verwendungsnachweis-Frist läuft ab'),
+      p(
+        `Vorgang <strong>${esc(daten.angebotNr)}</strong> (${esc(daten.kundeFirma)}): ` +
+          `<strong>${fristLabel}</strong> am <strong>${fristText}</strong> (${tageText}).`,
+      ),
+      infoBox(`<strong>Nächster Schritt:</strong> ${handlung}`),
+      p(
+        `Vorgangsakte: <a href="${esc(portalUrl(`/admin/kunden/${daten.angebotId}`))}" style="color:#0d9488;">` +
+          `${esc(portalUrl(`/admin/kunden/${daten.angebotId}`))}</a>`,
+      ),
+    ].join(''),
+  )
+  return sendeMail(
+    empfaenger,
+    `${istZeitraum ? 'Durchführungszeitraum' : 'VNW-Frist'} ${fristText}: ${daten.kundeFirma} (${daten.angebotNr})`,
+    html,
+  )
 }

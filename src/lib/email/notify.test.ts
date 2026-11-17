@@ -191,3 +191,42 @@ describe('sendePasswortReset (Reset-Mail-Vertrag)', () => {
     expect(fang.aufrufe).toHaveLength(0)
   })
 })
+
+// ---------- sendeFristErinnerungAnTeam (Migration 26) ----------
+
+describe('sendeFristErinnerungAnTeam (Fristen-Reminder)', () => {
+  it('VNW-Frist: Betreff mit Datum, Link zur Fallakte, Handlungshinweis', async () => {
+    const { sendeFristErinnerungAnTeam } = await import('./notify')
+    const fang: Fang = { aufrufe: [], html: [], status: 200, antwort: {} }
+    registriereHandlerMitHtml(fang)
+    vi.stubEnv('RESEND_API_KEY', 're_test_1234567890')
+    vi.stubEnv('NEXT_PUBLIC_APP_URL', 'https://foerdercheck.mabe.de')
+
+    const erg = await sendeFristErinnerungAnTeam({
+      angebotId: 'a1', angebotNr: 'ANG-2026-042', kundeFirma: 'Mueller Werkzeugbau GmbH',
+      art: 'vnw_frist', fristAm: '2026-12-15', tageRest: 28,
+    })
+
+    expect(erg.ok, `grund: ${erg.ok ? '' : (erg.grund ?? '?')}`).toBe(true)
+    expect(fang.aufrufe[0].subject).toContain('VNW-Frist')
+    expect(fang.aufrufe[0].subject).toContain('15.12.2026')
+    expect(fang.html[0]).toContain('/admin/kunden/a1')
+    expect(fang.html[0]).toContain('Verwendungsnachweis')
+  })
+
+  it('Zeitraum-Ende: eigene Betreffformulierung und 28-Tage-Vorlauf-Text', async () => {
+    const { sendeFristErinnerungAnTeam } = await import('./notify')
+    const fang: Fang = { aufrufe: [], html: [], status: 200, antwort: {} }
+    registriereHandlerMitHtml(fang)
+    vi.stubEnv('RESEND_API_KEY', 're_test_1234567890')
+
+    const erg = await sendeFristErinnerungAnTeam({
+      angebotId: 'a2', angebotNr: 'ANG-2026-007', kundeFirma: 'Test GmbH',
+      art: 'zeitraum_ende', fristAm: '2026-11-30', tageRest: 13,
+    })
+
+    expect(erg.ok).toBe(true)
+    expect(fang.aufrufe[0].subject).toContain('Durchführungszeitraum')
+    expect(fang.html[0]).toContain('noch 13 Tag(e)')
+  })
+})

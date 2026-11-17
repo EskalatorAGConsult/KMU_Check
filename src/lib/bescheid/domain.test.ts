@@ -140,3 +140,53 @@ describe('NachweisKontext (OOP-Domäne)', () => {
   })
 })
 
+
+// ---------- Fristen-Erinnerungen (Migration 26) ----------
+
+import { fristErinnerungsFaellig, sammleFristErinnerungen, FRIST_ERINNERUNG_STANDARD, type FristKandidat } from './domain'
+
+describe('fristErinnerungsFaellig', () => {
+  it('faellig ab Erreichen des Vorlaufs, auch ueberfaellig', () => {
+    expect(fristErinnerungsFaellig('2026-11-20', 14, HEUTE)).toBe(true) // 3 T
+    expect(fristErinnerungsFaellig('2026-12-01', 14, HEUTE)).toBe(true) // 14 T = Grenze
+    expect(fristErinnerungsFaellig('2026-12-02', 14, HEUTE)).toBe(false) // 15 T
+    expect(fristErinnerungsFaellig('2026-11-10', 14, HEUTE)).toBe(true) // -7 ueberfaellig
+  })
+  it('ohne Frist oder unsinnige Konfiguration: nie', () => {
+    expect(fristErinnerungsFaellig(null, 14, HEUTE)).toBe(false)
+    expect(fristErinnerungsFaellig('2026-11-20', 0, HEUTE)).toBe(false)
+  })
+})
+
+describe('sammleFristErinnerungen', () => {
+  const k = (ueber: Partial<FristKandidat>): FristKandidat => ({
+    angebotId: 'a1', angebotNr: 'ANG-1', kundeFirma: 'Test GmbH',
+    durchfuehrungBis: null, vnwFrist: null, vnwVorlagefrist: null, vnwEingereicht: false, ...ueber,
+  })
+  it('beide Arten je einmal, VNW nur solange offen', () => {
+    const erg = sammleFristErinnerungen(
+      [k({ durchfuehrungBis: '2026-11-25', vnwFrist: '2026-11-30' })],
+      FRIST_ERINNERUNG_STANDARD, HEUTE,
+    )
+    expect(erg.map((e) => e.art)).toEqual(['zeitraum_ende', 'vnw_frist'])
+    const erg2 = sammleFristErinnerungen(
+      [k({ durchfuehrungBis: '2026-11-25', vnwFrist: '2026-11-30', vnwEingereicht: true })],
+      FRIST_ERINNERUNG_STANDARD, HEUTE,
+    )
+    expect(erg2.map((e) => e.art)).toEqual(['zeitraum_ende'])
+  })
+  it('VNW-Snapshot gewinnt vor Bescheid-Frist (Domänen-Regel)', () => {
+    const erg = sammleFristErinnerungen(
+      [k({ vnwFrist: '2027-06-30', vnwVorlagefrist: '2026-11-28' })],
+      { zeitraumEndeTage: 14, vnwFristTage: 28 }, HEUTE,
+    )
+    expect(erg).toHaveLength(1)
+    expect(erg[0].fristAm).toBe('2026-11-28')
+  })
+  it('weit entfernte Fristen erinnern nicht', () => {
+    expect(sammleFristErinnerungen(
+      [k({ durchfuehrungBis: '2027-09-01', vnwFrist: '2028-01-01' })],
+      FRIST_ERINNERUNG_STANDARD, HEUTE,
+    )).toEqual([])
+  })
+})

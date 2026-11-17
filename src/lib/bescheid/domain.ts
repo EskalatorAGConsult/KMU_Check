@@ -54,6 +54,99 @@ export function zeitraumGueltig(von: string | null, bis: string | null): boolean
   return new Date(von).getTime() <= new Date(bis).getTime()
 }
 
+// ---------- Fristen-Erinnerungen (Reminder, Migration 26) ----------
+
+/** Konfigurierbare Vorlauf-Zeiten in Tagen (Admin-Einstellungen, Defaults). */
+export interface FristErinnerungsEinstellungen {
+  zeitraumEndeTage: number
+  vnwFristTage: number
+}
+
+export const FRIST_ERINNERUNG_STANDARD: FristErinnerungsEinstellungen = {
+  zeitraumEndeTage: 14,
+  vnwFristTage: 28,
+}
+
+/**
+ * Eine Frist ist erinnerungs-faellig, sobald die Restzeit die konfigurierte
+ * Vorlauf-Zeit erreicht oder unterschreitet, auch bereits ueberfaellig
+ * (negative Resttage: der Anlass ist dringender, nicht erledigt). Ohne Frist
+ * oder unsinnige Konfiguration (< 1 Tag): nie.
+ */
+export function fristErinnerungsFaellig(
+  fristAm: string | null | undefined,
+  tageVorher: number,
+  heute: Date,
+): boolean {
+  if (!fristAm || tageVorher < 1) return false
+  const tage = tageBisFrist(fristAm, heute)
+  return tage !== null && tage <= tageVorher
+}
+
+export type FristErinnerungsArt = 'zeitraum_ende' | 'vnw_frist'
+
+/** Kandidaten-Snapshot aus der DB (bescheid vorhanden, Vorgang nicht widerrufen). */
+export interface FristKandidat {
+  angebotId: string
+  angebotNr: string
+  kundeFirma: string
+  durchfuehrungBis: string | null
+  vnwFrist: string | null
+  /** VNW-Snapshot hat Vorrang (Domänen-Regel wirksameFrist). */
+  vnwVorlagefrist: string | null
+  vnwEingereicht: boolean
+}
+
+export interface FristErinnerung {
+  angebotId: string
+  angebotNr: string
+  kundeFirma: string
+  art: FristErinnerungsArt
+  fristAm: string
+  tageRest: number
+}
+
+/**
+ * Reine Sammel-Logik: ermittelt aus Kandidaten-Snapshots die fälligen
+ * Erinnerungen (je Vorgang max. eine je Art).
+ * - zeitraum_ende: Ende des Durchführungszeitraums laeuft der Konfiguration nach ab.
+ * - vnw_frist: nur solange der Verwendungsnachweis NICHT eingereicht ist;
+ *   wirksame Frist = VNW-Snapshot vor Bescheid-Frist (gleiche Regel wie die Ampel).
+ */
+export function sammleFristErinnerungen(
+  kandidaten: FristKandidat[],
+  einstellungen: FristErinnerungsEinstellungen,
+  heute: Date,
+): FristErinnerung[] {
+  const aus: FristErinnerung[] = []
+  for (const k of kandidaten) {
+    if (fristErinnerungsFaellig(k.durchfuehrungBis, einstellungen.zeitraumEndeTage, heute)) {
+      aus.push({
+        angebotId: k.angebotId,
+        angebotNr: k.angebotNr,
+        kundeFirma: k.kundeFirma,
+        art: 'zeitraum_ende',
+        fristAm: k.durchfuehrungBis as string,
+        tageRest: tageBisFrist(k.durchfuehrungBis, heute) ?? 0,
+      })
+    }
+    if (!k.vnwEingereicht) {
+      const wirksam = k.vnwVorlagefrist ?? k.vnwFrist
+      if (fristErinnerungsFaellig(wirksam, einstellungen.vnwFristTage, heute)) {
+        aus.push({
+          angebotId: k.angebotId,
+          angebotNr: k.angebotNr,
+          kundeFirma: k.kundeFirma,
+          art: 'vnw_frist',
+          fristAm: wirksam as string,
+          tageRest: tageBisFrist(wirksam, heute) ?? 0,
+        })
+      }
+    }
+  }
+  return aus
+}
+
 /** Zusammenfassender Zustand eines Vorgangs nach der Einreichung. */
 export interface NachweisEingabe {
   bescheid: Pick<

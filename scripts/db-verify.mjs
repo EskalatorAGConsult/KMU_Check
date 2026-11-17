@@ -36,6 +36,7 @@ const EXPECTED = [
   'bescheide', 'verwendungsnachweise', 'vnw_belege',
   // Better-Auth (08): `verification` verwaltet auch die Passwort-Reset-Tokens
   'user', 'session', 'account', 'verification',
+  'frist_erinnerungen',
 ]
 const { rows: tables } = await client.query(
   `select relname, relrowsecurity from pg_class
@@ -43,7 +44,7 @@ const { rows: tables } = await client.query(
    order by relname`,
   [EXPECTED],
 )
-ok('Alle 21 Tabellen vorhanden (inkl. Better-Auth)', tables.length === 21, `${tables.length}/21`)
+ok('Alle 22 Tabellen vorhanden (inkl. Better-Auth + Fristen)', tables.length === 22, `${tables.length}/22`)
 const noRls = tables.filter((t) => !t.relrowsecurity).map((t) => t.relname)
 ok('RLS auf allen Tabellen aktiv', noRls.length === 0, noRls.join(',') || 'alle')
 
@@ -69,9 +70,9 @@ ok('uuid_v7() liefert UUID Version 7', uv.u1.charAt(14) === '7', uv.u1)
 ok('uuid_v7() ist zeit-sortiert (Monotonie ueber ms-Grenze)', uv.monoton === true)
 const { rows: [ud] } = await client.query(
   `select count(*)::int as n from pg_attrdef where pg_get_expr(adbin, adrelid) like '%uuid_v7%'`)
-// 13 = Kernschema (9) + Migrationen 19–24 (vorgang_revisionen, kunden_zugriffe,
-// vorgang_notizen) + Migration 25 (vnw_belege) – live verifiziert 17.11.2026.
-ok('uuid_v7-Default auf allen 13 ID-Spalten', ud.n === 13, `${ud.n}/13`)
+// 14 = Kernschema (10) + Migrationen 19–24 (vorgang_revisionen, kunden_zugriffe,
+// vorgang_notizen) + Migration 25 (vnw_belege) + Migration 26 (frist_erinnerungen).
+ok('uuid_v7-Default auf allen 14 ID-Spalten', ud.n === 14, `${ud.n}/14`)
 
 // 3 · Constraint-Verhalten (Transaktion + Rollback)
 await client.query('begin')

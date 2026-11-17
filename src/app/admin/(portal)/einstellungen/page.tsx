@@ -3,6 +3,7 @@ import type { Metadata } from 'next'
 import { env } from '@/env'
 
 import { EmailTestButton } from '@/components/admin/email-test-button'
+import { FristErinnerungForm } from '@/components/admin/frist-erinnerung-form'
 import { LeadEmpfaengerForm } from '@/components/admin/lead-empfaenger-form'
 import { WebhookForm } from '@/components/admin/webhook-form'
 import { ermittleLeadEmpfaenger, holeEinstellung } from '@/lib/db/repositories/einstellungen'
@@ -33,6 +34,8 @@ export default async function EinstellungenPage() {
   const dbWert = (await holeEinstellung('webhook_url')) ?? ''
   const aufloesung = loeseWebhookAuf(dbWert, env.WEBHOOK_URL)
   const dbEmpfaenger = (await holeEinstellung('lead_email_empfaenger')) ?? ''
+  const { holeFristErinnerungsEinstellungen } = await import('@/lib/bescheid/fristen')
+  const fristEinstellungen = await holeFristErinnerungsEinstellungen()
   const leadEmpfaenger = await ermittleLeadEmpfaenger()
   const mailKeyGesetzt = resendClient() !== null
   const absenderAdresse = absender()
@@ -84,6 +87,23 @@ export default async function EinstellungenPage() {
           <code className="rounded bg-olive-100 px-1.5 py-0.5 text-xs break-all">{leadEmpfaenger.empfaenger.join(', ')}</code>
         </p>
         <LeadEmpfaengerForm initialWert={dbEmpfaenger} />
+      </section>
+
+      <section className="rounded-2xl border border-olive-200 bg-white p-5 sm:p-6">
+        <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
+          <h3 className="text-sm font-semibold text-mabe-900">Fristen-Erinnerungen</h3>
+          <span className="rounded-full bg-olive-100 px-2.5 py-1 text-xs font-semibold text-olive-700">
+            {fristEinstellungen.quelle === 'datenbank' ? 'individuell' : 'Standard'}
+          </span>
+        </div>
+        <p className="mb-4 text-sm/6 text-olive-600">
+          Wann das Team erinnert wird: vor Ende des Durchführungszeitraums und vor der Vorlagefrist des
+          Verwendungsnachweises (Fristversäumnis kann zum Widerruf des Bescheids führen).
+        </p>
+        <FristErinnerungForm
+          initialZeitraum={String(fristEinstellungen.werte.zeitraumEndeTage)}
+          initialVnw={String(fristEinstellungen.werte.vnwFristTage)}
+        />
       </section>
 
       <section className="rounded-2xl border border-olive-200 bg-white p-5 sm:p-6">
