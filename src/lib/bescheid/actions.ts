@@ -25,6 +25,7 @@ import {
 } from '@/lib/db/repositories/bescheid'
 import { audit } from '@/lib/db/repositories/journey'
 import { supabaseServer } from '@/lib/db/server'
+import { sendeBescheidHinweisAnAdmins } from '@/lib/email/notify'
 import { loggeFehler } from '@/lib/fehler'
 import { analysiereBescheid, type BescheidAnalyse } from '@/lib/gemini/bescheid-analyse'
 import { ladeDokumentHoch } from '@/lib/storage/blob'
@@ -131,6 +132,17 @@ export async function ladeBescheidHoch(
       datei: geprueft.name,
       ocr_ok: !!analyse,
       ocr_grund: ocrGrund,
+    })
+    // Fristen laufen ab jetzt – Team informieren (best effort, wie alle Mails).
+    const hinweis = await sendeBescheidHinweisAnAdmins({
+      kundeFirma: angebot.kunde_firma,
+      angebotNr: angebot.angebot_nr,
+      fristAm: analyse?.vnw_frist_am ?? null,
+      hochgeladenVon: `${zugriff.rolle === 'admin' ? 'Team' : 'Kunde'} (${zugriff.session.user.email ?? zugriff.session.user.id})`,
+    })
+    await audit(angebotId, 'system', 'bescheid_email_admins', {
+      gesendet: hinweis.ok,
+      grund: hinweis.grund ?? null,
     })
     revalidatePath(`/konto/vorgang/${angebotId}`)
     revalidatePath('/admin/kunden')

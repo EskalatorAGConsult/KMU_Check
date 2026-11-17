@@ -2,6 +2,7 @@ import 'server-only'
 
 import { feldLabel } from '@/lib/admin/feld-labels'
 import { formatiereWert } from '@/lib/admin/revision-diff'
+import { NachweisKontext } from '@/lib/bescheid/domain'
 import type { KundeVorgang } from '@/lib/db/repositories/kunden'
 import { jahrKennzahl } from '@/lib/journey/verbund-jahre'
 import { analysiereVerbund, CATEGORY_LABELS, type Category, type KmuResult } from '@/lib/kmu'
@@ -15,6 +16,7 @@ import {
   SOFTWARE_VARIANTE_LABELS,
   TECHNOLOGIE_LABELS,
   UNTERNEHMENSART_LABELS,
+  VNW_STATUS_LABELS,
 } from '@/lib/labels'
 import { datumDE, eur, neuesPdfDokument, Writer } from '@/lib/pdf/writer'
 
@@ -227,8 +229,65 @@ export async function generiereFallaktePdf(v: KundeVorgang): Promise<Uint8Array>
   }
   w.abstand(6)
 
+  // ---------- Bewilligung & Verwendungsnachweis (Migration 25) ----------
+  w.ueberschrift('6 · Bewilligung & Verwendungsnachweis')
+  if (v.bescheid) {
+    const nachweis = new NachweisKontext({
+      bescheid: v.bescheid,
+      vnw: v.verwendungsnachweis,
+      belege: v.vnwBelege,
+    })
+    const fristText =
+      nachweis.wirksameFrist
+        ? `${datumDE(nachweis.wirksameFrist)} (${nachweis.frist.status}${
+            nachweis.frist.tageRest != null ? `, ${nachweis.frist.tageRest} T.` : ''
+          })`
+        : fehlt
+    w.zeile('Aktenzeichen', v.bescheid.aktenzeichen ?? fehlt)
+    w.zeile('Bescheid vom', datumDE(v.bescheid.bewilligt_am))
+    w.zeile('Erhalten am (Upload)', zeitDE(v.bescheid.erhalten_am))
+    w.zeile('Bewilligte Förderung', `${v.bescheid.foerderquote_pct ?? fehlt} % · ${eur(v.bescheid.foerdersumme_eur)}`)
+    w.zeile(
+      'Durchführungszeitraum',
+      v.bescheid.durchfuehrung_von
+        ? `${datumDE(v.bescheid.durchfuehrung_von)} – ${datumDE(v.bescheid.durchfuehrung_bis)}`
+        : fehlt,
+    )
+    w.zeile('VNW-Vorlagefrist', fristText)
+    w.zeile(
+      'Bescheid bestätigt',
+      v.bescheid.bestaetigt_am
+        ? `${zeitDE(v.bescheid.bestaetigt_am)} · ${v.bearbeiter[v.bescheid.bestaetigt_von ?? ''] ?? v.bescheid.bestaetigt_von ?? fehlt}`
+        : 'noch unbestätigt (OCR prüfen)',
+    )
+    if (v.bescheid.auflagen && v.bescheid.auflagen.length > 0) {
+      w.abstand(3)
+      w.absatz('Auflagen/Hinweise aus dem Bescheid (OCR-Kurzfassung):', 9.5)
+      for (const a of v.bescheid.auflagen.slice(0, 10)) w.absatz(`· ${a}`, 8.5)
+    }
+    if (v.verwendungsnachweis) {
+      const vnw = v.verwendungsnachweis
+      w.abstand(3)
+      w.zeile('Verwendungsnachweis', VNW_STATUS_LABELS[vnw.status])
+      w.zeile(
+        'Belege',
+        `${v.vnwBelege.length} Stück · Summe (erfasst) ${eur(nachweis.belegSummeEur)}`,
+      )
+      if (vnw.sachbericht) w.zeile('Sachbericht', kurz(vnw.sachbericht, 80))
+      if (vnw.eingereicht_am) {
+        w.zeile(
+          'Eingereicht',
+          `${zeitDE(vnw.eingereicht_am)} · ${v.bearbeiter[vnw.eingereicht_von ?? ''] ?? vnw.eingereicht_von ?? fehlt}`,
+        )
+      }
+    }
+  } else {
+    w.absatz('Noch kein Zuwendungsbescheid hochgeladen (Stationen Durchführungszeitraum & VNW inaktiv).', 9.5)
+  }
+  w.abstand(6)
+
   // ---------- Kunden-Zugriffsprotokoll ----------
-  w.ueberschrift(`6 · Kunden-Zugriffe (Login-Protokoll)`)
+  w.ueberschrift(`7 · Kunden-Zugriffe (Login-Protokoll)`)
   if (v.zugriffe.anzahl > 0) {
     w.zeile('Aufrufe gesamt', String(v.zugriffe.anzahl))
     w.zeile('Zuletzt aufgerufen', zeitDE(v.zugriffe.liste[0]?.created_at))
@@ -242,7 +301,7 @@ export async function generiereFallaktePdf(v: KundeVorgang): Promise<Uint8Array>
   w.abstand(6)
 
   // ---------- Audit-Report ----------
-  w.ueberschrift(`7 · Änderungshistorie durch Admins (${v.revisionen.length})`)
+  w.ueberschrift(`8 · Änderungshistorie durch Admins (${v.revisionen.length})`)
   if (v.revisionen.length > 0) {
     for (const r of v.revisionen) {
       const wer = v.bearbeiter[r.bearbeitet_von] ?? r.bearbeitet_von

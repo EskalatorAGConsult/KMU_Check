@@ -307,3 +307,43 @@ export async function sendeVollmachtAnAdmins(daten: {
     [{ filename: `Vollmacht_${daten.angebotNr}.pdf`, content: Buffer.from(daten.pdfBytes).toString('base64') }],
   )
 }
+
+/**
+ * 9 · Bescheid-Hinweis (intern): Zuwendungsbescheid wurde hochgeladen –
+ * Fristen laufen jetzt. Empfänger wie Lead-Notification (lead_email_empfaenger);
+ * best effort, blockiert den Upload nie.
+ */
+export async function sendeBescheidHinweisAnAdmins(daten: {
+  kundeFirma: string
+  angebotNr: string
+  /** ISO-Datum der erkannten VNW-Vorlagefrist (falls OCR sie gefunden hat). */
+  fristAm: string | null
+  /** Humanlesbarer Name/Ref des Uploaders (Kunde oder Admin). */
+  hochgeladenVon: string
+}): Promise<VersandErgebnis> {
+  const { ermittleLeadEmpfaenger } = await import('@/lib/db/repositories/einstellungen')
+  const { empfaenger } = await ermittleLeadEmpfaenger()
+  if (empfaenger.length === 0) {
+    return { ok: false, grund: 'Keine Empfänger konfiguriert (Einstellungen)' }
+  }
+  const fristText = daten.fristAm
+    ? new Date(`${daten.fristAm}T00:00:00`).toLocaleDateString('de-DE')
+    : 'noch nicht erkannt – bitte im Portal prüfen'
+  const html = layout(
+    `Zuwendungsbescheid eingetroffen: ${daten.kundeFirma}`,
+    [
+      h1('Bewilligung liegt vor 🎉'),
+      p(
+        `Für den Vorgang <strong>${esc(daten.angebotNr)}</strong> (${esc(daten.kundeFirma)}) wurde der ` +
+          `Zuwendungsbescheid hochgeladen (${esc(daten.hochgeladenVon)}). Die Stationen Durchführungszeitraum ` +
+          `und Verwendungsnachweis sind im Portal aktiviert.`,
+      ),
+      infoBox(
+        `Gelesene VNW-Vorlagefrist: <strong>${fristText}</strong> – Fristversäumnis kann zum Widerruf führen ` +
+          `(BAFA-Merkblatt: regelmäßig 3 Monate nach Ablauf des Bewilligungszeitraums). Bitte OCR-Werte in der ` +
+          `Fallakte prüfen und bestätigen.`,
+      ),
+    ].join(''),
+  )
+  return sendeMail(empfaenger, `Zuwendungsbescheid: ${daten.kundeFirma} (${daten.angebotNr})`, html)
+}

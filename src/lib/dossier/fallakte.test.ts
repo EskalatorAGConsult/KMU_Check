@@ -156,9 +156,46 @@ const vorgang: KundeVorgang = {
     },
   ],
   bearbeiter: { 'admin-1': 'Robin Berater (robin@eskalator.ag)' },
-  bescheid: null,
-  verwendungsnachweis: null,
-  vnwBelege: [],
+  bescheid: {
+    angebot_id: 'a1',
+    hochgeladen_von: 'u1',
+    erhalten_am: '2026-11-10T09:00:00Z',
+    aktenzeichen: 'EEW3/2026/004711',
+    bewilligt_am: '2026-11-05',
+    foerderquote_pct: 35,
+    foerdersumme_eur: 12500,
+    durchfuehrung_von: '2026-11-06',
+    durchfuehrung_bis: '2027-01-31',
+    vnw_frist_am: '2027-04-30',
+    ocr: null,
+    ocr_am: '2026-11-10T09:00:05Z',
+    bestaetigt_am: '2026-11-10T09:30:00Z',
+    bestaetigt_von: 'admin-1',
+    auflagen: ['Beginn der Maßnahme erst nach Erhalt dieses Bescheids.'],
+    notiz: null,
+    created_at: '2026-11-10T09:00:00Z',
+    updated_at: '2026-11-10T09:30:00Z',
+  },
+  verwendungsnachweis: {
+    angebot_id: 'a1',
+    status: 'in_bearbeitung',
+    vorlagefrist_am: '2027-04-30',
+    sachbericht: 'Sensoren montiert, Software live.',
+    eingereicht_am: null,
+    eingereicht_von: null,
+    created_at: '2026-11-10T09:00:00Z',
+    updated_at: '2026-11-12T14:00:00Z',
+  },
+  vnwBelege: [
+    {
+      id: 'vb1',
+      angebot_id: 'a1',
+      dokument_id: 'd1',
+      kategorie: 'rechnung',
+      betrag_eur: 8500,
+      created_at: '2026-11-12T14:00:00Z',
+    },
+  ],
   notizen: [
     {
       id: 'n1',
@@ -197,6 +234,16 @@ describe('generiereFallaktePdf', () => {
     const bytes = await generiereFallaktePdf(vorgang)
     const doc = await PDFDocument.load(bytes)
     expect(doc.getPageCount()).toBeGreaterThanOrEqual(1)
+    expect(doc.getTitle()).toContain('ANG-2026-042')
+  })
+
+  it('rendert den Bewilligungs-Abschnitt (Bescheid, Frist, VNW, Belege) fehlerfrei', async () => {
+    // Migration 25: Abschnitt 6 – mit gefuelltem Bescheid/VNW/Belegen aus dem
+    // Fixture muss ein valides PDF entstehen (WinAnsi-Sanitizer haelt auch
+    // Sonderzeichen der OCR-Auflagen).
+    const bytes = await generiereFallaktePdf(vorgang)
+    const doc = await PDFDocument.load(bytes)
+    expect(doc.getPageCount()).toBeGreaterThanOrEqual(2)
     expect(doc.getTitle()).toContain('ANG-2026-042')
   })
 
