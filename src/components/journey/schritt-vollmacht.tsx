@@ -101,7 +101,7 @@ export function SchrittVollmacht({
                 modus === 'canvas' ? 'bg-white text-mabe-900 shadow-sm ring-1 ring-olive-200' : 'text-olive-500 hover:text-mabe-900'
               }`}
             >
-              💻 Online unterschreiben
+              Online unterschreiben
             </button>
             <button
               type="button"
@@ -112,7 +112,7 @@ export function SchrittVollmacht({
                 modus === 'upload' ? 'bg-white text-mabe-900 shadow-sm ring-1 ring-olive-200' : 'text-olive-500 hover:text-mabe-900'
               }`}
             >
-              🖊 Händisch unterschreiben
+              Händisch unterschreiben
             </button>
           </div>
           )}
@@ -126,9 +126,9 @@ export function SchrittVollmacht({
             </h3>
             <p className="text-sm/6 text-olive-700">
               Mit Ihrer Unterschrift bestellen Sie die <strong>WissensReich Academy UG (haftungsbeschränkt)</strong>,
-              Weinsbergstraße 190, 50825 Köln – Ihr Fördermittel-Partner für die Beantragung – als bevollmächtigte
+              Weinsbergstraße 190, 50825 Köln, Ihr Fördermittel-Partner für die Beantragung, als bevollmächtigte
               Organisation im Sinne des § 14 VwVfG gegenüber dem Bundesamt für Wirtschaft und Ausfuhrkontrolle
-              (BAFA). Maßgeblich ist ausschließlich das folgende <strong>Original-Formular des BAFA</strong> – es
+              (BAFA). Maßgeblich ist ausschließlich das folgende <strong>Original-Formular des BAFA</strong>, es
               ist bereits mit Ihren Daten vorbefüllt, prüfen Sie es direkt hier:
             </p>
 
@@ -137,7 +137,7 @@ export function SchrittVollmacht({
                 der Link in einem eigenen Tab (iOS/Android zeigen iframe-PDFs unsicher). */}
             <iframe
               src={`/v/${token}/vollmacht-vordruck.pdf?inline=1#view=FitH`}
-              title="BAFA-Vollmacht eew_vm_3 – vorbefüllt mit Ihren Daten"
+              title="BAFA-Vollmacht eew_vm_3, vorbefüllt mit Ihren Daten"
               className="hidden h-[36rem] w-full rounded-xl bg-white ring-1 ring-olive-200 sm:block"
             />
             <a
@@ -153,7 +153,7 @@ export function SchrittVollmacht({
               <>
                 <p className="rounded-xl bg-white px-4 py-3 text-xs/5 text-olive-600 ring-1 ring-olive-200">
                   Nach dem Absenden erstellen wir automatisch das <strong>ausgefüllte</strong> BAFA-Formular
-                  eew_vm_3 mit Ihren Stammdaten und Ihrer Unterschrift – Sie finden es in Ihrem Kundenkonto unter
+                  eew_vm_3 mit Ihren Stammdaten und Ihrer Unterschrift, Sie finden es in Ihrem Kundenkonto unter
                   „Das reichen wir für Sie ein“.
                 </p>
 
@@ -162,7 +162,7 @@ export function SchrittVollmacht({
                     Unterschrift zeichnen <span className="text-teal-700">*</span>
                   </span>
                   <p className="text-xs/5 text-olive-600">
-                    Unterschreiben Sie mit dem Finger oder der Maus – so wie auf Ihrem Ausweis. Ihre Unterschrift wird
+                    Unterschreiben Sie mit dem Finger oder der Maus, so wie auf Ihrem Ausweis. Ihre Unterschrift wird
                     zusammen mit Name und Datum an der vorgesehenen Stelle des BAFA-Formulars eingefügt (Vorschau im
                     Dokument oben).
                   </p>
@@ -175,7 +175,7 @@ export function SchrittVollmacht({
 
                 <Feld
                   label="Unterzeichner/in (vollständiger Name)"
-                  hilfe="Name der zeichnungsberechtigten Person (vorbefüllt mit Ihrem Ansprechpartner – bitte prüfen). Ergänzt die gezeichnete Unterschrift als Nachweis; Zeitpunkt und technische Daten werden protokolliert."
+                  hilfe="Name der zeichnungsberechtigten Person (vorbefüllt mit Ihrem Ansprechpartner, bitte prüfen). Ergänzt die gezeichnete Unterschrift als Nachweis; Zeitpunkt und technische Daten werden protokolliert."
                   fehler={fehler.unterschrift_name}
                   pflicht
                 >
@@ -194,9 +194,9 @@ export function SchrittVollmacht({
                 <ol className="flex flex-col gap-2.5">
                   {(
                     [
-                      ['Vollmacht herunterladen', 'Das offizielle BAFA-Formular ist bereits mit Ihren Daten vorbefüllt – Sie müssen nichts eintragen.'],
-                      ['Unterschreiben', 'Ort, Datum und Ihre handschriftliche Unterschrift auf die letzte Seite – fertig.'],
-                      ['Hochladen', 'Scan oder Foto der unterschriebenen Vollmacht hier ablegen – wir reichen sie für Sie ein.'],
+                      ['Vollmacht herunterladen', 'Das offizielle BAFA-Formular ist bereits mit Ihren Daten vorbefüllt, Sie müssen nichts eintragen.'],
+                      ['Unterschreiben', 'Ort, Datum und Ihre handschriftliche Unterschrift auf die letzte Seite, fertig.'],
+                      ['Hochladen', 'Scan oder Foto der unterschriebenen Vollmacht hier ablegen, wir reichen sie für Sie ein.'],
                     ] as const
                   ).map(([titel, text], i) => (
                     <li key={titel} className="flex gap-3 rounded-xl bg-white px-4 py-3 ring-1 ring-olive-200">
@@ -213,7 +213,7 @@ export function SchrittVollmacht({
 
                 {/* BAFA-Hinweis: händisch unterschreiben, einscannen, hochladen – kein Unterschriftenstempel */}
                 <div className="flex gap-3 rounded-xl border border-teal-600/25 bg-teal-50/70 p-4">
-                  <svg viewBox="0 0 20 20" fill="currentColor" className="mt-0.5 size-5 shrink-0 text-teal-700" aria-hidden>
+                  <svg viewBox="0 0 20 20" fill="currentColor" aria-hidden className="mt-0.5 size-5 shrink-0 text-teal-700">
                     <path
                       fillRule="evenodd"
                       d="M18 10a8 8 0 1 1-16 0 8 8 0 0 1 16 0Zm-7-4a1 1 0 1 1-2 0 1 1 0 0 1 2 0ZM9 9a.75.75 0 0 0 0 1.5h.253a.25.25 0 0 1 .244.304l-.459 2.066A1.75 1.75 0 0 0 10.747 15H11a.75.75 0 0 0 0-1.5h-.253a.25.25 0 0 1-.244-.304l.459-2.066A1.75 1.75 0 0 0 9.253 9H9Z"
@@ -232,7 +232,7 @@ export function SchrittVollmacht({
                   href={`/v/${token}/vollmacht-vordruck.pdf`}
                   className="flex min-h-12 items-center justify-center gap-2 rounded-xl bg-mabe-900 px-5 py-3 text-sm font-semibold text-white hover:bg-mabe-800"
                 >
-                  ⬇ 1 · Vollmacht herunterladen (vorbefüllt)
+                  1 · Vollmacht herunterladen (vorbefüllt)
                 </a>
 
                 {/* Upload der signierten Datei */}
@@ -284,7 +284,7 @@ export function SchrittVollmacht({
                       pending ? 'pointer-events-none opacity-60' : ''
                     }`}
                   >
-                    {pending ? 'Lädt hoch …' : '⬆ 3 · Unterschriebene Vollmacht hochladen (PDF, PNG oder JPG · max. 15 MB)'}
+                    {pending ? 'Lädt hoch …' : '3 · Unterschriebene Vollmacht hochladen (PDF, PNG oder JPG · max. 15 MB)'}
                     <input
                       type="file"
                       accept=".pdf,.png,.jpg,.jpeg"
@@ -324,7 +324,7 @@ export function SchrittVollmacht({
         </div>
 
       {/* Systemkonzept (BAFA-Pflichtanlage): Ansicht + Bestaetigung.
-          Gilt fuer beide Beantragungswege – das Dokument wird in jedem
+          Gilt fuer beide Beantragungswege, das Dokument wird in jedem
           Fall mit dem Antrag eingereicht. */}
       <div className="flex flex-col gap-4 rounded-2xl border border-olive-200 bg-olive-50/50 p-5">
         <h3 className="text-sm font-semibold text-mabe-900">
@@ -332,9 +332,9 @@ export function SchrittVollmacht({
           <span className="ml-2 text-xs font-normal text-olive-500">Pflichtanlage zum Antrag · Datenerfassungsplan</span>
         </h3>
         <p className="text-sm/6 text-olive-700">
-          Das BAFA verlangt für Modul 3 ein <strong>Systemkonzept mit Datenerfassungsplan</strong> – es beschreibt,
+          Das BAFA verlangt für Modul 3 ein <strong>Systemkonzept mit Datenerfassungsplan</strong>, es beschreibt,
           wie MABE smart control Mess-, Steuer- und Energiemanagementtechnik in Ihrem Betrieb zusammenwirkt.
-          <strong> Genau dieses Dokument reichen wir mit Ihrem Antrag ein</strong> – bitte sehen Sie es sich an:
+          <strong> Genau dieses Dokument reichen wir mit Ihrem Antrag ein</strong>, bitte sehen Sie es sich an:
         </p>
         {/* Desktop: eingebettet; mobil: eigener Tab (iOS/Android zeigen iframe-PDFs unsicher) */}
         <iframe
@@ -373,7 +373,7 @@ export function SchrittVollmacht({
           fehler={fehler.vorhaben_nicht_begonnen}
           label={
             <>
-              <strong>Bestätigung Vorhabenbeginn:</strong> Wir haben mit der Maßnahme noch nicht begonnen – keine
+              <strong>Bestätigung Vorhabenbeginn:</strong> Wir haben mit der Maßnahme noch nicht begonnen, keine
               Bestellung, kein Liefervertrag, keine Ausführung. (Ein vorzeitiger Beginn führt zum Förderausschluss.)
             </>
           }
@@ -391,7 +391,7 @@ export function SchrittVollmacht({
           label={
             <>
               <strong>Datenschutz:</strong> Ich willige ein, dass meine Angaben zur Erstellung und Abwicklung des
-              Förderantrags verarbeitet und – bei Beantragung durch die WissensReich Academy – an diese übermittelt
+              Förderantrags verarbeitet und, bei Beantragung durch die WissensReich Academy, an diese übermittelt
               werden (Art. 6 Abs. 1 lit. a DSGVO). Widerruf jederzeit möglich.
             </>
           }

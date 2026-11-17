@@ -100,7 +100,7 @@ export function KmuZusammenfassung({
           <p className="mt-1.5">
             {mitVerbund
               ? `Darin sind Ihre angegebenen Partner- und verbundenen Unternehmen bereits anteilig eingerechnet (eigene Beschäftigte: ${formatNumber(ergebnis.own.employees, 1)} JAE). `
-              : 'Sie haben keine zurechnungsfähigen Beteiligungen angegeben – es zählen allein Ihre eigenen Kennzahlen. '}
+              : 'Sie haben keine zurechnungsfähigen Beteiligungen angegeben, es zählen allein Ihre eigenen Kennzahlen. '}
             Damit gilt Ihr Unternehmen als <strong className="text-mabe-900">{ergebnis.categoryLabel}</strong> und die
             Förderquote beträgt <strong className="text-teal-700">{ergebnis.fundingRatePct} %</strong>
             {zuschuss != null && (
@@ -115,7 +115,7 @@ export function KmuZusammenfassung({
       </div>
 
       <p className="border-t border-olive-100 bg-olive-50/50 px-5 py-2.5 text-xs/5 text-olive-500 sm:px-6">
-        Unverbindliche Orientierung – die verbindliche Einstufung prüft die Bewilligungsbehörde (BAFA).
+        Unverbindliche Orientierung, die verbindliche Einstufung prüft die Bewilligungsbehörde (BAFA).
       </p>
     </section>
   )

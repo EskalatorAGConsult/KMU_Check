@@ -12,7 +12,7 @@ import type { Angebot } from '@/lib/db/types'
 
 const BEREITHALTEN = [
   ['Stammdaten Ihres Unternehmens', 'Name, Anschrift, WZ-Code (2008), Steuernummer, ggf. USt-IdNr.'],
-  ['KMU-Kennzahlen 2025 UND 2024', 'Beschäftigte (JAE), Jahresumsatz und Bilanzsumme – je Geschäftsjahr, inklusive aller verbundenen Unternehmen'],
+  ['KMU-Kennzahlen 2025 UND 2024', 'Beschäftigte (JAE), Jahresumsatz und Bilanzsumme, je Geschäftsjahr, inklusive aller verbundenen Unternehmen'],
   ['De-minimis-Beihilfen der letzten 3 Jahre', 'Beihilfegeber, Betrag, Bewilligungsdatum (Bestandteil des Antragsformulars)'],
   ['Bankverbindung für die Auszahlung', 'Kontoinhaber (meist die Firma) + IBAN'],
   ['Standort der Maßnahme', 'Wo wird die Technik installiert? (falls abweichend von der Firmenadresse)'],
@@ -34,7 +34,7 @@ function PdfRahmen({
     <div className="flex flex-col gap-3 rounded-2xl border border-olive-200 bg-white p-5">
       <div className="flex items-center gap-3">
         <span className="flex size-11 shrink-0 items-center justify-center rounded-xl bg-red-50 text-red-600 ring-1 ring-red-200" aria-hidden>
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.6} className="size-6">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden strokeWidth={1.6} className="size-6">
             <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 0 0-3.375-3.375h-1.5A1.125 1.125 0 0 1 13.5 7.125v-1.5a3.375 3.375 0 0 0-3.375-3.375H8.25m2.25 0H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 0 0-9-9Z" />
           </svg>
         </span>
@@ -54,7 +54,7 @@ function PdfRahmen({
         href={href}
         className="flex min-h-11 items-center justify-center gap-2 rounded-xl bg-mabe-900 px-4 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-mabe-800 focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-teal-400 active:brightness-90"
       >
-        <svg viewBox="0 0 20 20" fill="currentColor" className="size-4" aria-hidden>
+        <svg viewBox="0 0 20 20" fill="currentColor" aria-hidden className="size-4">
           <path d="M10.75 2.75a.75.75 0 0 0-1.5 0v8.69L6.7 8.9a.75.75 0 1 0-1.06 1.06l3.75 3.75c.3.3.77.3 1.06 0l3.75-3.75a.75.75 0 1 0-1.06-1.06l-2.54 2.54V2.75Z" />
           <path d="M3.5 12.75a.75.75 0 0 1 .75.75v2.75c0 .414.336.75.75.75h10a.75.75 0 0 0 .75-.75V13.5a.75.75 0 0 1 1.5 0v2.75A2.25 2.25 0 0 1 15 18.5H5a2.25 2.25 0 0 1-2.25-2.25V13.5a.75.75 0 0 1 .75-.75Z" />
         </svg>
@@ -71,9 +71,9 @@ export function SchrittSelbst({ angebot, token }: { angebot: Angebot; token: str
       <ol className="flex flex-col gap-2.5">
         {(
           [
-            ['Unterlagen herunterladen', 'Systemkonzept und Ihr MABE-Angebot (unten) – beides brauchen Sie für den Antrag.'],
-            ['Daten aus der Checkliste bereithalten', 'Alles Wichtige steht in der Liste unten – so sitzen Sie nur einmal am Formular.'],
-            ['Im BAFA-Portal einreichen', 'Antrag nur online möglich – Sie brauchen ein ELSTER-Organisationszertifikat (Beantragung dauert Wochen!).'],
+            ['Unterlagen herunterladen', 'Systemkonzept und Ihr MABE-Angebot (unten), beides brauchen Sie für den Antrag.'],
+            ['Daten aus der Checkliste bereithalten', 'Alles Wichtige steht in der Liste unten, so sitzen Sie nur einmal am Formular.'],
+            ['Im BAFA-Portal einreichen', 'Antrag nur online möglich, Sie brauchen ein ELSTER-Organisationszertifikat (Beantragung dauert Wochen!).'],
           ] as const
         ).map(([titel, text], i) => (
           <li key={titel} className="flex gap-3 rounded-xl bg-white px-4 py-3 ring-1 ring-olive-200">
@@ -92,13 +92,13 @@ export function SchrittSelbst({ angebot, token }: { angebot: Angebot; token: str
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
         <PdfRahmen
           titel="Systemkonzept (Pflichtanlage Modul 3)"
-          hinweis="Datenerfassungsplan MABE smart control – dieses Dokument müssen Sie zwingend hochladen."
+          hinweis="Datenerfassungsplan MABE smart control, dieses Dokument müssen Sie zwingend hochladen."
           href="/vorlagen/systemkonzept.pdf"
           vorschau
         />
         <PdfRahmen
           titel={`Ihr MABE-Angebot ${angebot.angebot_nr}`}
-          hinweis="Kostenangebot mit den Investitionskosten – das BAFA verlangt es als Beleg."
+          hinweis="Kostenangebot mit den Investitionskosten, das BAFA verlangt es als Beleg."
           href={`/v/${token}/angebot.pdf`}
         />
       </div>
@@ -140,7 +140,7 @@ export function SchrittSelbst({ angebot, token }: { angebot: Angebot; token: str
       </div>
 
       <p className="text-xs/5 text-olive-500">
-        Fragen zur Einreichung? Ihr MABE-Ansprechpartner hilft gern weiter – oder wechseln Sie oben zurück zur
+        Fragen zur Einreichung? Ihr MABE-Ansprechpartner hilft gern weiter, oder wechseln Sie oben zurück zur
         Beantragung durch unser Fördermittel-Team (kostenlos).
       </p>
     </div>

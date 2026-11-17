@@ -189,7 +189,7 @@ export function SchrittKmu({
       {/* SCHRITT 1 · Eigene Kennzahlen (BAFA fragt fest 2025 + 2024 ab) */}
       <div className="flex flex-col gap-5">
         <div className="rounded-2xl border border-olive-200 bg-olive-50/60 p-5">
-          <p className="mb-2 inline-flex items-center gap-2 rounded-full bg-mabe-900 px-3 py-1 text-[11px] font-bold tracking-wide text-white uppercase">
+          <p className="mb-2 inline-flex items-center gap-2 rounded-full bg-mabe-900 px-3 py-1 text-xs font-semibold text-white">
             Schritt 1 von 3 · Ihre Zahlen
           </p>
           <h3 className="flex flex-wrap items-center gap-2 text-base font-semibold text-mabe-900">
@@ -197,17 +197,17 @@ export function SchrittKmu({
             <span className="rounded-full bg-teal-600 px-2.5 py-0.5 text-[11px] font-bold text-white">
               Ihr Unternehmen · Antragsteller
             </span>
-            <Tooltip text="Das BAFA-Portal fragt fest die Kennzahlen der Geschäftsjahre 2025 und 2024 ab. Für Ihre Förderquote zählt das jüngste Jahr (2025) – das Jahr 2024 dokumentiert die Entwicklung Ihres Unternehmens." />
+            <Tooltip text="Das BAFA-Portal fragt fest die Kennzahlen der Geschäftsjahre 2025 und 2024 ab. Für Ihre Förderquote zählt das jüngste Jahr (2025), das Jahr 2024 dokumentiert die Entwicklung Ihres Unternehmens." />
           </h3>
           <p className="mt-1 text-sm/6 text-olive-600">
             <strong className="text-mabe-900">Warum fragen wir das?</strong> Die Höhe Ihres Zuschusses hängt von der
-            Unternehmensgröße ab – der Staat misst sie an Beschäftigten, Umsatz und Bilanzsumme. Sie finden alle
-            Zahlen in Ihrem Jahresabschluss oder der BWA – im Zweifel kurz beim Steuerbüro nachfragen.
+            Unternehmensgröße ab, der Staat misst sie an Beschäftigten, Umsatz und Bilanzsumme. Sie finden alle
+            Zahlen in Ihrem Jahresabschluss oder der BWA, im Zweifel kurz beim Steuerbüro nachfragen.
           </p>
           <p className="mt-3 rounded-xl bg-white px-4 py-3 text-sm/6 text-mabe-900 ring-1 ring-olive-200">
-            <strong>Wichtig – beide Jahre, kompletter Verbund:</strong> Wir erfassen für die Geschäftsjahre{' '}
+            <strong>Wichtig, beide Jahre, kompletter Verbund:</strong> Wir erfassen für die Geschäftsjahre{' '}
             <strong>2025 und 2024</strong> die <strong>jahreszeitäquivalenten Beschäftigten (JAE)</strong>, Umsatz und
-            Bilanzsumme – und zwar nicht nur von Ihrem Unternehmen, sondern vom <strong>Gesamtverbund</strong> (Ihr
+            Bilanzsumme, und zwar nicht nur von Ihrem Unternehmen, sondern vom <strong>Gesamtverbund</strong> (Ihr
             Unternehmen plus alle Partner- und verbundenen Unternehmen aus dem nächsten Schritt). Ihre eigenen Zahlen
             tragen Sie hier ein, die Zahlen Ihrer Beteiligungen direkt danach.
           </p>
@@ -224,7 +224,7 @@ export function SchrittKmu({
             </legend>
             {i === 0 && (
               <p className="mb-4 rounded-xl bg-amber-50 px-4 py-3 text-sm/6 text-amber-900 ring-1 ring-amber-200">
-                <strong>Zahlen für {jahr.geschaeftsjahr} noch nicht vorhanden?</strong> Kein Problem – wenn Ihr
+                <strong>Zahlen für {jahr.geschaeftsjahr} noch nicht vorhanden?</strong> Kein Problem, wenn Ihr
                 Jahresabschluss {jahr.geschaeftsjahr} noch nicht fertig ist (oder im Handelsregister noch keine
                 Zahlen hinterlegt sind), tragen Sie eine <strong>plausible Schätzung nach Treu und Glauben</strong>{' '}
                 ein (z. B. anhand der BWA oder des Vorjahres). Entfernen Sie dafür unten den Haken bei
@@ -246,7 +246,7 @@ export function SchrittKmu({
               </Feld>
               <Feld label="Jahresumsatz (€)"
                 hilfe={i === 0 ? 'Es genügt Umsatz ODER Bilanzsumme innerhalb der Grenze.' : undefined}
-                tooltip={i === 0 ? 'Jahresumsatz ohne Mehrwertsteuer (Jahresabschluss/BWA). Überschreiten Sie eine Umsatzgrenze, kann die Bilanzsumme die Einstufung trotzdem retten – eines von beiden genügt.' : undefined}>
+                tooltip={i === 0 ? 'Jahresumsatz ohne Mehrwertsteuer (Jahresabschluss/BWA). Überschreiten Sie eine Umsatzgrenze, kann die Bilanzsumme die Einstufung trotzdem retten, eines von beiden genügt.' : undefined}>
                 <input
                   type="number"
                   inputMode="decimal"
@@ -257,7 +257,7 @@ export function SchrittKmu({
                 />
               </Feld>
               <Feld label="Bilanzsumme (€)"
-                tooltip={i === 0 ? 'Summe aller Vermögenswerte laut Bilanz (unterste Zeile). Steht im Jahresabschluss – oder kurz beim Steuerbüro erfragen.' : undefined}>
+                tooltip={i === 0 ? 'Summe aller Vermögenswerte laut Bilanz (unterste Zeile). Steht im Jahresabschluss, oder kurz beim Steuerbüro erfragen.' : undefined}>
                 <input
                   type="number"
                   inputMode="decimal"
@@ -282,19 +282,19 @@ export function SchrittKmu({
       {/* SCHRITT 2 · Verbund (Verflechtungen sichtbar machen) */}
       <div className="flex flex-col gap-4">
         <div className="rounded-2xl border border-olive-200 bg-olive-50/60 p-5">
-          <p className="mb-2 inline-flex items-center gap-2 rounded-full bg-mabe-900 px-3 py-1 text-[11px] font-bold tracking-wide text-white uppercase">
+          <p className="mb-2 inline-flex items-center gap-2 rounded-full bg-mabe-900 px-3 py-1 text-xs font-semibold text-white">
             Schritt 2 von 3 · Ihre Verflechtungen
           </p>
           <h3 className="flex flex-wrap items-center gap-2 text-base font-semibold text-mabe-900">
             Partner- und verbundene Unternehmen
             <span className="rounded-full bg-mabe-100 px-2.5 py-0.5 text-[11px] font-bold text-mabe-800">
-              ANDERE Unternehmen – nicht Ihr Unternehmen
+              ANDERE Unternehmen, nicht Ihr Unternehmen
             </span>
-            <Tooltip text="Gehört Ihr Unternehmen zu einem Konzern oder halten Sie Anteile an anderen Firmen (oder umgekehrt)? Dann zählen deren Zahlen anteilig mit – das entscheidet mit über Ihre Förderquote. Unter 25 % Beteiligung brauchen Sie nichts anzugeben." />
+            <Tooltip text="Gehört Ihr Unternehmen zu einem Konzern oder halten Sie Anteile an anderen Firmen (oder umgekehrt)? Dann zählen deren Zahlen anteilig mit, das entscheidet mit über Ihre Förderquote. Unter 25 % Beteiligung brauchen Sie nichts anzugeben." />
           </h3>
           <p className="mt-1 text-sm/6 text-olive-600">
             <strong className="text-mabe-900">Warum fragen wir das?</strong> Die EU betrachtet nie nur Ihre Firma
-            allein: Ab <strong className="text-mabe-900">25&nbsp;% Beteiligung</strong> – in beide Richtungen –
+            allein: Ab <strong className="text-mabe-900">25&nbsp;% Beteiligung</strong>, in beide Richtungen –
             fließen die Zahlen des <strong>anderen</strong> Unternehmens in Ihre Größe ein (25–50&nbsp;% anteilig,
             über 50&nbsp;% voll, auch über mehrere Stufen). Die Kennzahlen unten gehören deshalb{' '}
             <strong className="text-mabe-900">je Beteiligungsunternehmen</strong>, nicht zu Ihnen. Am Ende dieses
@@ -310,7 +310,7 @@ export function SchrittKmu({
             Steht Ihr Unternehmen in Beteiligungsverhältnissen von mindestens 25 %?
           </p>
           <p className="mt-1 text-xs/5 text-olive-500">
-            Anteile, die andere Firmen an Ihrem Unternehmen halten – oder die Sie an anderen Firmen halten.
+            Anteile, die andere Firmen an Ihrem Unternehmen halten, oder die Sie an anderen Firmen halten.
           </p>
           <div className="mt-3 grid grid-cols-2 gap-3 sm:max-w-sm" role="group" aria-label="Beteiligungsverhältnisse vorhanden?">
             {([true, false] as const).map((v) => (
@@ -333,7 +333,7 @@ export function SchrittKmu({
 
         {hatBeteiligungen === false && (
           <p className="rounded-xl border border-olive-200 bg-white px-4 py-3 text-sm text-olive-700" role="status">
-            Verstanden – Ihr Unternehmen wird als eigenständig bewertet. Die Handelsregister-Abfrage oben können
+            Verstanden, Ihr Unternehmen wird als eigenständig bewertet. Die Handelsregister-Abfrage oben können
             Sie trotzdem zur Kontrolle nutzen.
           </p>
         )}
@@ -351,7 +351,7 @@ export function SchrittKmu({
                     Sticky: Beim Scrollen durch die Jahres-Kennzahlen bleibt sichtbar,
                     wessen Zahlen hier gerade erfasst werden (nicht der Antragsteller).
                     Offset = Navbar (5.25rem, --scroll-padding-top) + Fortschrittsleiste
-                    (~4.75rem) – klebt UNTER beiden statt hinter ihnen zu verschwinden
+                    (~4.75rem), klebt UNTER beiden statt hinter ihnen zu verschwinden
                     (Mobile-Audit: beide sticken sonst auf top-0 unter der Navbar). */}
                 <div className="sticky top-[calc(var(--scroll-padding-top)+4.75rem)] z-20 -mx-4 -mt-4 mb-4 flex items-center justify-between gap-2 rounded-t-2xl bg-white px-4 py-3 ring-1 ring-olive-100 sm:-mx-5 sm:-mt-5 sm:px-5">
                   <span className="inline-flex min-w-0 flex-wrap items-center gap-2 text-sm font-semibold text-mabe-900">
@@ -398,7 +398,7 @@ export function SchrittKmu({
                     }`}
                     aria-label={
                       loeschBestaetigt === i
-                        ? `Beteiligung ${b.name || i + 1} wirklich entfernen – erneut tippen`
+                        ? `Beteiligung ${b.name || i + 1} wirklich entfernen, erneut tippen`
                         : `Beteiligung ${b.name || i + 1} entfernen`
                     }
                   >
@@ -425,7 +425,7 @@ export function SchrittKmu({
                         clipRule="evenodd"
                       />
                     </svg>
-                    Aus dem Handelsregister übernommen – bitte prüfen
+                    Aus dem Handelsregister übernommen, bitte prüfen
                   </p>
                 )}
                 {b.pfad && (b.stufe ?? 1) > 1 && (
@@ -458,7 +458,7 @@ export function SchrittKmu({
                   <label className="block sm:col-span-2">
                     <span className="mb-1 flex items-center gap-1 text-xs font-semibold text-olive-600">
                       Die Beteiligung besteht an …
-                      <Tooltip text="Standard: an Ihrem Unternehmen (1. Stufe). Liegt die Beteiligung eine Stufe darüber oder darunter – z. B. hält eine Holding Anteile an Ihrer Muttergesellschaft – wählen Sie hier das Zwischenunternehmen. So werden auch Folgeketten EU-korrekt verrechnet." />
+                      <Tooltip text="Standard: an Ihrem Unternehmen (1. Stufe). Liegt die Beteiligung eine Stufe darüber oder darunter, z. B. hält eine Holding Anteile an Ihrer Muttergesellschaft, wählen Sie hier das Zwischenunternehmen. So werden auch Folgeketten EU-korrekt verrechnet." />
                     </span>
                     <select
                       className={inputCls}
@@ -505,7 +505,7 @@ export function SchrittKmu({
                   />
                   {/* Skala positionsgenau zur Schiene (Vertrag: slider-skala.ts):
                       Wert 50 liegt bei 33,3 % der Schienenlänge, nicht in der
-                      Mitte – sonst tauscht die Mitte 62,5 % als „50 %" vor.
+                      Mitte, sonst tauscht die Mitte 62,5 % als „50 %" vor.
                       Darunter die EU-Zonen mit Kipppunkt > 50 %. */}
                   <div className="relative mt-1.5 h-4 text-[11px] text-olive-500 tabular-nums" aria-hidden>
                     <span className="absolute left-0">25 %</span>
@@ -539,14 +539,14 @@ export function SchrittKmu({
 
                 {/* Kennzahlen je BAFA-Geschäftsjahr (2025 UND 2024 – das Portal
                     fragt beide ab, auch für Partner-/verbundene Unternehmen).
-                    Mobil (unter sm): Jahres-Stack statt Wisch-Tabelle – drei
+                    Mobil (unter sm): Jahres-Stack statt Wisch-Tabelle, drei
                     Eingabefelder passen auf 375px nicht nebeneinander lesbar
                     (Mobile-Audit: min-w-Zwang erzwang horizontales Wischen). */}
                 <div className="mt-4">
                   <p className="mb-2 text-xs font-semibold text-olive-600">
                     Kennzahlen je Geschäftsjahr (2025 und 2024) dieses Unternehmens{' '}
                     <span className="font-normal text-olive-400">
-                      – jahreszeitäquivalente Beschäftigte (JAE), Umsatz, Bilanzsumme
+                     , jahreszeitäquivalente Beschäftigte (JAE), Umsatz, Bilanzsumme
                     </span>
                   </p>
 
@@ -649,7 +649,7 @@ export function SchrittKmu({
                     )
                     return quoteLeer && vorjahrVorhanden ? (
                       <p className="mt-2 rounded-lg bg-amber-50 px-3 py-2 text-xs/5 font-medium text-amber-900 ring-1 ring-amber-200">
-                        Achtung: Für Ihre Förderquote zählt {gjQuote} – dieses Jahr ist für „{b.name || 'dieses Unternehmen'}“
+                        Achtung: Für Ihre Förderquote zählt {gjQuote}, dieses Jahr ist für „{b.name || 'dieses Unternehmen'}“
                         noch leer. Bitte {gjQuote}er Werte eintragen (ggf. Schätzung anhand des Vorjahres), sonst fällt
                         das Unternehmen bei der Quote-Rechnung zu niedrig aus.
                       </p>
@@ -682,13 +682,13 @@ export function SchrittKmu({
       {/* Schritt 3: transparente Herleitung + Ampel */}
       <div className="flex flex-col gap-4 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm sm:p-6">
         <div>
-          <span className="inline-flex items-center rounded-full bg-mabe-900 px-3 py-1 text-xs font-semibold tracking-wide text-white uppercase">
+          <span className="inline-flex items-center rounded-full bg-mabe-900 px-3 py-1 text-xs font-semibold text-white">
             Schritt 3 von 3 · Ihr Ergebnis
           </span>
-          <h2 className="mt-3 text-lg font-semibold text-slate-900">Ihre Einstufung – transparent hergeleitet</h2>
+          <h2 className="mt-3 text-lg font-semibold text-slate-900">Ihre Einstufung, transparent hergeleitet</h2>
           <p className="mt-1 text-sm text-slate-600">
             Unten sehen Sie, wie sich Ihre Verbundgröße zusammensetzt und wo Sie damit auf der EU-Skala landen. Sie
-            müssen nichts weiter eingeben – die Auswertung aktualisiert sich live mit jeder Angabe oben.
+            müssen nichts weiter eingeben, die Auswertung aktualisiert sich live mit jeder Angabe oben.
           </p>
         </div>
         <KmuAbleitung ergebnis={ergebnis} />

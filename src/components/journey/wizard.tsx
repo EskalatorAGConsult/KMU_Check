@@ -378,7 +378,7 @@ export function Wizard({
             Ragt ueber den Consent-Banner hinaus, solange keine Einwilligungs-
             Entscheidung vorliegt, sonst ist „Weiter" auf dem iPhone verdeckt. */}
         <div
-          className={`fixed inset-x-0 bottom-0 z-30 border-t border-olive-200 bg-white px-4 py-3 shadow-actionbar transition-transform duration-300 motion-reduce:transition-none md:static md:border-0 md:bg-transparent md:p-0 md:shadow-none md:transform-none ${
+          className={`fixed inset-x-0 bottom-0 z-30 border-t border-olive-200 bg-white px-4 pt-3 pb-[calc(0.75rem+env(safe-area-inset-bottom))] shadow-actionbar transition-transform duration-300 motion-reduce:transition-none md:static md:border-0 md:bg-transparent md:p-0 md:shadow-none md:transform-none ${
             consentOffen ? '-translate-y-44' : 'translate-y-0'
           }`}
         >

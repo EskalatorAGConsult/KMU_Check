@@ -120,7 +120,7 @@ export function KmuCheck() {
           .then((d) => {
             trackingRef.current = d
           })
-          // Fingerprint ist optional (siehe tracking.ts) – ein Scheitern darf
+          // Fingerprint ist optional (siehe tracking.ts), ein Scheitern darf
           // die Lead-Übergabe nie blockieren.
           .catch(() => undefined)
       }
@@ -130,7 +130,7 @@ export function KmuCheck() {
     return () => window.removeEventListener(CONSENT_EVENT, aktualisiereTracking)
   }, [])
 
-  // Dynamische Schrittliste – „holdings“ nur wenn Beteiligungen vorhanden.
+  // Dynamische Schrittliste, „holdings“ nur wenn Beteiligungen vorhanden.
   const steps = useMemo<StepId[]>(() => {
     const base: StepId[] = ['name', 'employees', 'financials', 'holdingsQuestion']
     if (hasHoldings) base.push('holdings')
@@ -324,7 +324,7 @@ export function KmuCheck() {
         keepalive: true,
       })
     } catch {
-      // Erfolgsanzeige trotzdem zeigen – Lead lokal nicht verlieren.
+      // Erfolgsanzeige trotzdem zeigen, Lead lokal nicht verlieren.
     } finally {
       setSubmitting(false)
       setDone(true)
@@ -372,19 +372,19 @@ export function KmuCheck() {
                   </div>
                   <div className="h-1.5 w-full overflow-hidden rounded-full bg-olive-200">
                     <div
-                      className="h-full rounded-full bg-gradient-to-r from-mabe-700 to-teal-500 transition-all duration-500"
+                      className="h-full w-full origin-left rounded-full bg-gradient-to-r from-mabe-700 to-teal-500 transition-transform duration-500 motion-reduce:transition-none"
                       style={{ width: `${Math.max(6, progress)}%` }}
                     />
                   </div>
                 </div>
 
-                {/* Schrittinhalt – sanfter Übergang bei jedem Schrittwechsel */}
+                {/* Schrittinhalt, sanfter Übergang bei jedem Schrittwechsel */}
                 <div key={currentStep} className="min-h-[18rem] animate-step-in">
                   {currentStep === 'name' && (
                     <Step
-                      kicker="Los geht's"
+                      
                       title="Für welches Unternehmen prüfen wir?"
-                      subtitle="In rund 3 Minuten wissen Sie, ob Sie als KMU gelten – und welche Förderquote möglich ist. Keine Anmeldung nötig."
+                      subtitle="In rund 3 Minuten wissen Sie, ob Sie als KMU gelten, und welche Förderquote möglich ist. Keine Anmeldung nötig."
                     >
                       <RegisterSuche onUebernehmen={uebernehmeRegister} />
                       <Field
@@ -408,9 +408,8 @@ export function KmuCheck() {
 
                   {currentStep === 'employees' && (
                     <Step
-                      kicker="Kriterium 1 von 2"
                       title="Wie viele Mitarbeitende beschäftigt das Unternehmen?"
-                      subtitle="Maßgeblich sind Jahresarbeitseinheiten (JAE) – also Vollzeitäquivalente des letzten abgeschlossenen Geschäftsjahres."
+                      subtitle="Maßgeblich sind Jahresarbeitseinheiten (JAE), also Vollzeitäquivalente des letzten abgeschlossenen Geschäftsjahres."
                     >
                       <Field
                         label="Beschäftigte in Jahresarbeitseinheiten (JAE)"
@@ -443,9 +442,8 @@ export function KmuCheck() {
 
                   {currentStep === 'financials' && (
                     <Step
-                      kicker="Kriterium 2 von 2"
                       title="Wie sehen die Finanzkennzahlen aus?"
-                      subtitle="Es genügt, wenn EINER der beiden Werte innerhalb der Grenze liegt. Geben Sie idealerweise beide an – wir rechnen mit dem für Sie günstigeren Wert."
+                      subtitle="Es genügt, wenn EINER der beiden Werte innerhalb der Grenze liegt. Geben Sie idealerweise beide an, wir rechnen mit dem für Sie günstigeren Wert."
                     >
                       <Field
                         label="Letztes abgeschlossenes / veröffentlichtes Geschäftsjahr"
@@ -505,9 +503,8 @@ export function KmuCheck() {
 
                   {currentStep === 'holdingsQuestion' && (
                     <Step
-                      kicker="Verbund prüfen"
                       title="Gibt es Beteiligungen von mehr als 25 %?"
-                      subtitle="Für den KMU-Status zählt nicht nur Ihr Unternehmen allein, sondern der gesamte Verbund. Das wird sehr oft übersehen – und entscheidet über Ihre Förderquote."
+                      subtitle="Für den KMU-Status zählt nicht nur Ihr Unternehmen allein, sondern der gesamte Verbund. Das wird sehr oft übersehen, und entscheidet über Ihre Förderquote."
                     >
                       <div className="grid gap-4 sm:grid-cols-2">
                         <ChoiceCard
@@ -536,9 +533,8 @@ export function KmuCheck() {
 
                   {currentStep === 'holdings' && (
                     <Step
-                      kicker="Verbund erfassen"
                       title="Erfassen Sie die Beteiligungen"
-                      subtitle="Pro Beteiligung benötigen wir Anteil, Mitarbeitende und Finanzkennzahlen. Wir rechnen sofort live um – Sie sehen die Wirkung rechts."
+                      subtitle="Pro Beteiligung benötigen wir Anteil, Mitarbeitende und Finanzkennzahlen. Wir rechnen sofort live um, Sie sehen die Wirkung rechts."
                     >
                       <div className="flex flex-col gap-5">
                         {holdings.map((h, idx) => (
@@ -563,7 +559,7 @@ export function KmuCheck() {
                           onClick={() => setHoldings((arr) => [...arr, newHolding()])}
                           className="inline-flex items-center justify-center gap-2 rounded-xl border border-dashed border-olive-300 px-4 py-3 text-sm font-medium text-mabe-800 hover:border-teal-600 hover:bg-teal-50"
                         >
-                          <svg viewBox="0 0 20 20" fill="currentColor" className="size-5">
+                          <svg viewBox="0 0 20 20" fill="currentColor" className="size-5" aria-hidden>
                             <path d="M10 5a.75.75 0 0 1 .75.75v3.5h3.5a.75.75 0 0 1 0 1.5h-3.5v3.5a.75.75 0 0 1-1.5 0v-3.5h-3.5a.75.75 0 0 1 0-1.5h3.5v-3.5A.75.75 0 0 1 10 5Z" />
                           </svg>
                           Weitere Beteiligung hinzufügen
@@ -578,7 +574,6 @@ export function KmuCheck() {
 
                   {currentStep === 'summary' && (
                     <Step
-                      kicker="Geschafft"
                       title="Ihr Ergebnis steht fest"
                       subtitle="Hier sehen Sie Ihre Angaben im Überblick. Im nächsten Schritt sichern Sie sich den PDF-Nachweis und eine kostenlose Ersteinschätzung zur Förderung."
                     >
@@ -601,7 +596,6 @@ export function KmuCheck() {
 
                   {currentStep === 'lead' && (
                     <Step
-                      kicker="Letzter Schritt"
                       title="Wohin dürfen wir Ihr Ergebnis senden?"
                       subtitle="Sie erhalten den PDF-Nachweis und eine unverbindliche Einschätzung, welche Förderungen für Ihr Unternehmen in Frage kommen."
                     >
@@ -614,7 +608,7 @@ export function KmuCheck() {
                               onChange={(e) => setSalutation(e.target.value)}
                               className={inputClass}
                             >
-                              <option value="">–</option>
+                              <option value="">Bitte wählen</option>
                               <option>Herr</option>
                               <option>Frau</option>
                               <option>Divers</option>
@@ -674,7 +668,7 @@ export function KmuCheck() {
                           label="Telefon"
                           htmlFor="phone"
                           required
-                          why="Für kurze Rückfragen zur Förderfähigkeit. Ein Anruf spart oft Wochen – gerade bei Fristen und Antragsformalitäten."
+                          why="Für kurze Rückfragen zur Förderfähigkeit. Ein Anruf spart oft Wochen, gerade bei Fristen und Antragsformalitäten."
                         >
                           <PhoneInput
                             id="phone"
@@ -724,7 +718,7 @@ export function KmuCheck() {
                     disabled={stepIndex === 0}
                     className="inline-flex items-center gap-1.5 rounded-full px-4 py-2.5 text-sm font-medium text-olive-700 hover:bg-olive-100 disabled:invisible"
                   >
-                    <svg viewBox="0 0 20 20" fill="currentColor" className="size-4">
+                    <svg viewBox="0 0 20 20" fill="currentColor" aria-hidden className="size-4">
                       <path
                         fillRule="evenodd"
                         d="M12.79 5.23a.75.75 0 0 1 0 1.06L9.06 10l3.73 3.71a.75.75 0 1 1-1.06 1.06l-4.25-4.24a.75.75 0 0 1 0-1.06l4.25-4.24a.75.75 0 0 1 1.06 0Z"
@@ -748,7 +742,7 @@ export function KmuCheck() {
                     ) : (
                       <>
                         Weiter
-                        <svg viewBox="0 0 20 20" fill="currentColor" className="size-4">
+                        <svg viewBox="0 0 20 20" fill="currentColor" aria-hidden className="size-4">
                           <path
                             fillRule="evenodd"
                             d="M7.21 14.77a.75.75 0 0 1 0-1.06L10.94 10 7.21 6.29a.75.75 0 1 1 1.06-1.06l4.25 4.24a.75.75 0 0 1 0 1.06l-4.25 4.24a.75.75 0 0 1-1.06 0Z"
@@ -778,20 +772,17 @@ export function KmuCheck() {
 /* --------------------------------------------------------------------- */
 
 function Step({
-  kicker,
-  title,
+    title,
   subtitle,
   children,
 }: {
-  kicker: string
-  title: string
+    title: string
   subtitle: string
   children: React.ReactNode
 }) {
   return (
     <div className="flex flex-col gap-5">
       <div className="flex flex-col gap-2">
-        <span className="text-xs font-semibold tracking-wide text-teal-700 uppercase">{kicker}</span>
         <h3 className="font-display text-2xl/8 font-semibold text-mabe-900 sm:text-3xl/9">{title}</h3>
         <p className="text-sm/6 text-olive-600">{subtitle}</p>
       </div>
@@ -806,7 +797,7 @@ function TrustRow() {
     <ul className="flex flex-wrap gap-x-5 gap-y-2 pt-1">
       {items.map((t) => (
         <li key={t} className="inline-flex items-center gap-1.5 text-xs font-medium text-olive-600">
-          <svg viewBox="0 0 20 20" fill="currentColor" className="size-4 text-teal-600">
+          <svg viewBox="0 0 20 20" fill="currentColor" aria-hidden className="size-4 text-teal-600">
             <path
               fillRule="evenodd"
               d="M16.704 4.153a.75.75 0 0 1 .143 1.052l-8 10.5a.75.75 0 0 1-1.127.075l-4.5-4.5a.75.75 0 0 1 1.06-1.06l3.894 3.893 7.48-9.817a.75.75 0 0 1 1.05-.143Z"
@@ -848,7 +839,7 @@ function ChoiceCard({
           )}
         >
           {active && (
-            <svg viewBox="0 0 20 20" fill="white" className="size-3.5">
+            <svg viewBox="0 0 20 20" fill="white" className="size-3.5" aria-hidden>
               <path
                 fillRule="evenodd"
                 d="M16.704 4.153a.75.75 0 0 1 .143 1.052l-8 10.5a.75.75 0 0 1-1.127.075l-4.5-4.5a.75.75 0 0 1 1.06-1.06l3.894 3.893 7.48-9.817a.75.75 0 0 1 1.05-.143Z"
@@ -867,7 +858,7 @@ function ChoiceCard({
 function InfoBox({ children }: { children: React.ReactNode }) {
   return (
     <div className="flex gap-3 rounded-xl bg-mabe-50 px-4 py-3 text-sm text-mabe-900 ring-1 ring-mabe-600/15">
-      <svg viewBox="0 0 20 20" fill="currentColor" className="mt-0.5 size-5 shrink-0 text-mabe-600">
+      <svg viewBox="0 0 20 20" fill="currentColor" aria-hidden className="mt-0.5 size-5 shrink-0 text-mabe-600">
         <path
           fillRule="evenodd"
           d="M18 10A8 8 0 1 1 2 10a8 8 0 0 1 16 0Zm-7-4a1 1 0 1 1-2 0 1 1 0 0 1 2 0ZM9 9a.75.75 0 0 0 0 1.5h.253a.25.25 0 0 1 .244.304l-.459 2.066A1.75 1.75 0 0 0 10.747 15H11a.75.75 0 0 0 0-1.5h-.253a.25.25 0 0 1-.244-.304l.459-2.066A1.75 1.75 0 0 0 9.253 9H9Z"
@@ -934,7 +925,7 @@ function HoldingCard({
           aria-label="Beteiligung entfernen"
           className="flex size-11 shrink-0 items-center justify-center rounded-full text-olive-500 hover:bg-red-50 hover:text-red-600"
         >
-          <svg viewBox="0 0 20 20" fill="currentColor" className="size-5">
+          <svg viewBox="0 0 20 20" fill="currentColor" className="size-5" aria-hidden>
             <path
               fillRule="evenodd"
               d="M8.75 1A2.75 2.75 0 0 0 6 3.75v.443A28.97 28.97 0 0 0 2.5 4.5a.75.75 0 0 0 0 1.5h.227l.706 11.31A2.75 2.75 0 0 0 6.178 19h7.644a2.75 2.75 0 0 0 2.745-2.69L17.273 6H17.5a.75.75 0 0 0 0-1.5 28.97 28.97 0 0 0-3.5-.307V3.75A2.75 2.75 0 0 0 11.25 1h-2.5ZM10 4c.84 0 1.673.025 2.5.075V3.75c0-.69-.56-1.25-1.25-1.25h-2.5c-.69 0-1.25.56-1.25 1.25v.325C8.327 4.025 9.16 4 10 4Z"
@@ -953,7 +944,7 @@ function HoldingCard({
               clipRule="evenodd"
             />
           </svg>
-          Aus dem Handelsregister übernommen – bitte prüfen
+          Aus dem Handelsregister übernommen, bitte prüfen
         </p>
       )}
       {holding.pfad && (holding.stufe ?? 1) > 1 && (
@@ -986,7 +977,7 @@ function HoldingCard({
         <Field
           label="Die Beteiligung besteht an …"
           htmlFor={`h-bezug-${holding.id}`}
-          why="Standard: an Ihrem Unternehmen (1. Stufe). Hält z. B. eine Holding Anteile an Ihrer Muttergesellschaft, wählen Sie hier das Zwischenunternehmen – so werden auch Folgeketten EU-korrekt verrechnet."
+          why="Standard: an Ihrem Unternehmen (1. Stufe). Hält z. B. eine Holding Anteile an Ihrer Muttergesellschaft, wählen Sie hier das Zwischenunternehmen, so werden auch Folgeketten EU-korrekt verrechnet."
         >
           <select
             id={`h-bezug-${holding.id}`}
@@ -1156,7 +1147,7 @@ function SuccessPanel({
   return (
     <div className="flex flex-col items-center gap-6 py-6 text-center">
       <div className="flex size-16 items-center justify-center rounded-full bg-teal-100">
-        <svg viewBox="0 0 20 20" fill="currentColor" className="size-9 text-teal-600">
+        <svg viewBox="0 0 20 20" fill="currentColor" className="size-9 text-teal-600" aria-hidden>
           <path
             fillRule="evenodd"
             d="M16.704 4.153a.75.75 0 0 1 .143 1.052l-8 10.5a.75.75 0 0 1-1.127.075l-4.5-4.5a.75.75 0 0 1 1.06-1.06l3.894 3.893 7.48-9.817a.75.75 0 0 1 1.05-.143Z"
@@ -1175,7 +1166,7 @@ function SuccessPanel({
 
       {result && (
         <div className="w-full rounded-2xl bg-olive-50 p-5">
-          <div className="text-xs font-semibold tracking-wide text-olive-500 uppercase">Ihr Ergebnis</div>
+          <div className="text-xs font-semibold text-olive-500">Ihr Ergebnis</div>
           <div className="mt-1 flex items-center justify-center gap-3">
             <span className="font-display text-2xl font-semibold text-mabe-900">{result.categoryLabel}</span>
             <span className="rounded-full bg-teal-600 px-3 py-1 text-sm font-bold text-white">
@@ -1191,7 +1182,7 @@ function SuccessPanel({
         disabled={pdfBusy}
         className="inline-flex items-center gap-2 rounded-full bg-mabe-900 px-6 py-3 text-sm font-semibold text-white shadow-sm transition hover:bg-mabe-800 disabled:opacity-60"
       >
-        <svg viewBox="0 0 20 20" fill="currentColor" className="size-5">
+        <svg viewBox="0 0 20 20" fill="currentColor" className="size-5" aria-hidden>
           <path d="M10.75 2.75a.75.75 0 0 0-1.5 0v8.614L6.295 8.235a.75.75 0 1 0-1.09 1.03l4.25 4.5a.75.75 0 0 0 1.09 0l4.25-4.5a.75.75 0 0 0-1.09-1.03l-2.955 3.129V2.75Z" />
           <path d="M3.5 12.75a.75.75 0 0 0-1.5 0v2.5A2.75 2.75 0 0 0 4.75 18h10.5A2.75 2.75 0 0 0 18 15.25v-2.5a.75.75 0 0 0-1.5 0v2.5c0 .69-.56 1.25-1.25 1.25H4.75c-.69 0-1.25-.56-1.25-1.25v-2.5Z" />
         </svg>
@@ -1199,7 +1190,7 @@ function SuccessPanel({
       </button>
 
       <p className="max-w-md text-xs text-olive-500">
-        Nutzen Sie diesen Nachweis auch für weitere Förderprogramme – die KMU-Einstufung ist die Grundlage für viele
+        Nutzen Sie diesen Nachweis auch für weitere Förderprogramme, die KMU-Einstufung ist die Grundlage für viele
         Zuschüsse von BAFA, KfW und Ländern.
       </p>
     </div>

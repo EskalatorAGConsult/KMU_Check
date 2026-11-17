@@ -133,7 +133,7 @@ export function StepGenerisch({
           return (
             <p
               key={`gruppe-${eintrag.label}`}
-              className="col-span-full mt-2 -mb-1 border-t border-olive-100 pt-4 text-xs font-semibold tracking-wide text-olive-500 uppercase first:mt-0 first:border-0 first:pt-0"
+              className="col-span-full mt-2 -mb-1 border-t border-olive-100 pt-4 text-xs font-semibold text-olive-500 first:mt-0 first:border-0 first:pt-0"
             >
               {eintrag.label}
             </p>

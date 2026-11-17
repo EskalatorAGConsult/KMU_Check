@@ -19,13 +19,13 @@ const CATEGORY_META: Record<
     tone: 'text-teal-700',
     pill: 'bg-teal-50 text-teal-800 ring-teal-600/20',
     isKmu: true,
-    plain: 'Ihr Unternehmen ist ein KMU (Kleinstunternehmen) – es gilt die höchste Förderquote.',
+    plain: 'Ihr Unternehmen ist ein KMU (Kleinstunternehmen), es gilt die höchste Förderquote.',
   },
   klein: {
     tone: 'text-teal-700',
     pill: 'bg-teal-50 text-teal-800 ring-teal-600/20',
     isKmu: true,
-    plain: 'Ihr Unternehmen ist ein KMU (kleines Unternehmen) – es gilt die höchste Förderquote.',
+    plain: 'Ihr Unternehmen ist ein KMU (kleines Unternehmen), es gilt die höchste Förderquote.',
   },
   mittel: {
     tone: 'text-mabe-700',
@@ -109,10 +109,10 @@ export function LiveEvaluation({
       {/* Kopf */}
       <div className="flex items-center gap-2">
         <span className="relative flex size-2">
-          <span className="absolute inline-flex size-full animate-ping rounded-full bg-teal-400 opacity-60" />
+          <span className="absolute inline-flex size-full motion-safe:animate-ping rounded-full bg-teal-400 opacity-60" />
           <span className="relative inline-flex size-2 rounded-full bg-teal-500" />
         </span>
-        <span className="text-xs font-semibold tracking-wide text-olive-400 uppercase">Ihr Ergebnis · live</span>
+        <span className="text-xs font-semibold text-olive-400">Ihr Ergebnis · live</span>
       </div>
 
       {/* Status */}
@@ -128,14 +128,14 @@ export function LiveEvaluation({
           )}
         </div>
         <p className="text-sm/6 text-olive-600">
-          {ready ? meta.plain : 'Beantworten Sie die Fragen – Ihre Auswertung erscheint hier sofort und live.'}
+          {ready ? meta.plain : 'Beantworten Sie die Fragen, Ihre Auswertung erscheint hier sofort und live.'}
         </p>
       </div>
 
       {/* Förderquote */}
       <div className="flex flex-col gap-3">
         <div className="flex items-end justify-between">
-          <span className="text-xs font-semibold tracking-wide text-olive-400 uppercase">Förderquote</span>
+          <span className="text-xs font-semibold text-olive-400">Förderquote</span>
           <span className="text-xs text-olive-400">BAFA Modul 3</span>
         </div>
         <div className="flex items-baseline gap-1.5">
@@ -154,7 +154,7 @@ export function LiveEvaluation({
       {/* Was bedeutet das für ein MABE-Angebot */}
       <div className="flex flex-col gap-4 rounded-2xl bg-mabe-900 p-5 text-white">
         <div className="flex flex-col gap-1">
-          <span className="text-xs font-semibold tracking-wide text-teal-300 uppercase">
+          <span className="text-xs font-semibold text-teal-300">
             Ihr Vorteil bei MABE
           </span>
           <p className="text-sm/6 text-olive-200">
@@ -196,7 +196,7 @@ export function LiveEvaluation({
 
       {/* Kennzahlen vs. Schwellenwerte */}
       <div className="flex flex-col gap-4">
-        <span className="text-xs font-semibold tracking-wide text-olive-400 uppercase">
+        <span className="text-xs font-semibold text-olive-400">
           {hasVerbund ? 'Konsolidierte Verbundwerte' : 'Ihre Werte'} · vs. Grenze
         </span>
         {[
@@ -245,7 +245,7 @@ export function LiveEvaluation({
 
       {/* Disclaimer */}
       <p className="border-t border-olive-100 pt-4 text-xs/5 text-olive-400">
-        Unverbindliche Orientierung auf Basis Ihrer Angaben (EU 2003/361/EG). Keine Rechts- oder Steuerberatung – im
+        Unverbindliche Orientierung auf Basis Ihrer Angaben (EU 2003/361/EG). Keine Rechts- oder Steuerberatung, im
         Zweifel durch Steuerberater bestätigen lassen. Maßgeblich ist die Prüfung der Bewilligungsbehörde.
       </p>
     </div>

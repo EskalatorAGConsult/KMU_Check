@@ -50,11 +50,11 @@ export function NachweisManager({
   const eur = (v: number) => v.toLocaleString('de-DE', { style: 'currency', currency: 'EUR', maximumFractionDigits: 2 })
 
   const FRIST_VIEW: Record<FristStatus, { label: string; cls: string; text: string }> = {
-    eingereicht: { label: 'Eingereicht', cls: 'bg-teal-600 text-white', text: 'Der Verwendungsnachweis ist übergeben – die Fristuhr steht still.' },
-    ok: { label: 'Frist im grünen Bereich', cls: 'bg-teal-100 text-teal-800', text: 'Noch genug Zeit – Belege sammeln sich erfahrungsgemäß schnell an.' },
+    eingereicht: { label: 'Eingereicht', cls: 'bg-teal-600 text-white', text: 'Der Verwendungsnachweis ist übergeben, die Fristuhr steht still.' },
+    ok: { label: 'Frist im grünen Bereich', cls: 'bg-teal-100 text-teal-800', text: 'Noch genug Zeit, Belege sammeln sich erfahrungsgemäß schnell an.' },
     knapp: { label: 'Frist läuft in Kürze ab', cls: 'bg-amber-100 text-amber-900', text: 'Bitte jetzt die Belege vervollständigen und einreichen.' },
-    ueberfaellig: { label: 'Frist überschritten', cls: 'bg-red-100 text-red-700', text: 'Die Vorlagefrist ist überschritten – bitte umgehend einreichen und MABE informieren (Förderrisiko).' },
-    ungefasst: { label: 'Frist noch nicht erfasst', cls: 'bg-olive-100 text-olive-700', text: 'In Ihrem Bescheid ist keine eindeutige Frist erkennbar – bitte auf der Bescheid-Seite erfassen oder erfragen.' },
+    ueberfaellig: { label: 'Frist überschritten', cls: 'bg-red-100 text-red-700', text: 'Die Vorlagefrist ist überschritten, bitte umgehend einreichen und MABE informieren (Förderrisiko).' },
+    ungefasst: { label: 'Frist noch nicht erfasst', cls: 'bg-olive-100 text-olive-700', text: 'In Ihrem Bescheid ist keine eindeutige Frist erkennbar, bitte auf der Bescheid-Seite erfassen oder erfragen.' },
   }
   const fristView = FRIST_VIEW[frist.status]
 
@@ -93,7 +93,7 @@ export function NachweisManager({
       {/* Frist-Ampel */}
       <section className={`rounded-2xl p-5 sm:p-6 ${frist.status === 'ueberfaellig' ? 'bg-red-50' : 'bg-white'} border border-olive-200`}>
         <div className="flex flex-wrap items-center justify-between gap-2">
-          <h2 className="text-base font-semibold text-mabe-900">Vorlagefrist Verwendungsnachweis</h2>
+          <h2 className="min-w-0 text-base font-semibold text-balance [overflow-wrap:break-word] text-mabe-900" style={{ overflowWrap: 'break-word', minWidth: 0 }}>Vorlagefrist Verwendungsnachweis</h2>
           <span className={`rounded-full px-3 py-1 text-xs font-semibold ${fristView.cls}`}>{fristView.label}</span>
         </div>
         <p className="mt-1.5 text-sm/6 text-olive-600">{fristView.text}</p>
@@ -107,7 +107,7 @@ export function NachweisManager({
       {/* Belege */}
       <section className="rounded-2xl border border-olive-200 bg-white p-5 sm:p-6">
         <div className="flex flex-wrap items-baseline justify-between gap-2">
-          <h2 className="text-base font-semibold text-mabe-900">Belege ({belege.length})</h2>
+          <h2 className="min-w-0 text-base font-semibold text-balance [overflow-wrap:break-word] text-mabe-900" style={{ overflowWrap: 'break-word', minWidth: 0 }}>Belege ({belege.length})</h2>
           {belege.length > 0 && (
             <p className="text-sm text-olive-600">
               Belegsumme (erfasst): <strong className="text-mabe-900 tabular-nums">{eur(belegSummeEur)}</strong>
@@ -115,7 +115,7 @@ export function NachweisManager({
           )}
         </div>
         <p className="mt-1 text-sm/6 text-olive-600">
-          Rechnungen und Zahlungsnachweise der geförderten Maßnahme – das BAFA verlangt sie im
+          Rechnungen und Zahlungsnachweise der geförderten Maßnahme, das BAFA verlangt sie im
           Verwendungsnachweis (zusammen mit dem Sachbericht).
         </p>
 
@@ -162,7 +162,7 @@ export function NachweisManager({
           </>
         ) : (
           <p className="mt-3 rounded-xl bg-teal-50 px-4 py-3 text-sm text-teal-800">
-            Eingereicht – Belege sind archiviert und nicht mehr veränderbar.
+            Eingereicht, Belege sind archiviert und nicht mehr veränderbar.
           </p>
         )}
 
@@ -205,7 +205,7 @@ export function NachweisManager({
 
       {/* Sachbericht */}
       <section className="rounded-2xl border border-olive-200 bg-white p-5 sm:p-6">
-        <h2 className="text-base font-semibold text-mabe-900">Sachbericht</h2>
+        <h2 className="min-w-0 text-base font-semibold text-balance [overflow-wrap:break-word] text-mabe-900" style={{ overflowWrap: 'break-word', minWidth: 0 }}>Sachbericht</h2>
         <p className="mt-1 text-sm/6 text-olive-600">
           Kurz beschreiben, was umgesetzt wurde (Lieferung, Installation, Inbetriebnahme der Messtechnik und
           Software). Fließt in den Verwendungsnachweis ein.
@@ -233,7 +233,7 @@ export function NachweisManager({
       {/* Einreichung */}
       {!eingereicht ? (
         <section className="rounded-2xl border border-olive-200 bg-white p-5 sm:p-6">
-          <h2 className="text-base font-semibold text-mabe-900">Verwendungsnachweis einreichen</h2>
+          <h2 className="min-w-0 text-base font-semibold text-balance [overflow-wrap:break-word] text-mabe-900" style={{ overflowWrap: 'break-word', minWidth: 0 }}>Verwendungsnachweis einreichen</h2>
           {darfEinreichen ? (
             <>
               <p className="mt-1 text-sm/6 text-olive-600">

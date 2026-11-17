@@ -114,10 +114,10 @@ export function BescheidManager({
     <div className="flex flex-col gap-6">
       {/* 1 · Upload */}
       <section className="rounded-2xl border border-olive-200 bg-white p-5 sm:p-6">
-        <h2 className="text-base font-semibold text-mabe-900">1 · Zuwendungsbescheid hochladen</h2>
+        <h2 className="min-w-0 text-base font-semibold text-balance [overflow-wrap:break-word] text-mabe-900" style={{ overflowWrap: 'break-word', minWidth: 0 }}>1 · Zuwendungsbescheid hochladen</h2>
         <p className="mt-1 text-sm/6 text-olive-600">
           Sobald das BAFA Ihren Antrag bewilligt hat, laden Sie hier den Zuwendungsbescheid hoch (PDF). Wir lesen
-          Fristen und Auflagen automatisch aus – zur Sicherheit prüfen Sie die Werte einmal kurz.
+          Fristen und Auflagen automatisch aus, zur Sicherheit prüfen Sie die Werte einmal kurz.
         </p>
         <div className="mt-4">
           <DragDropZone
@@ -142,7 +142,7 @@ export function BescheidManager({
       {hat && (
         <section className="rounded-2xl border border-olive-200 bg-white p-5 sm:p-6">
           <div className="flex flex-wrap items-center justify-between gap-2">
-            <h2 className="text-base font-semibold text-mabe-900">2 · Bescheiddaten prüfen & bestätigen</h2>
+            <h2 className="min-w-0 text-base font-semibold text-balance [overflow-wrap:break-word] text-mabe-900" style={{ overflowWrap: 'break-word', minWidth: 0 }}>2 · Bescheiddaten prüfen & bestätigen</h2>
             {bestaetigt ? (
               <span className="rounded-full bg-teal-100 px-2.5 py-1 text-xs font-semibold text-teal-800">
                 bestätigt
@@ -155,7 +155,7 @@ export function BescheidManager({
           </div>
           <p className="mt-1 text-sm/6 text-olive-600">
             {analyse
-              ? 'Die folgenden Werte wurden automatisch aus dem Bescheid gelesen – bitte prüfen und korrigieren, dann bestätigen.'
+              ? 'Die folgenden Werte wurden automatisch aus dem Bescheid gelesen, bitte prüfen und korrigieren, dann bestätigen.'
               : 'Tragen Sie die Angaben aus dem Bescheid ein (automatisches Lesen war nicht möglich).'}
           </p>
           <div className="mt-4 grid gap-4 sm:grid-cols-2">
@@ -182,7 +182,7 @@ export function BescheidManager({
             disabled={busy}
             className="mt-5 min-h-12 rounded-xl bg-mabe-900 px-6 py-3 text-sm font-semibold text-white hover:bg-mabe-800 disabled:opacity-50"
           >
-            {busy ? 'Speichert …' : 'Daten bestätigen – Bewilligung aktivieren'}
+            {busy ? 'Speichert …' : 'Daten bestätigen, Bewilligung aktivieren'}
           </button>
         </section>
       )}
@@ -190,7 +190,7 @@ export function BescheidManager({
       {/* 3 · Durchführungszeitraum & Vorlagefrist */}
       {hat && (
         <section className="rounded-2xl border border-olive-200 bg-white p-5 sm:p-6">
-          <h2 className="text-base font-semibold text-mabe-900">3 · Durchführungszeitraum & Vorlagefrist</h2>
+          <h2 className="min-w-0 text-base font-semibold text-balance [overflow-wrap:break-word] text-mabe-900" style={{ overflowWrap: 'break-word', minWidth: 0 }}>3 · Durchführungszeitraum & Vorlagefrist</h2>
           <p className="mt-1 text-sm/6 text-olive-600">
             Der Bewilligungszeitraum steht im Bescheid. Die Vorlagefrist für den Verwendungsnachweis ebenfalls –
             beide können Sie hier anpassen (z. B. bei Verlängerung durch das BAFA).
@@ -233,7 +233,7 @@ export function BescheidManager({
             ))}
           </ul>
           <p className="mt-2 text-xs/5 text-amber-700">
-            Unverbindlicher Auszug aus der automatischen Erkennung – maßgeblich ist der Wortlaut des Bescheids.
+            Unverbindlicher Auszug aus der automatischen Erkennung, maßgeblich ist der Wortlaut des Bescheids.
           </p>
         </section>
       ) : null}

@@ -34,12 +34,12 @@ function zahl(v?: number): string {
 function euKlasse(b: { klasse: 'partner' | 'verbunden'; anteil_pct: number }): { label: string; cls: string } {
   if (b.klasse === 'verbunden') {
     return {
-      label: 'Verbundenes Unternehmen – zählt zu 100 %',
+      label: 'Verbundenes Unternehmen, zählt zu 100 %',
       cls: 'bg-amber-50 text-amber-800 ring-amber-600/30',
     }
   }
   return {
-    label: `Partnerunternehmen – zählt anteilig (${fmtZahl.format(b.anteil_pct)} %)`,
+    label: `Partnerunternehmen, zählt anteilig (${fmtZahl.format(b.anteil_pct)} %)`,
     cls: 'bg-sky-50 text-sky-800 ring-sky-600/30',
   }
 }
@@ -100,7 +100,7 @@ export function VerbundSuche({
         </h3>
         <p className="text-sm/6 text-olive-700">
           Wir suchen Ihr Unternehmen im <strong className="text-mabe-900">offiziellen Handelsregister</strong> und
-          füllen Beschäftigte, Bilanzsumme und Ihre Beteiligungsverhältnisse automatisch vor – Sie prüfen die Werte
+          füllen Beschäftigte, Bilanzsumme und Ihre Beteiligungsverhältnisse automatisch vor, Sie prüfen die Werte
           anschließend nur noch. Kein Handelsregistereintrag (z. B. Einzelunternehmen)? Dann tragen Sie die Zahlen
           einfach darunter von Hand ein.
         </p>
@@ -121,7 +121,7 @@ export function VerbundSuche({
             <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
             <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 0 1 8-8v4a4 4 0 0 0-4 4H4Z" />
           </svg>
-          Lade Gesellschafter, Beteiligungen und Kennzahlen aus dem Handelsregister – inklusive aller Folgestufen Ihrer Beteiligungskette …
+          Lade Gesellschafter, Beteiligungen und Kennzahlen aus dem Handelsregister, inklusive aller Folgestufen Ihrer Beteiligungskette …
         </p>
       )}
 
@@ -135,7 +135,7 @@ export function VerbundSuche({
       {ergebnis && (
         <div className="flex flex-col gap-4">
           <div className="rounded-xl border border-olive-200 bg-white p-4 sm:p-5">
-            <p className="text-xs font-semibold tracking-wide text-olive-500 uppercase">
+            <p className="text-xs font-semibold text-olive-500">
               Gefunden im Handelsregister
               {quelle === 'stammdaten' ? ' · Ihre Auswahl aus „Ihr Unternehmen"' : ''}
             </p>
@@ -177,7 +177,7 @@ export function VerbundSuche({
           {/* Verbund */}
           {ergebnis.beteiligungen.length > 0 ? (
             <div className="flex flex-col gap-2">
-              <p className="text-xs font-semibold tracking-wide text-olive-500 uppercase">
+              <p className="text-xs font-semibold text-olive-500">
                 Ihr Unternehmensverbund laut Register ({ergebnis.beteiligungen.length})
               </p>
               {ergebnis.beteiligungen.map((b) => {
@@ -218,7 +218,7 @@ export function VerbundSuche({
             </div>
           ) : (
             <p className="rounded-xl border border-olive-200 bg-white px-4 py-3 text-sm text-olive-700">
-              Keine Beteiligungsverhältnisse ab 25 % gefunden – Ihr Unternehmen wird als eigenständig bewertet.
+              Keine Beteiligungsverhältnisse ab 25 % gefunden, Ihr Unternehmen wird als eigenständig bewertet.
             </p>
           )}
 
@@ -233,14 +233,14 @@ export function VerbundSuche({
               {ergebnis.natuerlichePersonen === 1
                 ? 'Ein Gesellschafter ist eine natürliche Person'
                 : `${ergebnis.natuerlichePersonen} Gesellschafter sind natürliche Personen`}{' '}
-              – Privatpersonen zählen nicht zum Unternehmensverbund.
+             , Privatpersonen zählen nicht zum Unternehmensverbund.
             </p>
           )}
           {ergebnis.kennzahlenUnvollstaendig && (
             <p className="rounded-xl bg-amber-50 px-4 py-3 text-xs/5 font-medium text-amber-800 ring-1 ring-amber-600/20">
               Für mindestens ein Verbundunternehmen sind keine Kennzahlen veröffentlicht (kleine Gesellschaften
               müssen wenig offenlegen). Bitte ergänzen Sie Beschäftigte und Umsatz/Bilanzsumme nach der Übernahme
-              von Hand – Ihr Steuerbüro oder die Geschäftsführung der Schwesterfirma hilft weiter.
+              von Hand, Ihr Steuerbüro oder die Geschäftsführung der Schwesterfirma hilft weiter.
             </p>
           )}
           {ergebnis.ketteAbgeschnitten && (
@@ -253,14 +253,14 @@ export function VerbundSuche({
           {/* Übernehmen */}
           {uebernommen ? (
             <p className="flex items-center gap-2 rounded-xl bg-teal-50 px-4 py-3 text-sm font-medium text-teal-800 ring-1 ring-teal-600/20" role="status">
-              <svg viewBox="0 0 20 20" fill="currentColor" className="size-4" aria-hidden>
+              <svg viewBox="0 0 20 20" fill="currentColor" aria-hidden className="size-4">
                 <path
                   fillRule="evenodd"
                   d="M16.704 4.153a.75.75 0 0 1 .143 1.052l-8 10.5a.75.75 0 0 1-1.127.075l-4.5-4.5a.75.75 0 0 1 1.06-1.06l3.894 3.893 7.48-9.817a.75.75 0 0 1 1.05-.143Z"
                   clipRule="evenodd"
                 />
               </svg>
-              Übernommen – bitte prüfen Sie die vorbefüllten Werte unten und passen Sie sie bei Abweichungen an.
+              Übernommen, bitte prüfen Sie die vorbefüllten Werte unten und passen Sie sie bei Abweichungen an.
             </p>
           ) : (
             <button
@@ -277,7 +277,7 @@ export function VerbundSuche({
 
           <p className="text-xs/5 text-olive-400">
             Datenquelle: Handelsregister & Bundesanzeiger (via OpenRegister){ausCache ? ' · zwischengespeicherter Stand' : ''}.
-            Maßgeblich ist immer Ihr Jahresabschluss – Abweichungen bitte korrigieren.
+            Maßgeblich ist immer Ihr Jahresabschluss, Abweichungen bitte korrigieren.
           </p>
         </div>
       )}

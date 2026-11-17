@@ -60,7 +60,7 @@ export function KmuAbleitung({ ergebnis }: { ergebnis: KmuResult }) {
         <h3 className="text-base font-semibold text-mabe-900">So kommt Ihre Einstufung zustande</h3>
         <p className="mt-1 text-sm/6 text-olive-600">
           Transparent nach EU-Empfehlung 2003/361/EG: Ihre Zahlen plus die anteiligen Zahlen Ihrer Verflechtungen
-          ergeben die <strong className="text-mabe-900">Verbundgröße</strong> – die wird mit den EU-Grenzen
+          ergeben die <strong className="text-mabe-900">Verbundgröße</strong>, die wird mit den EU-Grenzen
           verglichen.
         </p>
       </div>
@@ -69,7 +69,7 @@ export function KmuAbleitung({ ergebnis }: { ergebnis: KmuResult }) {
       <div className="overflow-x-auto">
         <table className="w-full min-w-[26rem] border-collapse">
           <thead>
-            <tr className="text-left text-[11px] font-semibold tracking-wide text-olive-400 uppercase">
+            <tr className="text-left text-xs font-semibold text-olive-400">
               <th className="pb-1.5 pr-3">Kennzahl</th>
               <th className="pb-1.5 pr-3 text-right">Ihr Unternehmen</th>
               <th className="pb-1.5 pr-3 text-right">+ Verflechtungen</th>
@@ -104,13 +104,13 @@ export function KmuAbleitung({ ergebnis }: { ergebnis: KmuResult }) {
           </tbody>
         </table>
         <p className="mt-2 text-[11px]/4 text-olive-500">
-          Partner (25–50 %) zählen anteilig, verbundene Unternehmen (&gt; 50 %) voll – auch über mehrere Stufen.
+          Partner (25–50 %) zählen anteilig, verbundene Unternehmen (&gt; 50 %) voll, auch über mehrere Stufen.
         </p>
       </div>
 
       {/* 2 · EU-Schwellen: Wo landen Sie? */}
       <div>
-        <p className="mb-2 text-xs font-semibold tracking-wide text-olive-500 uppercase">
+        <p className="mb-2 text-xs font-semibold text-olive-500">
           Ihre Position auf der EU-Skala
         </p>
         <div className="grid grid-cols-2 gap-2 sm:grid-cols-4" role="list">
@@ -144,7 +144,7 @@ export function KmuAbleitung({ ergebnis }: { ergebnis: KmuResult }) {
 
       {/* 3 · Herleitung in Worten (aus der Engine) */}
       <div className="rounded-xl bg-olive-50 px-4 py-3">
-        <p className="text-xs font-semibold tracking-wide text-olive-500 uppercase">Herleitung</p>
+        <p className="text-xs font-semibold text-olive-500">Herleitung</p>
         <ul className="mt-1.5 flex flex-col gap-1">
           {e.reasons.map((r) => (
             <li key={r} className="flex gap-2 text-sm/6 text-olive-700">

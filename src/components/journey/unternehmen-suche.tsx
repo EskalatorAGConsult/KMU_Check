@@ -68,7 +68,7 @@ export function UnternehmenSuche({
           Schneller fertig: Handelsregister-Abfrage
         </h3>
         <p className="text-sm/6 text-olive-700">
-          Tippen Sie Ihren Firmennamen ein – wir übernehmen <strong className="text-mabe-900">Name, Anschrift,
+          Tippen Sie Ihren Firmennamen ein, wir übernehmen <strong className="text-mabe-900">Name, Anschrift,
           WZ-Code und Unternehmensform</strong> automatisch aus dem offiziellen Handelsregister. Im KMU-Schritt
           laden wir dann auch Beschäftigte und Beteiligungen Ihrer Firma vor. Kein Registereintrag
           (z. B. Einzelunternehmen)? Dann füllen Sie die Felder einfach von Hand aus.
@@ -103,7 +103,7 @@ export function UnternehmenSuche({
             />
           </svg>
           <span>
-            <strong>{bestaetigung}</strong> aus dem Handelsregister übernommen – bitte prüfen Sie die vorbefüllten
+            <strong>{bestaetigung}</strong> aus dem Handelsregister übernommen, bitte prüfen Sie die vorbefüllten
             Felder unten und ergänzen Sie E-Mail und Steuernummer.
           </span>
         </p>

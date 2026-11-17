@@ -95,7 +95,7 @@ export function RegisterSuche({
         <ul className="flex flex-col gap-2" aria-label="Suchergebnisse">
           {treffer.length === 0 && (
             <li className="rounded-xl border border-olive-200 bg-white px-4 py-3 text-sm text-olive-600">
-              Kein Treffer im Handelsregister – bitte die Angaben einfach manuell eintragen.
+              Kein Treffer im Handelsregister, bitte die Angaben einfach manuell eintragen.
             </li>
           )}
           {treffer.map((t) => (

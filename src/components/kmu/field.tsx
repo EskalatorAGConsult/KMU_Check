@@ -33,7 +33,7 @@ export function Field({
             aria-expanded={open}
             className="inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-medium text-teal-700 hover:bg-teal-50"
           >
-            <svg viewBox="0 0 20 20" fill="currentColor" className="size-3.5">
+            <svg viewBox="0 0 20 20" fill="currentColor" className="size-3.5" aria-hidden>
               <path
                 fillRule="evenodd"
                 d="M18 10A8 8 0 1 1 2 10a8 8 0 0 1 16 0Zm-7-4a1 1 0 1 1-2 0 1 1 0 0 1 2 0ZM9 9a.75.75 0 0 0 0 1.5h.253a.25.25 0 0 1 .244.304l-.459 2.066A1.75 1.75 0 0 0 10.747 15H11a.75.75 0 0 0 0-1.5h-.253a.25.25 0 0 1-.244-.304l.459-2.066A1.75 1.75 0 0 0 9.253 9H9Z"

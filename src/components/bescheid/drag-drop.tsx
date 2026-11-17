@@ -73,7 +73,7 @@ export function DragDropZone({
           pruefeUndReiche(e.dataTransfer.files?.[0])
         }}
         className={clsx(
-          'flex cursor-pointer flex-col items-center justify-center gap-2 rounded-2xl border-2 border-dashed text-center transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-teal-600/50',
+          'flex cursor-pointer flex-col items-center justify-center gap-2 rounded-2xl border-2 border-dashed text-center transition-colors focus:outline-none focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-teal-700',
           kompakt ? 'min-h-24 px-4 py-4' : 'min-h-44 px-6 py-8',
           dragAktiv
             ? 'border-teal-600 bg-teal-50'
@@ -87,7 +87,7 @@ export function DragDropZone({
         </svg>
         <p className={clsx('font-semibold text-mabe-900', kompakt ? 'text-sm' : 'text-base')}>{label}</p>
         {hinweis && <p className="max-w-md text-xs/5 text-olive-500">{hinweis}</p>}
-        <p className="text-[11px] font-medium tracking-wide text-teal-700 uppercase">
+        <p className="text-[11px] font-medium tracking-wide text-teal-700">
           {pending ? 'Lädt hoch …' : 'Datei auswählen'}
         </p>
         <input
