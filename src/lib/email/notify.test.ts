@@ -61,7 +61,7 @@ describe('sendeTestMail (Resend-Vertrag)', () => {
 
   it('Test-/Platzhalter-Adresse: Versand bewusst blockiert (Sicherheitsnetz)', async () => {
     vi.stubEnv('RESEND_API_KEY', 're_test_1234567890')
-    const fang: Fang = { aufrufe: [], status: 200, antwort: {} }
+    const fang: Fang = { aufrufe: [], html: [], status: 200, antwort: {} }
     registriereHandler(fang)
 
     const erg = await sendeTestMail('kunde@example.com')
@@ -72,7 +72,7 @@ describe('sendeTestMail (Resend-Vertrag)', () => {
 
   it('kaputte Adresse (ohne gültige Domain): blockiert', async () => {
     vi.stubEnv('RESEND_API_KEY', 're_test_1234567890')
-    const fang: Fang = { aufrufe: [], status: 200, antwort: {} }
+    const fang: Fang = { aufrufe: [], html: [], status: 200, antwort: {} }
     registriereHandler(fang)
 
     const erg = await sendeTestMail('kaputt@keinedomain')
@@ -83,7 +83,7 @@ describe('sendeTestMail (Resend-Vertrag)', () => {
   it('erfolgreicher Versand: Absender, Empfänger und Betreff erreichen die API', async () => {
     vi.stubEnv('RESEND_API_KEY', 're_test_1234567890')
     vi.stubEnv('EMAIL_FROM', '') // deterministisch: Code-Fallback als Absender
-    const fang: Fang = { aufrufe: [], status: 200, antwort: {} }
+    const fang: Fang = { aufrufe: [], html: [], status: 200, antwort: {} }
     registriereHandler(fang)
 
     const erg = await sendeTestMail('admin@mabe.de')
@@ -98,7 +98,7 @@ describe('sendeTestMail (Resend-Vertrag)', () => {
 
   it('Resend-Fehler (422, Domain nicht verifiziert): Grund wird durchgereicht statt verschluckt', async () => {
     vi.stubEnv('RESEND_API_KEY', 're_test_1234567890')
-    const fang: Fang = { aufrufe: [], status: 422, antwort: { message: 'The foerderportal.mabe.de domain is not verified' } }
+    const fang: Fang = { aufrufe: [], html: [], status: 422, antwort: { message: 'The foerderportal.mabe.de domain is not verified' } }
     registriereHandler(fang)
     const konsolenSpy = vi.spyOn(console, 'error').mockImplementation(() => {})
 
@@ -122,7 +122,7 @@ vi.mock('@/lib/db/repositories/einstellungen', () => ({
 describe('sendeBescheidHinweisAnAdmins (Fristen-Hinweis)', () => {
   it('informiert das Team mit erkannter VNW-Frist im Betreff-Kontext (best effort)', async () => {
     const { sendeBescheidHinweisAnAdmins } = await import('./notify')
-    const fang: Fang = { aufrufe: [], status: 200, antwort: {} }
+    const fang: Fang = { aufrufe: [], html: [], status: 200, antwort: {} }
     registriereHandler(fang)
 
     vi.stubEnv('RESEND_API_KEY', 're_test_1234567890')

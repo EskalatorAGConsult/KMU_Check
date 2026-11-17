@@ -1,4 +1,8 @@
 @import 'tailwindcss';
+@import './tokens.css';
+
+/* Hallmark · redesign: full · 2026-11-17 · Built in the project's own system (Tailwind v4 @theme);
+   tokens.css carries the scale, this file keeps the MABE brand ramp and page rules. */
 
 @theme {
   --font-display: 'Mona Sans', system-ui, sans-serif;
@@ -73,6 +77,12 @@
     color-scheme: light;
     --scroll-padding-top: 0;
     scroll-padding-top: var(--scroll-padding-top);
+  }
+
+  /* Hallmark Floor 34: kein horizontales Scrollen, kein 100vw. */
+  html,
+  body {
+    overflow-x: clip;
   }
 
   /* Crystal-clear focus ring for keyboard users (WCAG 2.4.7). */

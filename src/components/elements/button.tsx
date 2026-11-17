@@ -20,7 +20,7 @@ export function Button({
     <button
       type={type}
       className={clsx(
-        'inline-flex shrink-0 items-center justify-center gap-1 rounded-full text-sm/7 font-medium',
+        'inline-flex shrink-0 items-center justify-center gap-1 rounded-full text-sm/7 font-medium transition-colors active:brightness-90',
         color === 'dark/light' &&
           'bg-olive-950 text-white hover:bg-olive-800 dark:bg-olive-300 dark:text-olive-950 dark:hover:bg-olive-200',
         color === 'light' && 'hover bg-white text-olive-950 hover:bg-olive-100 dark:bg-olive-100 dark:hover:bg-white',
@@ -47,7 +47,7 @@ export function ButtonLink({
     <a
       href={href}
       className={clsx(
-        'inline-flex shrink-0 items-center justify-center gap-1 rounded-full text-sm/7 font-medium',
+        'inline-flex shrink-0 items-center justify-center gap-1 rounded-full text-sm/7 font-medium transition-colors active:brightness-90',
         color === 'dark/light' &&
           'bg-olive-950 text-white hover:bg-olive-800 dark:bg-olive-300 dark:text-olive-950 dark:hover:bg-olive-200',
         color === 'light' && 'hover bg-white text-olive-950 hover:bg-olive-100 dark:bg-olive-100 dark:hover:bg-white',

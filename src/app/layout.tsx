@@ -61,7 +61,7 @@ export default function RootLayout({
             <>
               <NavbarLink href="#kmu-check">KMU-Check</NavbarLink>
               <NavbarLink href="#vorteile">Vorteile</NavbarLink>
-              <NavbarLink href="#ablauf">So funktioniert&apos;s</NavbarLink>
+              <NavbarLink href="#ablauf">So funktioniert es</NavbarLink>
               <NavbarLink href="#faq">FAQ</NavbarLink>
             </>
           }
