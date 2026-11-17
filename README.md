@@ -91,6 +91,30 @@ Einreichung – alle eingereichten Angaben plus vollständige Datenübersicht al
 (`/konto/vorgang/[id]/dossier`, generiert on demand, nur eigene Vorgänge). Vertriebsrollen
 (`admin`/`vertrieb`) werden weiterhin nur serverseitig vergeben.
 
+**Bewilligungsprozess (Migration 25 – „Leben nach der Einreichung"):** Nach `abgeschlossen`
+(Antrag gestellt) geht die Reise weiter:
+
+1. **Zuwendungsbescheid hochladen** – Clean-Page mit Drag & Drop
+   (`/konto/vorgang/[id]/bescheid`, Kunde; identische Station in der Admin-Fallakte).
+   Gemini-OCR liest Aktenzeichen, Bewilligungsdatum, Förderquote/-summe,
+   **Durchführungszeitraum**, **VNW-Vorlagefrist** und Auflagen (Rohbefund – der Mensch
+   bestätigt; Fristen werden nie als Default geraten, die verbindliche Frist steht im
+   jeweiligen Bescheid).
+2. **Aktivierung** – mit dem ersten Bescheid aktivieren sich Durchführungszeitraum und
+   **Verwendungsnachweis** (`/konto/vorgang/[id]/nachweis`): Frist-Ampel (knapp ab 28 Tagen),
+   Beleg-Upload (Rechnung/Zahlungsnachweis mit Kategorie + Betrag), Sachbericht,
+   Einreichung mit Zeit-/Personen-Nachweis.
+3. **Neue Stati** (append-only): `bewilligt` (Bescheid-Daten bestätigt) und
+   `vnw_eingereicht` (VNW übergeben; Korrektur zurück möglich, z. B. BAFA-Nachforderung).
+
+Zugriff: Server Actions prüfen je Aufruf Admin-Rolle oder `angebot_zugriffe`-Zuordnung;
+jeder Statuswechsel läuft durch die Statusmaschine mit Revision + Audit
+(`src/lib/bescheid/`). Fachliche Grundlage (Recherche 2026-11): Verwendungsnachweis über
+das FZD-Onlineportal (Anträge ab 15.09.2025); Vorlagefrist regelmäßig 3 Monate nach Ablauf
+des Bewilligungszeitraums – Fristversäumnis kann zum Widerruf führen
+([BAFA Modul 3](https://www.bafa.de/DE/Energie/Energieeffizienz/Energieeffizienz_und_Prozesswaerme/Modul3_Energiemanagementsysteme/modul3_energiemanagementsysteme.html),
+[BAFA-Merkblatt Verwendungsnachweis](https://www.bafa.de/SharedDocs/Downloads/DE/Energie/cob_merkblatt_verwendungsnachweis.pdf)).
+
 **Admin (`/admin`):** Neben Vorgängen und Angebot-Anlage gibt es die **Kundenverwaltung**
 (`/admin/kunden`, gruppiert nach E-Mail, mit Registrierungsstatus, KMU-Ergebnis, Dokumenten und den
 Aktionen „Einladung erneut senden" und „Vorgang widerrufen"), die **Benutzerverwaltung**
