@@ -474,8 +474,12 @@ function Erfolg({
                 : 'Ihr Antrag wird vorbereitet und eingereicht, Sie müssen nichts weiter tun.',
           },
           {
-            titel: 'Bewilligung & Umsetzung',
-            text: 'Nach dem Zuwendungsbescheid kann die Maßnahme starten. Der Zuschuss wird nach Verwendungsnachweis ausgezahlt.',
+            titel: 'Zuwendungsbescheid hochladen',
+            text: 'Sobald das BAFA bewilligt, laden Sie den Bescheid über Ihr Kundenkonto hoch, wir überwachen dann alle Fristen für Sie.',
+          },
+          {
+            titel: 'Bewilligung & Auszahlung',
+            text: 'Nach der Maßnahme reichen Sie den Verwendungsnachweis ein, der Zuschuss wird ausgezahlt.',
           },
         ]
 
@@ -554,6 +558,26 @@ function Erfolg({
         Bewahren Sie diesen Link auf, er dokumentiert Ihren Vorgang. Bei Rückfragen genügt die Angabe der
         Angebotsnummer.
       </p>
+
+      {/* Bescheid-Upload-Hinweis: der wichtigste naechste Schritt des Kunden */}
+      {modus === 'concierge' && (
+        <div className="flex w-full flex-col items-center gap-3 rounded-2xl border-2 border-teal-600 bg-teal-50 p-6 text-left">
+          <p className="self-start text-base font-bold text-teal-900">
+            Wenn Ihr Zuwendungsbescheid eintrifft:
+          </p>
+          <p className="self-start text-sm/6 text-teal-800">
+            Laden Sie den Bescheid ueber Ihr Kundenkonto hoch, damit wir alle Fristen und Auflagen automatisch
+            ueberwachen und den Verwendungsnachweis rechtzeitig vorbereiten koennen. Sie erhalten dann eine
+            Bestaetigung per E-Mail mit der gelesenen Vorlagefrist.
+          </p>
+          <a
+            href={`/konto/vorgang/${angebot.id}/bescheid`}
+            className="mt-2 inline-flex min-h-12 items-center rounded-xl bg-teal-600 px-6 py-3 text-sm font-semibold text-white hover:bg-teal-500 focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-teal-700 active:brightness-90"
+          >
+            Zuwendungsbescheid hochladen
+          </a>
+        </div>
+      )}
 
       {/* Konto-Empfehlung */}
       <div className="flex w-full flex-col items-center gap-3 rounded-2xl bg-mabe-900 p-6 text-white">

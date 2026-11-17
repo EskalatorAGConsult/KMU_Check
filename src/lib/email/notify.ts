@@ -4,6 +4,7 @@ import { baueAntragZusammenfassungHtml, type AntragZusammenfassung } from './ant
 import { istTestAdresse } from './guard'
 import { baueLeadBenachrichtigungHtml, type LeadPayload } from './lead-benachrichtigung'
 import { absender, portalUrl, resendClient } from './resend'
+import { formatEUR } from '@/lib/kmu'
 import { button, esc, h1, infoBox, layout, p } from './templates'
 
 /**
@@ -346,6 +347,58 @@ export async function sendeBescheidHinweisAnAdmins(daten: {
     ].join(''),
   )
   return sendeMail(empfaenger, `Zuwendungsbescheid: ${daten.kundeFirma} (${daten.angebotNr})`, html)
+}
+
+/**
+ * 11 · Bescheid-Bestätigung an den Kunden: Ihr Zuwendungsbescheid ist
+ * eingegangen. Fasst die gelesenen Daten (OCR) zusammen und erklärt, was
+ * als Nächstes passiert (Durchführungszeitraum, VNW). Best effort.
+ */
+export async function sendeBescheidBestaetigungAnKunden(daten: {
+  an: string
+  kundeFirma: string
+  angebotNr: string
+  /** Gelesene VNW-Vorlagefrist aus der OCR (falls erkannt). */
+  fristAm: string | null
+  /** Bewilligte Fördersumme aus der OCR (falls erkannt). */
+  foerdersummeEur: number | null
+}): Promise<VersandErgebnis> {
+  const fristText = daten.fristAm
+    ? new Date(`${daten.fristAm}T00:00:00`).toLocaleDateString('de-DE', { day: '2-digit', month: 'long', year: 'numeric' })
+    : 'wird Ihnen noch mitgeteilt'
+  const summeText = daten.foerdersummeEur != null ? formatEUR(daten.foerdersummeEur) : null
+
+  const html = layout(
+    `Bescheid eingegangen: ${daten.kundeFirma}`,
+    [
+      h1('Ihr Zuwendungsbescheid ist bei uns eingegangen'),
+      p(
+        `Guten Tag,`,
+      ),
+      p(
+        `wir haben den Zuwendungsbescheid für Ihr Förderprojekt <strong>${esc(daten.angebotNr)}</strong> ` +
+          `(${esc(daten.kundeFirma)}) erhalten und gespeichert. Das BAFA hat Ihren Antrag somit bewilligt.` +
+          (summeText ? ` Die bewilligte Fördersumme beträgt <strong>${summeText}</strong>.` : ''),
+      ),
+      infoBox(
+        `<strong>Wichtig: Vorlagefrist für den Verwendungsnachweis</strong><br>` +
+          `Laut Bescheid müssen Sie den Verwendungsnachweis spätestens bis <strong>${fristText}</strong> beim BAFA einreichen. ` +
+          `Wir überwachen diese Frist und erinnern Sie rechtzeitig. Bitte reichen Sie Ihre Belege (Rechnungen, ` +
+          `Zahlungsnachweise) über Ihr Kundenkonto ein, sobald die Maßnahme abgeschlossen ist.`,
+      ),
+      p(
+        `<strong>Was passiert jetzt?</strong><br>` +
+          `1. Wir prüfen die gelesenen Daten aus dem Bescheid (Fristen, Auflagen)<br>` +
+          `2. Sie führen die bewilligte Maßnahme durch (Innerhalb des Durchführungszeitraums)<br>` +
+          `3. Sie laden Ihre Belege hoch, wir bereiten den Verwendungsnachweis vor<br>` +
+          `4. Auszahlung des Zuschusses nach Prüfung durch das BAFA`,
+      ),
+      p(
+        `Bei Fragen melden Sie sich einfach bei Ihrem MABE-Ansprechpartner. Bewahren Sie diese E-Mail auf.`,
+      ),
+    ].join(''),
+  )
+  return sendeMail(daten.an, `Ihr Zuwendungsbescheid ist eingegangen (${daten.angebotNr})`, html)
 }
 
 /**

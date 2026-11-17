@@ -25,7 +25,7 @@ import {
 } from '@/lib/db/repositories/bescheid'
 import { audit } from '@/lib/db/repositories/journey'
 import { supabaseServer } from '@/lib/db/server'
-import { sendeBescheidHinweisAnAdmins } from '@/lib/email/notify'
+import { sendeBescheidBestaetigungAnKunden, sendeBescheidHinweisAnAdmins } from '@/lib/email/notify'
 import { loggeFehler } from '@/lib/fehler'
 import { analysiereBescheid, type BescheidAnalyse } from '@/lib/gemini/bescheid-analyse'
 import { ladeDokumentHoch } from '@/lib/storage/blob'
@@ -109,7 +109,9 @@ export async function ladeBescheidHoch(
 
   try {
     const url = await ladeDokumentHoch(`bescheid/${angebot.angebot_nr}.pdf`, geprueft.bytes)
-    if (!url) return { ok: false, fehler: 'Storage nicht konfiguriert (Blob-Token fehlt).' }
+    if (!url) {
+      return { ok: false, fehler: 'Der Upload konnte nicht gespeichert werden (Storage-Fehler). Bitte versuchen Sie es erneut oder kontaktieren Sie Ihren MABE-Ansprechpartner.' }
+    }
 
     // OCR (best effort): Fehler blockieren den Upload nicht – die Werte
     // sind dann manuell zu erfassen; der Grund wird zurückgegeben.
@@ -144,6 +146,21 @@ export async function ladeBescheidHoch(
       gesendet: hinweis.ok,
       grund: hinweis.grund ?? null,
     })
+
+    // Kunden-Bestaetigung (best effort): "Bescheid ist eingegangen" mit
+    // gelesener Frist und Foerdersumme, erklaert den VNW-Prozess.
+    const kundenMail = await sendeBescheidBestaetigungAnKunden({
+      an: angebot.kunde_email,
+      kundeFirma: angebot.kunde_firma,
+      angebotNr: angebot.angebot_nr,
+      fristAm: analyse?.vnw_frist_am ?? null,
+      foerdersummeEur: analyse?.foerdersumme_eur ?? null,
+    })
+    await audit(angebotId, 'system', 'bescheid_email_kunde', {
+      gesendet: kundenMail.ok,
+      grund: kundenMail.grund ?? null,
+    })
+
     revalidatePath(`/konto/vorgang/${angebotId}`)
     revalidatePath('/admin/kunden')
     return {
@@ -289,7 +306,9 @@ export async function ladeBelegHoch(
   try {
     const pfad = `vnw-belege/${angebotId}/${Date.now()}-${datei.name}`
     const url = await ladeDokumentHoch(pfad, datei.bytes, datei.contentType)
-    if (!url) return { ok: false, fehler: 'Storage nicht konfiguriert (Blob-Token fehlt).' }
+    if (!url) {
+      return { ok: false, fehler: 'Der Upload konnte nicht gespeichert werden (Storage-Fehler). Bitte versuchen Sie es erneut oder kontaktieren Sie Ihren MABE-Ansprechpartner.' }
+    }
     const db = supabaseServer()
     const { data: dokument, error: eDoc } = await db
       .from('dokumente')

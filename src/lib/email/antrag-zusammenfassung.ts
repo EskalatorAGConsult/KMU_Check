@@ -1,5 +1,6 @@
 import { formatEUR, formatNumber, type KmuResult } from '@/lib/kmu'
 
+import { portalUrl } from './resend'
 import { esc, h1, infoBox, p } from './templates'
 
 /**
@@ -12,6 +13,8 @@ import { esc, h1, infoBox, p } from './templates'
 export interface AntragZusammenfassung {
   kundeFirma: string
   angebotNr: string
+  /** UUID des Angebots – Basis für den Bescheid-Upload-Link in der Mail. */
+  angebotId: string
   // Unternehmen
   strasse: string
   plz: string
@@ -171,8 +174,32 @@ export function baueAntragZusammenfassungHtml(z: AntragZusammenfassung): string 
     p(
       `1. Wir prüfen Ihre Angaben auf Vollständigkeit<br>` +
         `2. Antragstellung beim BAFA (durch die WissensReich Academy)<br>` +
-        `3. Bewilligung – danach kann die Maßnahme starten; bei Rückfragen der Behörde antwortet der Concierge für Sie`,
+        `3. Bewilligung – danach kann die Maßnahme starten; bei Rückfragen der Behörde antwortet der Concierge für Sie<br>` +
+        `4. <strong>Zuwendungsbescheid erhalten? Laden Sie ihn hoch</strong> (siehe unten)`,
     ),
+
+    // ── Bescheid-Upload: der wichtigste nächste Schritt des Kunden ──
+    `<div style="background:#f0fdfa;border:1px solid #99f6e4;border-radius:14px;padding:18px 20px;margin:18px 0;">
+      <p style="margin:0 0 8px;font-size:15px;font-weight:700;color:#134e4a;">
+        Ihr Zuwendungsbescheid ist eingetroffen?
+      </p>
+      <p style="margin:0 0 14px;font-size:14px;line-height:1.6;color:#134e4a;">
+        Sobald das BAFA Ihren Antrag bewilligt hat, erhalten Sie einen Zuwendungsbescheid per Post.
+        <strong>Laden Sie diesen Bescheid über den folgenden Link hoch</strong>, damit wir Fristen überwachen,
+        den Verwendungsnachweis rechtzeitig vorbereiten und die Auszahlung begleiten können.
+      </p>
+      <a href="${esc(portalUrl(`/konto/vorgang/${z.angebotId}/bescheid`))}"
+         style="display:inline-block;background:#0d9488;color:#ffffff;text-decoration:none;
+                font-size:15px;font-weight:600;padding:13px 26px;border-radius:10px;">
+        Zuwendungsbescheid hochladen
+      </a>
+      <p style="margin:12px 0 0;font-size:12px;color:#64748b;line-height:1.5;">
+        Link: ${esc(portalUrl(`/konto/vorgang/${z.angebotId}/bescheid`))}<br>
+        Bitte bewahren Sie diesen Link auf. Falls Sie noch kein Kundenkonto haben, erstellen Sie eines
+        unter ${esc(portalUrl('/konto/registrieren'))} und öffnen Sie danach Ihren Journey-Link erneut.
+      </p>
+    </div>`,
+
     p(
       `Bewahren Sie diese E-Mail als Nachweis auf. Bei Rückfragen genügt die Angabe der Angebotsnummer ` +
         `<strong>${esc(z.angebotNr)}</strong>.`,

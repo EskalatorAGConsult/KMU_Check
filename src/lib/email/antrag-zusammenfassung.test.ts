@@ -13,6 +13,7 @@ function beispiel(overrides: Partial<AntragZusammenfassung> = {}): AntragZusamme
   return {
     kundeFirma: 'Müller & Söhne <Metallbau> GmbH',
     angebotNr: 'ANG-2026-042',
+    angebotId: 'test-angebot-uuid',
     strasse: 'Industriestraße 12',
     plz: '08060',
     ort: 'Zwickau',

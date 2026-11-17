@@ -494,6 +494,7 @@ export async function schliesseJourneyAb(
     zusammenfassung: {
       kundeFirma: angebot.kunde_firma,
       angebotNr: angebot.angebot_nr,
+      angebotId: angebot.id,
       strasse: String(unternehmen.strasse),
       plz: String(unternehmen.plz),
       ort: String(unternehmen.ort),
