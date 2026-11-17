@@ -160,8 +160,19 @@ export function RegistrierenForm() {
   )
 }
 
-/** Passwort-Reset anfordern (Mail via Resend). */
-export function PasswortVergessenForm() {
+/**
+ * Passwort-Reset anfordern (Mail via Resend, Token in der Better-Auth-
+ * Tabelle `verification`). Wiederverwendbar fuer Kunden- und Admin-Login:
+ * `redirectTo` ist die Zielseite des E-Mail-Links, `anmeldeLink` der
+ * Zurueck-Sprung (nach dem Setzen des neuen Passworts).
+ */
+export function PasswortVergessenForm({
+  redirectTo = '/konto/passwort-zuruecksetzen',
+  anmeldeLink = '/konto/anmelden',
+}: {
+  redirectTo?: string
+  anmeldeLink?: string
+} = {}) {
   const [fehler, setFehler] = useState<string | null>(null)
   const [gesendet, setGesendet] = useState(false)
   const [busy, startTransition] = useTransition()
@@ -173,7 +184,7 @@ export function PasswortVergessenForm() {
       setFehler(null)
       const { error } = await authClient.requestPasswordReset({
         email: String(fd.get('email') ?? ''),
-        redirectTo: '/konto/passwort-zuruecksetzen',
+        redirectTo,
       })
       if (error) {
         setFehler('Die E-Mail konnte nicht angefordert werden. Bitte prüfen Sie die Adresse.')
@@ -190,7 +201,7 @@ export function PasswortVergessenForm() {
           <strong>E-Mail ist unterwegs.</strong> Falls ein Konto zu dieser Adresse existiert, erhalten Sie in
           Kürze einen Link zum Zurücksetzen. Bitte prüfen Sie auch den Spam-Ordner.
         </div>
-        <Link href="/konto/anmelden" className="text-center text-sm font-medium text-teal-700 hover:underline">
+        <Link href={anmeldeLink} className="text-center text-sm font-medium text-teal-700 hover:underline">
           Zurück zur Anmeldung
         </Link>
       </div>
@@ -205,7 +216,7 @@ export function PasswortVergessenForm() {
       </div>
       {fehler && <Fehler text={fehler} />}
       <PrimaerButton busy={busy} label="Link zum Zurücksetzen senden" busyLabel="Wird gesendet …" />
-      <Link href="/konto/anmelden" className="text-center text-sm font-medium text-teal-700 hover:underline">
+      <Link href={anmeldeLink} className="text-center text-sm font-medium text-teal-700 hover:underline">
         Zurück zur Anmeldung
       </Link>
     </form>
@@ -213,7 +224,7 @@ export function PasswortVergessenForm() {
 }
 
 /** Neues Passwort setzen (Token aus dem E-Mail-Link). */
-export function PasswortZuruecksetzenForm() {
+export function PasswortZuruecksetzenForm({ anmeldeLink = '/konto/anmelden' }: { anmeldeLink?: string } = {}) {
   const router = useRouter()
   const params = useSearchParams()
   const token = params.get('token')
@@ -235,7 +246,7 @@ export function PasswortZuruecksetzenForm() {
         setFehler('Der Link ist ungültig oder abgelaufen. Bitte fordern Sie einen neuen an.')
         return
       }
-      router.push('/konto/anmelden')
+      router.push(anmeldeLink)
     })
   }
 

@@ -157,3 +157,37 @@ describe('sendeBescheidHinweisAnAdmins (Fristen-Hinweis)', () => {
     expect(fang.html[0]).toContain('noch nicht erkannt')
   })
 })
+
+// ---------- sendePasswortReset (Better-Auth-Hook via Resend) ----------
+
+describe('sendePasswortReset (Reset-Mail-Vertrag)', () => {
+  it('versendet mit Betreff, Reset-Link und 1-Stunden-Hinweis', async () => {
+    const { sendePasswortReset } = await import('./notify')
+    const fang: Fang = { aufrufe: [], html: [], status: 200, antwort: {} }
+    registriereHandlerMitHtml(fang)
+    vi.stubEnv('RESEND_API_KEY', 're_test_1234567890')
+
+    const erg = await sendePasswortReset({
+      an: 'admin@mabe.de',
+      resetUrl: 'https://foerdercheck.mabe.de/admin/login/passwort-zuruecksetzen?token=geheim',
+    })
+
+    expect(erg.ok, `grund: ${erg.ok ? '' : (erg.grund ?? '?')}`).toBe(true)
+    expect(fang.aufrufe[0].to).toEqual(['admin@mabe.de'])
+    expect(fang.aufrufe[0].subject).toContain('Passwort')
+    expect(fang.html[0]).toContain('https://foerdercheck.mabe.de/admin/login/passwort-zuruecksetzen?token=geheim')
+    expect(fang.html[0]).toContain('1 Stunde')
+  })
+
+  it('blockiert Test-/Platzhalter-Adressen weiterhin (Sicherheitsnetz)', async () => {
+    const { sendePasswortReset } = await import('./notify')
+    const fang: Fang = { aufrufe: [], html: [], status: 200, antwort: {} }
+    registriereHandler(fang)
+    vi.stubEnv('RESEND_API_KEY', 're_test_1234567890')
+
+    const erg = await sendePasswortReset({ an: 'admin@example.com', resetUrl: 'https://x/y?token=1' })
+
+    expect(erg.ok).toBe(false)
+    expect(fang.aufrufe).toHaveLength(0)
+  })
+})

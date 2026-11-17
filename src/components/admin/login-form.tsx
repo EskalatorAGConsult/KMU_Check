@@ -1,5 +1,6 @@
 'use client'
 
+import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { useState, useTransition } from 'react'
 
@@ -68,10 +69,18 @@ export function LoginForm() {
       <button
         type="submit"
         disabled={busy}
-        className="rounded-xl bg-mabe-900 px-6 py-3 text-sm font-semibold text-white hover:bg-mabe-800 disabled:opacity-50"
+        className="rounded-xl bg-mabe-900 px-6 py-3 text-sm font-semibold text-white transition-colors hover:bg-mabe-800 focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-teal-700 active:brightness-90 disabled:opacity-50"
       >
         {busy ? 'Anmelden …' : 'Anmelden'}
       </button>
+      <p className="text-center text-sm">
+        <Link
+          href="/admin/login/passwort-vergessen"
+          className="font-medium text-teal-700 hover:underline focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-teal-700 active:brightness-90"
+        >
+          Passwort vergessen?
+        </Link>
+      </p>
     </form>
   )
 }

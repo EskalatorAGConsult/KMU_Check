@@ -34,6 +34,8 @@ const EXPECTED = [
   'kmu_bewertungen', 'deminimis_beihilfen', 'deminimis_erklaerungen', 'vollmachten',
   'dokumente', 'uebergaben', 'audit_events', 'einstellungen', 'benutzer_einladungen',
   'bescheide', 'verwendungsnachweise', 'vnw_belege',
+  // Better-Auth (08): `verification` verwaltet auch die Passwort-Reset-Tokens
+  'user', 'session', 'account', 'verification',
 ]
 const { rows: tables } = await client.query(
   `select relname, relrowsecurity from pg_class
@@ -41,7 +43,7 @@ const { rows: tables } = await client.query(
    order by relname`,
   [EXPECTED],
 )
-ok('Alle 17 Tabellen vorhanden', tables.length === 17, `${tables.length}/17`)
+ok('Alle 21 Tabellen vorhanden (inkl. Better-Auth)', tables.length === 21, `${tables.length}/21`)
 const noRls = tables.filter((t) => !t.relrowsecurity).map((t) => t.relname)
 ok('RLS auf allen Tabellen aktiv', noRls.length === 0, noRls.join(',') || 'alle')
 
