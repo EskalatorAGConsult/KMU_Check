@@ -17,7 +17,9 @@ const STATUS_LABEL: Record<AngebotStatus, string> = {
   eingeladen: 'Eingeladen',
   in_bearbeitung: 'In Bearbeitung',
   eingereicht: 'Eingereicht',
-  abgeschlossen: 'Abgeschlossen',
+  abgeschlossen: 'Antrag gestellt',
+  bewilligt: 'Bewilligt',
+  vnw_eingereicht: 'VNW eingereicht',
   widerrufen: 'Widerrufen',
 }
 
@@ -27,6 +29,8 @@ const STATUS_CLS: Record<AngebotStatus, string> = {
   in_bearbeitung: 'bg-amber-100 text-amber-800',
   eingereicht: 'bg-teal-100 text-teal-800',
   abgeschlossen: 'bg-teal-600 text-white',
+  bewilligt: 'bg-teal-600 text-white',
+  vnw_eingereicht: 'bg-teal-700 text-white',
   widerrufen: 'bg-red-100 text-red-700',
 }
 

@@ -1,6 +1,7 @@
 import type { ReactNode } from 'react'
 
 import { DatenKopierenButton } from '@/components/admin/daten-kopieren-button'
+import { BescheidVerwaltung } from '@/components/admin/bescheid-verwaltung'
 import { DokumentUpload } from '@/components/admin/dokument-upload'
 import { SystemkonzeptAktionen } from '@/components/admin/systemkonzept-aktionen'
 import { VorgangAktionen } from '@/components/admin/vorgang-aktionen'
@@ -40,6 +41,8 @@ const STATUS_CLS: Record<AngebotStatus, string> = {
   in_bearbeitung: 'bg-amber-100 text-amber-800',
   eingereicht: 'bg-teal-100 text-teal-800',
   abgeschlossen: 'bg-teal-600 text-white',
+  bewilligt: 'bg-teal-600 text-white',
+  vnw_eingereicht: 'bg-teal-700 text-white',
   widerrufen: 'bg-red-100 text-red-700',
 }
 
@@ -707,6 +710,19 @@ export function VorgangDatenblatt({
         ) : (
           <LeerHinweis>Noch kein Beantragungsweg gewählt.</LeerHinweis>
         )}
+      </Sektion>
+
+      {/* Migration 25 · Bewilligung & Verwendungsnachweis */}
+      <Sektion
+        titel="Bewilligung & Verwendungsnachweis"
+        hinweis="Bescheid-Upload, Fristen (OCR) und VNW-Belege – aktiv mit dem ersten Bescheid."
+      >
+        <BescheidVerwaltung
+          angebotId={a.id}
+          bescheid={v.bescheid}
+          verwendungsnachweis={v.verwendungsnachweis}
+          vnwBelege={v.vnwBelege}
+        />
       </Sektion>
 
       {/* Dokumente */}

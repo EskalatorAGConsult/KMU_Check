@@ -22,7 +22,9 @@ const STATUS_KURZ: Record<AngebotStatus, string> = {
   eingeladen: 'Eingeladen',
   in_bearbeitung: 'In Bearb.',
   eingereicht: 'Eingereicht',
-  abgeschlossen: 'Abgeschl.',
+  abgeschlossen: 'Antrag gestellt',
+  bewilligt: 'Bewilligt',
+  vnw_eingereicht: 'VNW da',
   widerrufen: 'Widerrufen',
 }
 

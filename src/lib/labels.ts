@@ -10,6 +10,8 @@ import type {
   SoftwareVariante,
   Technologie,
   Unternehmensart,
+  VnwBelegKategorie,
+  VnwStatus,
 } from '@/lib/db/types'
 
 /**
@@ -81,7 +83,9 @@ export const ANGEBOT_STATUS_LABELS: Record<AngebotStatus, string> = {
   eingeladen: 'Eingeladen',
   in_bearbeitung: 'In Bearbeitung',
   eingereicht: 'Eingereicht',
-  abgeschlossen: 'Abgeschlossen',
+  abgeschlossen: 'Antrag gestellt',
+  bewilligt: 'Bewilligt (Bescheid liegt vor)',
+  vnw_eingereicht: 'Verwendungsnachweis eingereicht',
   widerrufen: 'Widerrufen',
 }
 
@@ -91,6 +95,8 @@ export const DOKUMENT_TYP_LABELS: Record<string, string> = {
   vollmacht: 'Vollmacht (BAFA-Formular eew_vm_3)',
   dossier: 'Datenübersicht (Dossier)',
   upload: 'Kunden-Upload',
+  bescheid: 'Zuwendungsbescheid (BAFA)',
+  vnw_beleg: 'Verwendungsnachweis-Beleg',
 }
 
 /** Kurzlabel fuer die Uebersichtstabellen (Dashboard, Kundenliste). */
@@ -99,6 +105,22 @@ export const ANGEBOT_STATUS_KURZ: Record<AngebotStatus, string> = {
   eingeladen: 'Eingeladen',
   in_bearbeitung: 'In Bearb.',
   eingereicht: 'Eingereicht',
-  abgeschlossen: 'Abgeschl.',
+  abgeschlossen: 'Antrag gestellt',
+  bewilligt: 'Bewilligt',
+  vnw_eingereicht: 'VNW da',
   widerrufen: 'Widerrufen',
+}
+
+/** Status des Verwendungsnachweises (Migration 25). */
+export const VNW_STATUS_LABELS: Record<VnwStatus, string> = {
+  offen: 'Noch offen',
+  in_bearbeitung: 'In Bearbeitung',
+  eingereicht: 'Eingereicht',
+}
+
+/** Beleg-Kategorien des Verwendungsnachweises (BAFA: Rechnungen, Zahlungsnachweise). */
+export const VNW_BELEG_KATEGORIE_LABELS: Record<VnwBelegKategorie, string> = {
+  rechnung: 'Rechnung',
+  zahlungsnachweis: 'Zahlungsnachweis',
+  sonstiges: 'Sonstiges',
 }

@@ -7,6 +7,7 @@ import type {
   Angebot,
   AngebotStatus,
   AuditEventRow,
+  BescheidRow,
   BeteiligungRow,
   DeminimisBeihilfeRow,
   DeminimisErklaerungRow,
@@ -15,9 +16,11 @@ import type {
   KundenZugriffRow,
   StammdatenRow,
   UebergabeRow,
+  VerwendungsnachweisRow,
   VollmachtRow,
   VorgangNotizRow,
   VorgangRevisionRow,
+  VnwBelegRow,
 } from '@/lib/db/types'
 
 /**
@@ -116,6 +119,10 @@ export interface KundeVorgang {
   zugriffe: { anzahl: number; liste: KundenZugriffRow[] }
   /** Interne Berater-Notizen inkl. Wiedervorlage (Migration 21), neueste zuerst. */
   notizen: VorgangNotizRow[]
+  /** Bewilligungsprozess (Migration 25): Bescheid, VNW und Belege. */
+  bescheid: BescheidRow | null
+  verwendungsnachweis: VerwendungsnachweisRow | null
+  vnwBelege: VnwBelegRow[]
 }
 
 export interface KundeDetail {
@@ -172,7 +179,7 @@ export async function holeVorgang(angebotId: string): Promise<KundeVorgang | nul
 async function holeVorgaenge(angebote: Angebot[]): Promise<KundeVorgang[]> {
   const db = supabaseServer()
   const ids = angebote.map((a) => a.id)
-  const [stammRes, betRes, kmuRes, demRes, behRes, vollRes, dokRes, fortRes, uebRes, audRes] =
+  const [stammRes, betRes, kmuRes, demRes, behRes, vollRes, dokRes, fortRes, uebRes, audRes, besRes, vnwRes, belegRes] =
     await Promise.all([
       db.from('stammdaten').select('*').in('angebot_id', ids),
       db.from('beteiligungen').select('*').in('angebot_id', ids).order('created_at', { ascending: true }),
@@ -201,6 +208,10 @@ async function holeVorgaenge(angebote: Angebot[]): Promise<KundeVorgang[]> {
         .in('angebot_id', ids)
         .order('created_at', { ascending: false })
         .limit(ids.length * MAX_AUDIT * 2),
+      // Migration 25: Bewilligungsprozess
+      db.from('bescheide').select('*').in('angebot_id', ids),
+      db.from('verwendungsnachweise').select('*').in('angebot_id', ids),
+      db.from('vnw_belege').select('*').in('angebot_id', ids).order('created_at', { ascending: true }),
     ])
 
   const stammNachAngebot = new Map((stammRes.data ?? []).map((s) => [s.angebot_id as string, s as StammdatenRow]))
@@ -208,6 +219,10 @@ async function holeVorgaenge(angebote: Angebot[]): Promise<KundeVorgang[]> {
     (demRes.data ?? []).map((d) => [d.angebot_id as string, d as DeminimisErklaerungRow]),
   )
   const vollNachAngebot = new Map((vollRes.data ?? []).map((v) => [v.angebot_id as string, v as VollmachtRow]))
+  const bescheidNachAngebot = new Map((besRes.data ?? []).map((b) => [b.angebot_id as string, b as BescheidRow]))
+  const vnwNachAngebot = new Map(
+    (vnwRes.data ?? []).map((v) => [v.angebot_id as string, v as VerwendungsnachweisRow]),
+  )
   const entwurfNachAngebot = new Map(
     (fortRes.data ?? []).map((f) => [
       f.angebot_id as string,
@@ -235,6 +250,7 @@ async function holeVorgaenge(angebote: Angebot[]): Promise<KundeVorgang[]> {
   const dokNachAngebot = gruppiere((dokRes.data ?? []) as DokumentRow[])
   const uebNachAngebot = gruppiere((uebRes.data ?? []) as UebergabeRow[], MAX_UEBERGABEN)
   const audNachAngebot = gruppiere((audRes.data ?? []) as AuditEventRow[], MAX_AUDIT)
+  const belegNachAngebot = gruppiere((belegRes.data ?? []) as VnwBelegRow[])
 
   // Revisionshistorie (Migration 19) + Notizen (Migration 21) laden und gruppieren
   const [revisionen, notizen] = await Promise.all([listeRevisionen(ids), listeNotizen(ids)])
@@ -293,5 +309,8 @@ async function holeVorgaenge(angebote: Angebot[]): Promise<KundeVorgang[]> {
       liste: zugNachAngebot.get(a.id) ?? [],
     },
     notizen: notizNachAngebot.get(a.id) ?? [],
+    bescheid: bescheidNachAngebot.get(a.id) ?? null,
+    verwendungsnachweis: vnwNachAngebot.get(a.id) ?? null,
+    vnwBelege: belegNachAngebot.get(a.id) ?? [],
   }))
 }

@@ -112,7 +112,7 @@ export async function listeVorgaengeFuerUser(userId: string): Promise<VorgangUeb
       {
         angebot: a,
         gespeicherteSchritte: Math.min(gespeichert, BEARBEITBARE_SCHRITTE),
-        eingereichteDaten: a.status === 'eingereicht' || a.status === 'abgeschlossen',
+        eingereichteDaten: a.status === 'eingereicht' || a.status === 'abgeschlossen' || a.status === 'bewilligt' || a.status === 'vnw_eingereicht',
       },
     ]
   })
@@ -163,7 +163,7 @@ export async function holeVorgangFuerUser(userId: string, angebotId: string): Pr
   const gespeichert = Object.keys((fort?.schritte ?? {}) as Record<string, unknown>).filter(
     (k) => k !== 'uebersicht',
   ).length
-  const eingereicht = angebot.status === 'eingereicht' || angebot.status === 'abgeschlossen'
+  const eingereicht = angebot.status === 'eingereicht' || angebot.status === 'abgeschlossen' || angebot.status === 'bewilligt' || angebot.status === 'vnw_eingereicht'
 
   let stammdaten: VorgangDetail['stammdaten'] = null
   let kmu: VorgangDetail['kmu'] = null

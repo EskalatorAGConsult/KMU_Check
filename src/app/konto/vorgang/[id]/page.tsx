@@ -4,6 +4,8 @@ import { notFound } from 'next/navigation'
 
 import { StatusBadge } from '@/components/konto/status-badge'
 import { requireKunde } from '@/lib/auth/guards'
+import { NachweisKontext } from '@/lib/bescheid/domain'
+import { holeBescheidBundle, holeVerwendungsnachweis, listeVnwBelege } from '@/lib/db/repositories/bescheid'
 import { holeVorgangFuerUser } from '@/lib/db/repositories/konto'
 import { CATEGORY_LABELS, formatEUR, type Category } from '@/lib/kmu'
 
@@ -28,7 +30,17 @@ export default async function VorgangPage({ params }: { params: Promise<{ id: st
   if (!vorgang) notFound()
 
   const { angebot, fortschrittProzent, stammdaten, kmu, vollmacht, deminimisSumme, dokumente } = vorgang
-  const eingereicht = angebot.status === 'eingereicht' || angebot.status === 'abgeschlossen'
+  const eingereicht = angebot.status === 'eingereicht' || angebot.status === 'abgeschlossen' || angebot.status === 'bewilligt' || angebot.status === 'vnw_eingereicht'
+
+  // Stationen nach der Einreichung (Migration 25): Aktivierung über die Domäne.
+  const [bescheidBundle, vnwRow, vnwBelege] = eingereicht
+    ? await Promise.all([holeBescheidBundle(angebot.id), holeVerwendungsnachweis(angebot.id), listeVnwBelege(angebot.id)])
+    : [null, null, []]
+  const nachweis = new NachweisKontext({
+    bescheid: bescheidBundle?.bescheid ?? null,
+    vnw: vnwRow ?? null,
+    belege: vnwBelege,
+  })
   const systemkonzept = dokumente.find((d) => d.typ === 'systemkonzept') ?? null
   const vollmachtDokument = dokumente.find((d) => d.typ === 'vollmacht') ?? null
   const angebotDokument = dokumente.find((d) => d.typ === 'angebot_pdf') ?? null
@@ -85,6 +97,61 @@ export default async function VorgangPage({ params }: { params: Promise<{ id: st
         )}
       </section>
 
+      {/* Stationen nach der Bewilligung (Migration 25) */}
+      {eingereicht && (
+        <section className="mb-8 grid gap-4 sm:grid-cols-2">
+          <Link
+            href={`/konto/vorgang/${angebot.id}/bescheid`}
+            className="flex flex-col gap-2 rounded-2xl border border-olive-200 bg-white p-5 transition-colors hover:border-teal-500"
+          >
+            <div className="flex items-center justify-between gap-2">
+              <h2 className="text-sm font-semibold text-mabe-900">Zuwendungsbescheid</h2>
+              <span
+                className={`rounded-full px-2.5 py-1 text-[11px] font-semibold ${
+                  nachweis.bescheidBestaetigt ? 'bg-teal-100 text-teal-800' : nachweis.bescheidVorhanden ? 'bg-amber-100 text-amber-800' : 'bg-olive-100 text-olive-600'
+                }`}
+              >
+                {nachweis.bescheidBestaetigt ? 'vorhanden' : nachweis.bescheidVorhanden ? 'prüfen' : 'erwartet'}
+              </span>
+            </div>
+            <p className="text-sm/6 text-olive-600">
+              Bescheid vom BAFA erhalten? Hier hochladen – wir merken uns Fristen und Auflagen.
+            </p>
+          </Link>
+          <Link
+            href={`/konto/vorgang/${angebot.id}/nachweis`}
+            aria-disabled={!nachweis.stationenAktiv}
+            className={`flex flex-col gap-2 rounded-2xl border p-5 transition-colors ${
+              nachweis.stationenAktiv
+                ? 'border-olive-200 bg-white hover:border-teal-500'
+                : 'pointer-events-none border-dashed border-olive-200 bg-olive-50/50 opacity-70'
+            }`}
+          >
+            <div className="flex items-center justify-between gap-2">
+              <h2 className="text-sm font-semibold text-mabe-900">Verwendungsnachweis</h2>
+              <span
+                className={`rounded-full px-2.5 py-1 text-[11px] font-semibold ${
+                  vnwRow?.status === 'eingereicht'
+                    ? 'bg-teal-600 text-white'
+                    : nachweis.stationenAktiv
+                      ? 'bg-amber-100 text-amber-800'
+                      : 'bg-olive-100 text-olive-600'
+                }`}
+              >
+                {vnwRow?.status === 'eingereicht'
+                  ? 'eingereicht'
+                  : nachweis.stationenAktiv
+                    ? `offen${nachweis.frist.tageRest != null ? ` · ${nachweis.frist.tageRest} T.` : ''}`
+                    : 'inaktiv'}
+              </span>
+            </div>
+            <p className="text-sm/6 text-olive-600">
+              Belege & Sachbericht für die Auszahlung. Aktiviert sich mit dem hochgeladenen Bescheid.
+            </p>
+          </Link>
+        </section>
+      )}
+
       {/* KMU-Ergebnis */}
       {kmu && (
         <section className="mb-8 overflow-hidden rounded-2xl bg-mabe-900 p-5 text-white sm:p-6">
@@ -113,13 +180,13 @@ export default async function VorgangPage({ params }: { params: Promise<{ id: st
             <Zeile label="Unternehmen" wert={String(stammdaten.unternehmensname ?? '')} />
             <Zeile
               label="Adresse"
-              wert={`${stammdaten.strasse ?? ''}, ${stammdaten.plz ?? ''} ${stammdaten.ort ?? ''}`}
+              wert={`${String(stammdaten.strasse ?? '')}, ${String(stammdaten.plz ?? '')} ${String(stammdaten.ort ?? '')}`}
             />
             <Zeile label="E-Mail (Unternehmen)" wert={String(stammdaten.email ?? '')} />
             <Zeile label="WZ-Code" wert={stammdaten.wz_code ? String(stammdaten.wz_code) : null} />
             <Zeile
               label="Ansprechpartner"
-              wert={`${stammdaten.ap_anrede ?? ''} ${stammdaten.ap_vorname ?? ''} ${stammdaten.ap_nachname ?? ''} (${stammdaten.ap_rolle ?? ''})`}
+              wert={`${String(stammdaten.ap_anrede ?? '')} ${String(stammdaten.ap_vorname ?? '')} ${String(stammdaten.ap_nachname ?? '')} (${String(stammdaten.ap_rolle ?? '')})`}
             />
             <Zeile label="E-Mail (Ansprechpartner)" wert={stammdaten.ap_email ? String(stammdaten.ap_email) : null} />
             <Zeile label="Kontoinhaber" wert={stammdaten.kontoinhaber ? String(stammdaten.kontoinhaber) : null} />

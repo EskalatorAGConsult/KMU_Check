@@ -156,6 +156,9 @@ const vorgang: KundeVorgang = {
     },
   ],
   bearbeiter: { 'admin-1': 'Robin Berater (robin@eskalator.ag)' },
+  bescheid: null,
+  verwendungsnachweis: null,
+  vnwBelege: [],
   notizen: [
     {
       id: 'n1',

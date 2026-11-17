@@ -38,8 +38,8 @@ describe('Statusmaschine (admin/status.ts)', () => {
     }
   })
 
-  it('abgeschlossen erlaubt nur die fachliche Korrektur zurueck auf eingereicht', () => {
-    expect(erlaubteZiele('abgeschlossen')).toEqual(['eingereicht'])
+  it('abgeschlossen erlaubt Korrektur zurueck auf eingereicht und den Bewilligungsprozess (Migration 25)', () => {
+    expect(erlaubteZiele('abgeschlossen')).toEqual(['eingereicht', 'bewilligt'])
     expect(istUebergangErlaubt('abgeschlossen', 'angelegt')).toBe(false)
   })
 

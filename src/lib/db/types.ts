@@ -10,6 +10,8 @@ export type AngebotStatus =
   | 'in_bearbeitung'
   | 'eingereicht'
   | 'abgeschlossen'
+  | 'bewilligt'
+  | 'vnw_eingereicht'
   | 'widerrufen'
 
 export type Technologie = 'software' | 'messtechnik' | 'steuerung'
@@ -262,5 +264,54 @@ export interface VorgangNotizRow {
   text: string
   /** ISO-Datum JJJJ-MM-TT oder null. */
   wiedervorlage_am: string | null
+  created_at: string
+}
+
+// ---------- Bewilligung & Verwendungsnachweis (Migration 25) ----------
+
+export type VnwStatus = 'offen' | 'in_bearbeitung' | 'eingereicht'
+export type VnwBelegKategorie = 'rechnung' | 'zahlungsnachweis' | 'sonstiges'
+
+/** Zuwendungsbescheid (1:1 zum Angebot): OCR-Vorbefüllung + bestätigte Daten. */
+export interface BescheidRow {
+  angebot_id: string
+  hochgeladen_von: string
+  erhalten_am: string
+  aktenzeichen: string | null
+  bewilligt_am: string | null
+  foerderquote_pct: 25 | 35 | 45 | null
+  foerdersumme_eur: number | null
+  durchfuehrung_von: string | null
+  durchfuehrung_bis: string | null
+  vnw_frist_am: string | null
+  ocr: Record<string, unknown> | null
+  ocr_am: string | null
+  bestaetigt_am: string | null
+  bestaetigt_von: string | null
+  auflagen: string[] | null
+  notiz: string | null
+  created_at: string
+  updated_at: string
+}
+
+/** Verwendungsnachweis (1:1): Sachbericht, Belege-Referenzen, Einreichung. */
+export interface VerwendungsnachweisRow {
+  angebot_id: string
+  status: VnwStatus
+  vorlagefrist_am: string | null
+  sachbericht: string | null
+  eingereicht_am: string | null
+  eingereicht_von: string | null
+  created_at: string
+  updated_at: string
+}
+
+/** Einzelner VNW-Beleg (Datei in dokumente, Metadaten hier). */
+export interface VnwBelegRow {
+  id: string
+  angebot_id: string
+  dokument_id: string
+  kategorie: VnwBelegKategorie
+  betrag_eur: number | null
   created_at: string
 }
