@@ -2,6 +2,8 @@ import 'server-only'
 
 import { get, put } from '@vercel/blob'
 
+import { env } from '@/env'
+
 /**
  * Dokumenten-Storage ueber Vercel Blob.
  *
@@ -19,12 +21,12 @@ import { get, put } from '@vercel/blob'
  * Blob-Store „MABE" heisst). Token anlegen: Vercel Dashboard -> Storage -> Blob.
  */
 export function blobToken(): string | undefined {
-  return process.env.BLOB_READ_WRITE_TOKEN ?? process.env.MABE_READ_WRITE_TOKEN
+  return env.BLOB_READ_WRITE_TOKEN ?? env.MABE_READ_WRITE_TOKEN
 }
 
 /** Zugriffsmodus des Stores (private ist Vercel-Standard; public nur via ENV). */
 export function blobZugriff(): 'private' | 'public' {
-  return process.env.BLOB_ACCESS === 'public' ? 'public' : 'private'
+  return env.BLOB_ACCESS === 'public' ? 'public' : 'private'
 }
 
 /** Laedt Bytes in den Blob-Store und gibt die (private) Blob-URL zurueck. */

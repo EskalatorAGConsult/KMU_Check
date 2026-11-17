@@ -2,6 +2,8 @@
 
 import { revalidatePath } from 'next/cache'
 
+import { env } from '@/env'
+
 import { requireAdmin } from '@/lib/auth/guards'
 import { holeEinstellung, setzeEinstellung } from '@/lib/db/repositories/einstellungen'
 import { audit } from '@/lib/db/repositories/journey'
@@ -51,7 +53,7 @@ export async function testeWebhook(): Promise<WebhookTestErgebnis> {
   } catch (e) {
     return { ok: false, fehler: e instanceof Error ? e.message : 'Einstellung nicht lesbar.' }
   }
-  const { url, quelle } = loeseWebhookAuf(dbWert, process.env.WEBHOOK_URL)
+  const { url, quelle } = loeseWebhookAuf(dbWert, env.WEBHOOK_URL)
   if (!url) {
     return { ok: false, fehler: 'Keine Webhook-URL konfiguriert (weder in den Einstellungen noch als ENV).' }
   }

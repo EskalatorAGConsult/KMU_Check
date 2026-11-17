@@ -90,7 +90,7 @@ export async function waehleSystemkonzeptVorlage(angebotId: string, vorlageUrl: 
     if (!hostOk || !pfadOk) {
       return { ok: false, fehler: 'Ungültige Vorlagen-URL (nur eigene Blob-Vorlagen erlaubt).' }
     }
-    await setzeDokument(angebotId, vorlageUrl, `vorlage:${u.pathname.split('/').pop()}`, session.user.id)
+    await setzeDokument(angebotId, vorlageUrl, `vorlage:${u.pathname.split('/').pop() ?? u.pathname}`, session.user.id)
     return { ok: true, hinweis: 'Standard-Systemkonzept zugeordnet.' }
   } catch (e) {
     return { ok: false, fehler: e instanceof Error ? e.message : 'Zuordnung fehlgeschlagen.' }

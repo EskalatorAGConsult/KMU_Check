@@ -113,7 +113,7 @@ export async function generiereFallaktePdf(v: KundeVorgang): Promise<Uint8Array>
         kurz(
           `${k.jae ?? fehlt} JAE · Umsatz ${eur(k.umsatz)} · Bilanz ${eur(k.bilanzsumme)}` +
             (k.kategorie
-              ? ` -> ${CATEGORY_LABELS[k.kategorie as Category] ?? k.kategorie} · ${k.foerderquote_pct} %`
+              ? ` -> ${CATEGORY_LABELS[k.kategorie as Category] ?? k.kategorie} · ${k.foerderquote_pct ?? fehlt} %`
               : ''),
         ),
       )

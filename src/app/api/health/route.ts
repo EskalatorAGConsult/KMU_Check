@@ -1,6 +1,8 @@
 import { NextResponse } from 'next/server'
 import pg from 'pg'
 
+import { env } from '@/env'
+
 import { pgSsl } from '@/lib/db/ssl'
 
 /**
@@ -28,18 +30,19 @@ const ENV_NAMEN = [
   'BLOB_READ_WRITE_TOKEN',
   'OPENREGISTER_API_KEY',
   'GEMINI_API_KEY',
-] as const
+] as const satisfies readonly (keyof typeof env)[]
 
 export async function GET() {
-  const env = Object.fromEntries(ENV_NAMEN.map((n) => [n, !!process.env[n]]))
+  const umgebung = Object.fromEntries(ENV_NAMEN.map((n) => [n, env[n] !== undefined]))
   // Blob-Token: Standardname ODER Store-praefixter Name (Store „MABE") zaehlt
-  env.BLOB_READ_WRITE_TOKEN = !!(process.env.BLOB_READ_WRITE_TOKEN ?? process.env.MABE_READ_WRITE_TOKEN)
+  umgebung.BLOB_READ_WRITE_TOKEN =
+    env.BLOB_READ_WRITE_TOKEN !== undefined || env.MABE_READ_WRITE_TOKEN !== undefined
 
   let datenbank = false
   let dbFehler: string | null = null
-  if (env.DATABASE_URL) {
+  if (umgebung.DATABASE_URL) {
     const pool = new pg.Pool({
-      connectionString: process.env.DATABASE_URL,
+      connectionString: env.DATABASE_URL,
       ssl: pgSsl(),
       max: 1,
       connectionTimeoutMillis: 5000,
@@ -56,6 +59,6 @@ export async function GET() {
     dbFehler = 'DATABASE_URL ist nicht gesetzt'
   }
 
-  const ok = datenbank && Object.values(env).every(Boolean)
-  return NextResponse.json({ ok, datenbank, dbFehler, env }, { status: ok ? 200 : 503 })
+  const ok = datenbank && Object.values(umgebung).every(Boolean)
+  return NextResponse.json({ ok, datenbank, dbFehler, env: umgebung }, { status: ok ? 200 : 503 })
 }

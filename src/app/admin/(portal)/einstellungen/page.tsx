@@ -1,5 +1,7 @@
 import type { Metadata } from 'next'
 
+import { env } from '@/env'
+
 import { EmailTestButton } from '@/components/admin/email-test-button'
 import { LeadEmpfaengerForm } from '@/components/admin/lead-empfaenger-form'
 import { WebhookForm } from '@/components/admin/webhook-form'
@@ -29,7 +31,7 @@ function maskiere(url: string): string {
 
 export default async function EinstellungenPage() {
   const dbWert = (await holeEinstellung('webhook_url')) ?? ''
-  const aufloesung = loeseWebhookAuf(dbWert, process.env.WEBHOOK_URL)
+  const aufloesung = loeseWebhookAuf(dbWert, env.WEBHOOK_URL)
   const dbEmpfaenger = (await holeEinstellung('lead_email_empfaenger')) ?? ''
   const leadEmpfaenger = await ermittleLeadEmpfaenger()
   const mailKeyGesetzt = resendClient() !== null

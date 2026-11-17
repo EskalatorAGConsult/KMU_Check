@@ -1,6 +1,8 @@
 import { betterAuth } from 'better-auth'
 import { Pool } from 'pg'
 
+import { env } from '@/env'
+
 import { pgSsl } from '@/lib/db/ssl'
 import { sendePasswortReset, sendeWillkommen } from '@/lib/email/notify'
 
@@ -18,10 +20,10 @@ import { sendePasswortReset, sendeWillkommen } from '@/lib/email/notify'
  * ein Mail-Ausfall blockiert den Auth-Flow nicht.
  */
 export const auth = betterAuth({
-  baseURL: process.env.BETTER_AUTH_URL ?? 'http://localhost:3000',
-  secret: process.env.BETTER_AUTH_SECRET,
+  baseURL: env.BETTER_AUTH_URL ?? 'http://localhost:3000',
+  secret: env.BETTER_AUTH_SECRET,
   database: new Pool({
-    connectionString: process.env.DATABASE_URL,
+    connectionString: env.DATABASE_URL,
     // verify-full mit gepinnter Supabase-Root-CA (certs/supabase-prod-ca.crt)
     ssl: pgSsl(),
     max: 5,

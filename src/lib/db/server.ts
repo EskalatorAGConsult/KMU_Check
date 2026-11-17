@@ -1,5 +1,7 @@
 import { createClient, type SupabaseClient } from '@supabase/supabase-js'
 
+import { env } from '@/env'
+
 /**
  * Serverseitiger Supabase-Client (Service-Role, bypassed RLS – unsere
  * Autorisierung erfolgt in den Guards/Repositories, RLS ist zusaetzliche
@@ -14,8 +16,8 @@ let cached: SupabaseClient | null = null
 
 export function supabaseServer(): SupabaseClient {
   if (cached) return cached
-  const url = process.env.NEXT_PUBLIC_SUPABASE_URL
-  const key = process.env.SUPABASE_SERVICE_ROLE_KEY
+  const url = env.NEXT_PUBLIC_SUPABASE_URL
+  const key = env.SUPABASE_SERVICE_ROLE_KEY
   if (!url || !key) {
     throw new Error('SUPABASE: NEXT_PUBLIC_SUPABASE_URL oder SUPABASE_SERVICE_ROLE_KEY fehlt.')
   }

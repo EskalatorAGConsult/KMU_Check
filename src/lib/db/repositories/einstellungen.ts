@@ -1,5 +1,7 @@
 import 'server-only'
 
+import { env } from '@/env'
+
 import { supabaseServer } from '@/lib/db/server'
 
 /**
@@ -38,7 +40,7 @@ export async function ermittleWebhookUrl(): Promise<{
   } catch (e) {
     console.error('[einstellungen] webhook_url nicht lesbar, nutze ENV-Fallback:', e)
   }
-  return loeseWebhookAuf(dbWert, process.env.WEBHOOK_URL)
+  return loeseWebhookAuf(dbWert, env.WEBHOOK_URL)
 }
 
 /** Standard-Empfaenger fuer Lead-Benachrichtigungen (Landingpage-KMU-Check). */
@@ -66,8 +68,8 @@ export async function ermittleLeadEmpfaenger(): Promise<{
     console.error('[einstellungen] lead_email_empfaenger nicht lesbar:', e)
   }
   if (dbWert && parse(dbWert).length > 0) return { empfaenger: parse(dbWert), quelle: 'datenbank' }
-  if (process.env.LEAD_EMAIL_AN && parse(process.env.LEAD_EMAIL_AN).length > 0) {
-    return { empfaenger: parse(process.env.LEAD_EMAIL_AN), quelle: 'umgebung' }
+  if (env.LEAD_EMAIL_AN && parse(env.LEAD_EMAIL_AN).length > 0) {
+    return { empfaenger: parse(env.LEAD_EMAIL_AN), quelle: 'umgebung' }
   }
   return { empfaenger: [LEAD_EMPFAENGER_STANDARD], quelle: 'standard' }
 }

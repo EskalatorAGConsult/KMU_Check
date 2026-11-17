@@ -1,5 +1,7 @@
 import type { Metadata } from 'next'
 
+import { env } from '@/env'
+
 import { BenutzerVerwaltung } from '@/components/admin/benutzer-verwaltung'
 import { requireAdmin } from '@/lib/auth/guards'
 import { listeBenutzer, listeEinladungen } from '@/lib/db/repositories/benutzer'
@@ -10,7 +12,7 @@ export const dynamic = 'force-dynamic'
 export default async function BenutzerPage() {
   const session = await requireAdmin()
   const [benutzer, einladungen] = await Promise.all([listeBenutzer(), listeEinladungen()])
-  const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? ''
+  const appUrl = env.NEXT_PUBLIC_APP_URL ?? ''
 
   return (
     <div className="flex max-w-4xl flex-col gap-6">

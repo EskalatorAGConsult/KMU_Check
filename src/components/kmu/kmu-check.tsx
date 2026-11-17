@@ -116,9 +116,13 @@ export function KmuCheck() {
       const data = collectTracking()
       trackingRef.current = data
       if (hatEinwilligung('statistik')) {
-        enrichWithFingerprint(data).then((d) => {
-          trackingRef.current = d
-        })
+        enrichWithFingerprint(data)
+          .then((d) => {
+            trackingRef.current = d
+          })
+          // Fingerprint ist optional (siehe tracking.ts) – ein Scheitern darf
+          // die Lead-Übergabe nie blockieren.
+          .catch(() => undefined)
       }
     }
     aktualisiereTracking()

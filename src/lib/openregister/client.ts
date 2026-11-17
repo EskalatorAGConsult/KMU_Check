@@ -1,5 +1,7 @@
 import 'server-only'
 
+import { env } from '@/env'
+
 import { mergeSuchTreffer, normalisiereSuchbegriff } from './mapping'
 
 /**
@@ -76,7 +78,7 @@ export interface OrHolding {
 // ---------- HTTP-Helfer ----------
 
 function apiKey(): string | null {
-  return process.env.OPENREGISTER_API_KEY || null
+  return env.OPENREGISTER_API_KEY || null
 }
 
 async function rufeApi<T>(pfad: string): Promise<T | null> {

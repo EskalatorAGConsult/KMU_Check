@@ -287,23 +287,23 @@ export async function bearbeiteStammdaten(
   }
   if (eingabe.iban !== undefined && eingabe.iban.trim() !== '') {
     const p = pruefeIban(eingabe.iban)
-    if (!p.ok) return { ok: false, fehler: `IBAN: ${p.fehler}` }
+    if (!p.ok) return { ok: false, fehler: `IBAN: ${p.fehler ?? 'Ungültige Eingabe.'}` }
   }
   if (eingabe.steuer_id !== undefined && eingabe.steuer_id.trim() !== '') {
     const p = pruefeSteuerId(eingabe.steuer_id)
-    if (!p.ok) return { ok: false, fehler: `Steuer-ID: ${p.fehler}` }
+    if (!p.ok) return { ok: false, fehler: `Steuer-ID: ${p.fehler ?? 'Ungültige Eingabe.'}` }
   }
   if (eingabe.ust_id !== undefined && eingabe.ust_id.trim() !== '') {
     const p = pruefeUstId(eingabe.ust_id)
-    if (!p.ok) return { ok: false, fehler: `USt-IdNr.: ${p.fehler}` }
+    if (!p.ok) return { ok: false, fehler: `USt-IdNr.: ${p.fehler ?? 'Ungültige Eingabe.'}` }
   }
   if (eingabe.wz_code !== undefined && eingabe.wz_code.trim() !== '') {
     const p = pruefeWzCode(eingabe.wz_code)
-    if (!p.ok) return { ok: false, fehler: `WZ-Code: ${p.fehler}` }
+    if (!p.ok) return { ok: false, fehler: `WZ-Code: ${p.fehler ?? 'Ungültige Eingabe.'}` }
   }
   if (eingabe.steuernummer !== undefined && eingabe.steuernummer.trim() !== '') {
     const p = pruefeSteuernummer(eingabe.steuernummer)
-    if (!p.ok) return { ok: false, fehler: `Steuernummer: ${p.fehler}` }
+    if (!p.ok) return { ok: false, fehler: `Steuernummer: ${p.fehler ?? 'Ungültige Eingabe.'}` }
   }
   if (eingabe.geburtsdatum !== undefined && eingabe.geburtsdatum.trim() !== '' && !datumOderNull(eingabe.geburtsdatum)) {
     return { ok: false, fehler: 'Geburtsdatum muss im Format JJJJ-MM-TT vorliegen.' }

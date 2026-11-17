@@ -22,6 +22,7 @@
     "@fingerprintjs/fingerprintjs": "^4.6.2",
     "@supabase/ssr": "^0.12.5",
     "@supabase/supabase-js": "^2.112.4",
+    "@t3-oss/env-core": "^0.13.11",
     "@tailwindplus/elements": "0.0.0-insiders.98ea4bc",
     "@vercel/blob": "^2.8.0",
     "better-auth": "^1.7.2",
@@ -44,6 +45,7 @@
     "@types/react-dom": "^19",
     "eslint": "^9",
     "eslint-config-next": "^16",
+    "msw": "^2.15.0",
     "typescript": "^5",
     "vitest": "^4.1.11"
   }
