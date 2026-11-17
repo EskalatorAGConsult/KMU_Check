@@ -33,6 +33,7 @@ const EXPECTED = [
   'angebote', 'journey_tokens', 'journey_fortschritt', 'stammdaten', 'beteiligungen',
   'kmu_bewertungen', 'deminimis_beihilfen', 'deminimis_erklaerungen', 'vollmachten',
   'dokumente', 'uebergaben', 'audit_events', 'einstellungen', 'benutzer_einladungen',
+  'bescheide', 'verwendungsnachweise', 'vnw_belege',
 ]
 const { rows: tables } = await client.query(
   `select relname, relrowsecurity from pg_class
@@ -40,7 +41,7 @@ const { rows: tables } = await client.query(
    order by relname`,
   [EXPECTED],
 )
-ok('Alle 14 Tabellen vorhanden', tables.length === 14, `${tables.length}/14`)
+ok('Alle 17 Tabellen vorhanden', tables.length === 17, `${tables.length}/17`)
 const noRls = tables.filter((t) => !t.relrowsecurity).map((t) => t.relname)
 ok('RLS auf allen Tabellen aktiv', noRls.length === 0, noRls.join(',') || 'alle')
 
@@ -66,7 +67,9 @@ ok('uuid_v7() liefert UUID Version 7', uv.u1.charAt(14) === '7', uv.u1)
 ok('uuid_v7() ist zeit-sortiert (Monotonie ueber ms-Grenze)', uv.monoton === true)
 const { rows: [ud] } = await client.query(
   `select count(*)::int as n from pg_attrdef where pg_get_expr(adbin, adrelid) like '%uuid_v7%'`)
-ok('uuid_v7-Default auf allen 9 ID-Spalten', ud.n === 9, `${ud.n}/9`)
+// 13 = Kernschema (9) + Migrationen 19–24 (vorgang_revisionen, kunden_zugriffe,
+// vorgang_notizen) + Migration 25 (vnw_belege) – live verifiziert 17.11.2026.
+ok('uuid_v7-Default auf allen 13 ID-Spalten', ud.n === 13, `${ud.n}/13`)
 
 // 3 · Constraint-Verhalten (Transaktion + Rollback)
 await client.query('begin')
@@ -156,6 +159,52 @@ await expectError(
     ['00000000-0000-0000-0000-000000000002']),
   /personenart|check/i)
 
+// Migration 25 · Bescheid & Verwendungsnachweis (Positiv- + Negativfaelle)
+const { rows: [dok] } = await ins(
+  `insert into dokumente (angebot_id, typ, storage_path) values ($1, 'bescheid', 'verify://bescheid.pdf') returning id`,
+  [ag.id])
+ok('Positiv: Bescheid-Dokument (typ bescheid) anlegbar', !!dok?.id)
+
+await ins(
+  `insert into bescheide (angebot_id, hochgeladen_von, aktenzeichen, bewilligt_am, foerderquote_pct,
+     foerdersumme_eur, durchfuehrung_von, durchfuehrung_bis, vnw_frist_am, bestaetigt_am, bestaetigt_von)
+   values ($1, $2, 'BAFA-2026-XYZ', current_date - 30, 45, 12500, current_date - 30, current_date + 300, current_date + 390, now(), $2)`,
+  [ag.id, admin])
+ok('Positiv: Bescheid mit Zeitraum, Frist und Bestätigung anlegbar', true)
+
+await ins(
+  `insert into verwendungsnachweise (angebot_id, status, vorlagefrist_am, sachbericht)
+   values ($1, 'in_bearbeitung', current_date + 390, 'Umsetzung abgeschlossen.')`,
+  [ag.id])
+ok('Positiv: Verwendungsnachweis (in_bearbeitung) anlegbar', true)
+
+await ins(
+  `insert into vnw_belege (angebot_id, dokument_id, kategorie, betrag_eur)
+   values ($1, $2, 'rechnung', 8500)`,
+  [ag.id, dok.id])
+ok('Positiv: VNW-Beleg mit Betrag anlegbar', true)
+
+await expectError(
+  'Negativ: Bescheid-Zeitraum von > bis abgelehnt',
+  () => ins(
+    `update bescheide set durchfuehrung_von = current_date + 10, durchfuehrung_bis = current_date where angebot_id = $1`,
+    [ag.id]),
+  /durchfuehrung|check/i)
+await expectError(
+  'Negativ: Förderquote 30 im Bescheid abgelehnt (nur 25/35/45)',
+  () => ins(`update bescheide set foerderquote_pct = 30 where angebot_id = $1`, [ag.id]),
+  /foerderquote|check/i)
+await expectError(
+  'Negativ: VNW-Frist vor Bewilligungsdatum abgelehnt',
+  () => ins(
+    `update bescheide set vnw_frist_am = current_date - 100 where angebot_id = $1`,
+    [ag.id]),
+  /vnw_frist|check/i)
+await expectError(
+  'Negativ: VNW-Status außerhalb des Enum abgelehnt',
+  () => ins(`update verwendungsnachweise set status = 'erledigt' where angebot_id = $1`, [ag.id]),
+  /vnw_status|invalid input/i)
+
 // 4 · updated_at-Trigger
 // Hinweis: now() ist transaktionskonstant – ein Zeitvergleich innerhalb derselben
 // Transaktion beweist nichts. Beweis stattdessen: updated_at manuell auf die
@@ -181,6 +230,10 @@ for (const role of ['anon', 'authenticated']) {
   await expectError(
     `Rechte: Rolle '${role}' kann einstellungen nicht lesen`,
     () => client.query('select * from einstellungen limit 1'),
+    /permission denied/i)
+  await expectError(
+    `Rechte: Rolle '${role}' kann bescheide nicht lesen`,
+    () => client.query('select * from bescheide limit 1'),
     /permission denied/i)
   await client.query('rollback')
 }
