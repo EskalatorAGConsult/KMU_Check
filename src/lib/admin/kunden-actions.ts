@@ -284,3 +284,44 @@ export async function loescheVorgangDsgvo(angebotId: string, bestaetigung: strin
     return { ok: false, fehler: e instanceof Error ? e.message : 'Löschung fehlgeschlagen.' }
   }
 }
+
+/**
+ * Archiviert einen Vorgang direkt aus der Listenansicht (schneller Weg,
+ * ohne Fallakte zu oeffnen). Nur aus abgeschlossen/bewilligt/vnw_eingereicht
+ * moeglich. Reaktivierung ueber denselben Toggle.
+ */
+export async function archiviereVorgangSchnell(
+  angebotId: string,
+  archivieren: boolean,
+): Promise<KundeActionErgebnis> {
+  const session = await requireAdmin()
+  const angebot = await holeAngebot(angebotId)
+  if (!angebot) return { ok: false, fehler: 'Vorgang nicht gefunden.' }
+
+  const ziel: AngebotStatus = archivieren ? 'archiviert' : 'vnw_eingereicht'
+  if (angebot.status === ziel) return { ok: true, hinweis: 'Status ist bereits aktuell.' }
+  if (!istUebergangErlaubt(angebot.status, ziel)) {
+    return { ok: false, fehler: `Archivieren aus Status „${ANGEBOT_STATUS_LABELS[angebot.status]}" nicht möglich.` }
+  }
+
+  try {
+    await setzeAngebotStatus(angebotId, ziel)
+    await speichereRevision(angebotId, session.user.id, 'angebot', {
+      status: { alt: angebot.status, neu: ziel },
+    })
+    await audit(angebotId, `admin:${session.user.id}`, archivieren ? 'vorgang_archiviert' : 'vorgang_reaktiviert', {
+      von: angebot.status,
+      nach: ziel,
+    })
+    revalidatePath('/admin')
+    revalidatePath('/admin/kunden')
+    return {
+      ok: true,
+      hinweis: archivieren
+        ? `${angebot.angebot_nr} wurde archiviert.`
+        : `${angebot.angebot_nr} wurde reaktiviert.`,
+    }
+  } catch (e) {
+    return { ok: false, fehler: e instanceof Error ? e.message : 'Archivieren fehlgeschlagen.' }
+  }
+}

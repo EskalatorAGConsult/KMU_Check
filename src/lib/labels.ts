@@ -86,6 +86,7 @@ export const ANGEBOT_STATUS_LABELS: Record<AngebotStatus, string> = {
   abgeschlossen: 'Antrag gestellt',
   bewilligt: 'Bewilligt (Bescheid liegt vor)',
   vnw_eingereicht: 'Verwendungsnachweis eingereicht',
+  archiviert: 'Archiviert',
   widerrufen: 'Widerrufen',
 }
 
@@ -108,6 +109,7 @@ export const ANGEBOT_STATUS_KURZ: Record<AngebotStatus, string> = {
   abgeschlossen: 'Antrag gestellt',
   bewilligt: 'Bewilligt',
   vnw_eingereicht: 'VNW da',
+  archiviert: 'Archiviert',
   widerrufen: 'Widerrufen',
 }
 

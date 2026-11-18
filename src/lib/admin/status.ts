@@ -15,11 +15,13 @@ export const STATUS_TRANSITIONEN: Record<AngebotStatus, readonly AngebotStatus[]
   eingereicht: ['abgeschlossen', 'in_bearbeitung', 'widerrufen', 'bewilligt'],
   // 'abgeschlossen' = Antrag beim BAFA gestellt; danach folgt der Bewilligungs-
   //prozess (Migration 25). Ruecksprung nur als fachliche Korrektur.
-  abgeschlossen: ['eingereicht', 'bewilligt'],
+  abgeschlossen: ['eingereicht', 'bewilligt', 'archiviert'],
   // Bescheid liegt bestaetigt vor: VNW einreichen oder zurueckkorrigieren
-  bewilligt: ['abgeschlossen', 'vnw_eingereicht', 'widerrufen'],
-  // VNW eingereicht: Korrektur zurueck (z. B. BAFA fordert nach)
-  vnw_eingereicht: ['bewilligt'],
+  bewilligt: ['abgeschlossen', 'vnw_eingereicht', 'archiviert', 'widerrufen'],
+  // VNW eingereicht: Korrektur zurueck oder archivieren
+  vnw_eingereicht: ['bewilligt', 'archiviert'],
+  // Archiviert: fertiger Vorgang aus der Aktiv-Ansicht entfernt
+  archiviert: ['vnw_eingereicht'],
   // Widerrufen ist terminal (Links sind ungueltig, Daten bleiben archiviert)
   widerrufen: [],
 }

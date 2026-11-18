@@ -12,6 +12,7 @@ export type AngebotStatus =
   | 'abgeschlossen'
   | 'bewilligt'
   | 'vnw_eingereicht'
+  | 'archiviert'
   | 'widerrufen'
 
 export type Technologie = 'software' | 'messtechnik' | 'steuerung'
