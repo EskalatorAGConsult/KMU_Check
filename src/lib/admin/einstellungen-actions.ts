@@ -69,7 +69,6 @@ export async function testeWebhook(): Promise<WebhookTestErgebnis> {
         ausgeloest_von: session.user.email,
         at: new Date().toISOString(),
       }),
-      signal: AbortSignal.timeout(10_000),
     })
     await audit(null, `admin:${session.user.id}`, 'webhook_test', { status: res.status, quelle })
     if (!res.ok) return { ok: false, fehler: `Webhook antwortete mit HTTP ${res.status}.` }
