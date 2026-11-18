@@ -95,7 +95,7 @@ export function RegisterSuche({ onUebernehmen }: { onUebernehmen: (ergebnis: Ver
         <span className="font-normal text-olive-500">(optional)</span>
       </label>
       <p className="mt-1 text-xs/5 text-olive-600">
-        Wir füllen Beschäftigte, Finanzzahlen und Beteiligungsverhältnisse automatisch vor – Sie prüfen die Werte
+        Wir füllen Beschäftigte, Finanzzahlen und Beteiligungsverhältnisse automatisch vor, Sie prüfen die Werte
         anschließend nur noch. Kein Eintrag im Handelsregister (z. B. Einzelunternehmen)? Einfach darunter von Hand
         eingeben.
       </p>
@@ -159,7 +159,7 @@ export function RegisterSuche({ onUebernehmen }: { onUebernehmen: (ergebnis: Ver
       )}
       {keinTreffer && !sucht && (
         <p className="mt-2 text-xs/5 text-olive-500" role="status">
-          Kein Treffer im Handelsregister – dann einfach unten manuell weiter.
+          Kein Treffer im Handelsregister, dann einfach unten manuell weiter.
         </p>
       )}
       {fehler && (

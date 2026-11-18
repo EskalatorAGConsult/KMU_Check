@@ -12,7 +12,7 @@ import { RegisterSuche } from './register-suche'
  * wir laden Gesellschafter + Beteiligungen + veröffentlichte Kennzahlen aus
  * dem Handelsregister/Bundesanzeiger (OpenRegister) inkl. aller Folgestufen
  * der Beteiligungskette und befüllen auf Wunsch die Formularfelder vor.
- * Alles bleibt editierbar – der Kunde prüft und bestätigt.
+ * Alles bleibt editierbar, der Kunde prüft und bestätigt.
  *
  * Hat der Kunde seine Firma bereits im Schritt „Ihr Unternehmen" gewählt,
  * wird das Ergebnis ueber `initialRegisterId` automatisch nachgeladen
@@ -208,7 +208,7 @@ export function VerbundSuche({
                     </div>
                     {(b.jae !== undefined || b.umsatz !== undefined || b.bilanzsumme !== undefined) && (
                       <p className="mt-2 text-xs/5 text-olive-600">
-                        Veröffentlichte Kennzahlen: {zahl(b.jae)} Beschäftigte · Umsatz {euro(b.umsatz)} · Bilanzsumme{' '}
+                        Veröffentlichte Kennzahlen: {zahl(b.jae)} Beschäftigte, Umsatz {euro(b.umsatz)}, Bilanzsumme{' '}
                         {euro(b.bilanzsumme)}
                       </p>
                     )}

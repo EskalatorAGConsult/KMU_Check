@@ -51,8 +51,7 @@ export default async function BescheidPage({ params }: { params: Promise<{ id: s
       </Link>
 
       <header className="mt-4 mb-8">
-        <p className="text-xs font-semibold tracking-wide text-teal-700 uppercase">Nächster Schritt</p>
-        <h1 className="mt-1 font-display text-2xl font-semibold text-mabe-900 sm:text-3xl">Zuwendungsbescheid</h1>
+                <h1 className="mt-1 min-w-0 font-display text-2xl font-semibold text-balance break-words text-mabe-900 sm:text-3xl" style={{ overflowWrap: 'break-word', minWidth: 0 }}>Zuwendungsbescheid</h1>
         <div className="mt-2 flex flex-wrap items-center gap-2 text-sm/6 text-olive-600">
           <span className="font-semibold text-mabe-900">{angebot.angebot_nr}</span>
           <span>·</span>
@@ -60,7 +59,7 @@ export default async function BescheidPage({ params }: { params: Promise<{ id: s
           <StatusBadge status={angebot.status as AngebotStatus} />
         </div>
         <p className="mt-3 max-w-xl text-sm/6 text-olive-600">
-          Geschafft – das BAFA hat bewilligt? Dann wird Ihr Zuschuss jetzt Wirklichkeit. Laden Sie den
+          Geschafft, das BAFA hat bewilligt? Dann wird Ihr Zuschuss jetzt Wirklichkeit. Laden Sie den
           Bescheid hoch: Wir merken uns Fristen und Auflagen und begleiten Sie bis zur Auszahlung.
         </p>
       </header>

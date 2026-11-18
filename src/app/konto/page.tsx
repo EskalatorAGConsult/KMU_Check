@@ -31,7 +31,7 @@ export default async function KontoPage() {
           <h2 className="text-lg font-semibold text-mabe-900">Noch kein Vorgang verknüpft</h2>
           <p className="text-sm/6 text-olive-600">
             Sobald Sie Ihren persönlichen Link aus der MABE-Einladung öffnen, wird der Vorgang automatisch Ihrem
-            Konto zugeordnet und erscheint hier – inklusive Status und Ihrer Angaben.
+            Konto zugeordnet und erscheint hier, inklusive Status und Ihrer Angaben.
           </p>
           <p className="text-sm/6 text-olive-600">
             Keinen Link erhalten? Wenden Sie sich an Ihren MABE-Ansprechpartner.

@@ -121,7 +121,7 @@ export function KmuAbleitung({ ergebnis }: { ergebnis: KmuResult }) {
                 key={z.key}
                 role="listitem"
                 aria-current={aktiv ? 'true' : undefined}
-                className={`rounded-xl border px-3 py-2.5 text-center transition-all ${
+                className={`rounded-xl border px-3 py-2.5 text-center transition-colors ${
                   aktiv
                     ? 'border-teal-600 bg-teal-50 shadow-sm ring-1 ring-teal-600/40'
                     : 'border-olive-200 bg-olive-50/50'

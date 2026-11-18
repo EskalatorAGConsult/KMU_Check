@@ -50,13 +50,12 @@ export default async function NachweisPage({ params }: { params: Promise<{ id: s
       </Link>
 
       <header className="mt-4 mb-8">
-        <p className="text-xs font-semibold tracking-wide text-teal-700 uppercase">Letzter Schritt zur Auszahlung</p>
-        <h1 className="mt-1 font-display text-2xl font-semibold text-mabe-900 sm:text-3xl">Verwendungsnachweis</h1>
+                <h1 className="mt-1 min-w-0 font-display text-2xl font-semibold text-balance break-words text-mabe-900 sm:text-3xl" style={{ overflowWrap: 'break-word', minWidth: 0 }}>Verwendungsnachweis</h1>
         <p className="mt-2 text-sm/6 text-olive-600">
           <strong className="text-mabe-900">{angebot.angebot_nr}</strong> · {angebot.kunde_firma}
         </p>
         <p className="mt-3 max-w-xl text-sm/6 text-olive-600">
-          Mit dem Verwendungsnachweis belegen Sie, dass die Maßnahme wie bewilligt umgesetzt wurde – Rechnungen,
+          Mit dem Verwendungsnachweis belegen Sie, dass die Maßnahme wie bewilligt umgesetzt wurde, Rechnungen,
           Zahlungen und ein kurzer Sachbericht. Erst danach zahlt das BAFA den Zuschuss aus.
         </p>
       </header>
@@ -75,14 +74,14 @@ export default async function NachweisPage({ params }: { params: Promise<{ id: s
         <section className="rounded-2xl border border-dashed border-olive-300 bg-white p-8 text-center">
           <p className="text-base font-semibold text-mabe-900">Noch ohne Zuwendungsbescheid</p>
           <p className="mx-auto mt-2 max-w-md text-sm/6 text-olive-600">
-            Diese Station wird aktiv, sobald der Zuwendungsbescheid hochgeladen ist – dann erscheinen hier
+            Diese Station wird aktiv, sobald der Zuwendungsbescheid hochgeladen ist, dann erscheinen hier
             Durchführungszeitraum, Vorlagefrist und die Belegsammlung.
           </p>
           <Link
             href={`/konto/vorgang/${id}/bescheid`}
             className="mt-5 inline-flex min-h-12 items-center rounded-xl bg-teal-600 px-6 py-3 text-sm font-semibold text-white hover:bg-teal-500"
           >
-            Zum Zuwendungsbescheid →
+            Zum Zuwendungsbescheid
           </Link>
         </section>
       )}

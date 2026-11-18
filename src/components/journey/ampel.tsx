@@ -24,12 +24,12 @@ const STUFEN: Stufe[] = [
   {
     kategorien: ['mittel'],
     titel: 'Sie werden mit 35 % gefördert!',
-    text: 'Ihr Unternehmen gilt als mittleres Unternehmen. Die Förderquote beträgt 35 % – ein deutlicher Zuschuss zu Ihrer Investition.',
+    text: 'Ihr Unternehmen gilt als mittleres Unternehmen. Die Förderquote beträgt 35 %, ein deutlicher Zuschuss zu Ihrer Investition.',
   },
   {
     kategorien: ['gross'],
     titel: 'Sie werden mit 25 % gefördert!',
-    text: 'Ihr Unternehmen überschreitet die KMU-Grenzen – die Förderung ist trotzdem mit 25 % möglich, nur die KMU-Bonus-Quoten entfallen.',
+    text: 'Ihr Unternehmen überschreitet die KMU-Grenzen, die Förderung ist trotzdem mit 25 % möglich, nur die KMU-Bonus-Quoten entfallen.',
   },
 ]
 
@@ -65,7 +65,7 @@ export function KmuAmpel({ ergebnis, investSumme }: { ergebnis: KmuResult; inves
             return (
               <span
                 key={farbe}
-                className={`size-7 rounded-full transition-all duration-700 sm:size-9 ${
+                className={`size-7 rounded-full transition-colors duration-700 sm:size-9 ${
                   aktiv ? `${LICHT_FARBEN[farbe].aktiv} motion-safe:animate-pulse` : LICHT_FARBEN[farbe].inaktiv
                 }`}
               />
@@ -75,10 +75,7 @@ export function KmuAmpel({ ergebnis, investSumme }: { ergebnis: KmuResult; inves
 
         {/* Ergebnis – poppt dezent bei jedem Kategorie-Wechsel (Aufmerksamkeits-Reward) */}
         <div key={ergebnis.category} className="min-w-0 flex-1 motion-safe:animate-check-pop">
-          <p className="text-xs font-semibold tracking-wide text-olive-300 uppercase">
-            Live-Auswertung · {ergebnis.categoryLabel}
-          </p>
-          <h3 className="mt-1.5 text-xl leading-snug font-semibold text-balance sm:text-2xl">{stufe.titel}</h3>
+                    <h3 className="mt-1.5 text-xl leading-snug font-semibold text-balance sm:text-2xl">{stufe.titel}</h3>
           <p className="mt-2 max-w-prose text-sm/6 text-olive-200">{stufe.text}</p>
 
           {zuschuss != null && (
@@ -110,7 +107,7 @@ export function KmuAmpel({ ergebnis, investSumme }: { ergebnis: KmuResult; inves
           Bilanzsumme <strong className="text-white">{formatEUR(ergebnis.consolidated.balanceSheet)}</strong>
         </span>
         <span className="w-full text-olive-400 sm:ml-auto sm:w-auto">
-          Unverbindliche Orientierung (EU 2003/361/EG) – verbindlich prüft die Bewilligungsbehörde.
+          Unverbindliche Orientierung (EU 2003/361/EG), verbindlich prüft die Bewilligungsbehörde.
         </span>
       </div>
     </section>

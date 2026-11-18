@@ -67,13 +67,13 @@ export function WzCodeFeld({
             />
           </svg>
           <span>
-            <span className="font-mono">{wert.trim().toUpperCase()}</span> – {bezeichnung}
+            <span className="font-mono">{wert.trim().toUpperCase()}</span>, {bezeichnung}
           </span>
         </p>
       )}
       {zeigeHinweis && (
         <p className="mt-1.5 text-xs/5 text-amber-800" role="status">
-          Dieser Code steht nicht in der offiziellen WZ-2008-Liste (Destatis) – bitte einmal gegen den
+          Dieser Code steht nicht in der offiziellen WZ-2008-Liste (Destatis), bitte einmal gegen den
           Handelsregisterauszug oder das Steuerbüro prüfen.
         </p>
       )}

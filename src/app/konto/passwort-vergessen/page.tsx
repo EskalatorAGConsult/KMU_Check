@@ -10,7 +10,7 @@ export default function PasswortVergessenPage() {
       <div className="w-full">
         <AuthKarte
           titel="Passwort vergessen"
-          untertitel="Geben Sie Ihre E-Mail-Adresse ein – wir senden Ihnen einen Link zum Zurücksetzen."
+          untertitel="Geben Sie Ihre E-Mail-Adresse ein, wir senden Ihnen einen Link zum Zurücksetzen."
         >
           <PasswortVergessenForm />
         </AuthKarte>

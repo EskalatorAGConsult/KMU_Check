@@ -57,7 +57,7 @@ export function SchrittDeminimis({
             />
           </svg>
           <p className="text-sm/6 text-olive-700">
-            <strong className="text-mabe-900">Keine Förderungen erhalten?</strong> Dann ist hier nichts weiter zu tun –
+            <strong className="text-mabe-900">Keine Förderungen erhalten?</strong> Dann ist hier nichts weiter zu tun ,
             lassen Sie die Liste einfach leer und bestätigen Sie unten. Die meisten Unternehmen haben keine oder nur
             eine De-minimis-Beihilfe.
           </p>
@@ -66,7 +66,7 @@ export function SchrittDeminimis({
 
       {beihilfen.map((b, i) => (
         <div key={i} className="rounded-2xl border border-olive-200 bg-white p-4">
-          <p className="mb-3 text-xs font-semibold tracking-wide text-olive-500 uppercase">Beihilfe {i + 1}</p>
+          <p className="mb-3 text-xs font-semibold text-olive-500">Beihilfe {i + 1}</p>
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <label className="flex flex-col gap-1 text-xs font-medium text-olive-600">
               Beihilfegeber (z. B. BAFA, Land, Kommune)
@@ -200,7 +200,7 @@ export function SchrittDeminimis({
               aria-label="Auslastung des De-minimis-Höchstbetrags"
             >
               <div
-                className={`h-full rounded-full transition-[width] duration-500 ease-out ${
+                className={`h-full rounded-full transition-transform duration-500 ease-out ${
                   zone === 'rot' ? 'bg-red-500' : zone === 'amber' ? 'bg-amber-500' : 'bg-teal-600'
                 }`}
                 style={{ width: `${ueberschritten ? 100 : quote}%` }}
@@ -208,7 +208,7 @@ export function SchrittDeminimis({
             </div>
             {ueberschritten && (
               <p className="mt-2 text-xs/5 font-medium text-red-700">
-                Der Höchstbetrag ist überschritten – bitte kontaktieren Sie uns vor dem Absenden, wir prüfen
+                Der Höchstbetrag ist überschritten, bitte kontaktieren Sie uns vor dem Absenden, wir prüfen
                 Alternativen (z. B. GBER-Beihilfen).
               </p>
             )}
@@ -219,7 +219,7 @@ export function SchrittDeminimis({
       <div className="flex flex-col gap-3">
         <p className="text-sm font-semibold text-mabe-900">
           Ist Ihr Unternehmen in den letzten drei Jahren entstanden durch …{' '}
-          <span className="font-normal text-olive-500">(optional – nur ankreuzen, falls zutreffend)</span>
+          <span className="font-normal text-olive-500">(optional, nur ankreuzen, falls zutreffend)</span>
         </p>
         <Checkbox
           checked={(daten.fusion_3j as boolean) ?? false}

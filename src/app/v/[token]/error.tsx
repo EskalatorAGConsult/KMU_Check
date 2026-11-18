@@ -18,7 +18,7 @@ export default function JourneyError({ error, reset }: { error: Error & { digest
   return (
     <FehlerAnzeige
       titel="Ihr Förderprojekt konnte gerade nicht geladen werden."
-      text="Keine Sorge: Ihre bisherigen Angaben sind sicher gespeichert und gehen nicht verloren. Laden Sie die Seite einfach erneut – bei anhaltenden Problemen hilft Ihnen Ihr MABE-Ansprechpartner sofort weiter."
+      text="Keine Sorge: Ihre bisherigen Angaben sind sicher gespeichert und gehen nicht verloren. Laden Sie die Seite einfach erneut, bei anhaltenden Problemen hilft Ihnen Ihr MABE-Ansprechpartner sofort weiter."
       kennung={error.digest}
       onReset={reset}
       homeHref="/"

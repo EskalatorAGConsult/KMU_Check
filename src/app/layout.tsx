@@ -21,7 +21,7 @@ import './globals.css'
 export const metadata: Metadata = {
   title: 'KMU-Fördercheck | MABE Maschinen- und Behälterbau GmbH',
   description:
-    'In 3 Minuten prüfen, ob Ihr Unternehmen als KMU gilt und welche Förderquote (45 % / 35 % / 25 %) Ihnen im BAFA-Programm zusteht – inklusive korrekter Verbund-Verrechnung und PDF-Nachweis.',
+    'In 3 Minuten prüfen, ob Ihr Unternehmen als KMU gilt und welche Förderquote (45 % / 35 % / 25 %) Ihnen im BAFA-Programm zusteht, inklusive korrekter Verbund-Verrechnung und PDF-Nachweis.',
   robots: { index: true, follow: true },
 }
 
@@ -53,7 +53,7 @@ export default function RootLayout({
         <NavbarWithLogoActionsAndLeftAlignedLinks
           id="navbar"
           logo={
-            <NavbarLogo href="#hero" aria-label="MABE – Maschinen- und Behälterbau GmbH">
+            <NavbarLogo href="#hero" aria-label="MABE, Maschinen- und Behälterbau GmbH">
               <MabeLogo className="h-7 w-auto" />
             </NavbarLogo>
           }

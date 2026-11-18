@@ -257,7 +257,7 @@ export function NachweisManager({
         </section>
       ) : (
         <section className="rounded-2xl bg-mabe-900 p-5 text-white sm:p-6">
-          <h2 className="text-base font-semibold">Verwendungsnachweis eingereicht ✓</h2>
+          <h2 className="text-base font-semibold" style={{ overflowWrap: 'break-word', minWidth: 0 }}>Verwendungsnachweis eingereicht ✓</h2>
           <p className="mt-1 text-sm/6 text-olive-200">
             {vnw?.eingereicht_am ? `Übergeben am ${new Date(vnw.eingereicht_am).toLocaleString('de-DE')}.` : ''} Die
             Auszahlung des Zuschusses folgt nach Prüfung durch das BAFA.

@@ -14,7 +14,7 @@ export default function KontoError({ error, reset }: { error: Error & { digest?:
   return (
     <FehlerAnzeige
       titel="Ihr Kundenkonto konnte nicht geladen werden."
-      text="Beim Abruf Ihrer Daten ist ein Fehler aufgetreten. Versuchen Sie es erneut – Ihre gespeicherten Angaben sind davon nicht betroffen."
+      text="Beim Abruf Ihrer Daten ist ein Fehler aufgetreten. Versuchen Sie es erneut, Ihre gespeicherten Angaben sind davon nicht betroffen."
       kennung={error.digest}
       onReset={reset}
       homeHref="/konto"

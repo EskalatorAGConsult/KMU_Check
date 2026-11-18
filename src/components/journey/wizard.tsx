@@ -52,7 +52,7 @@ export function Wizard({
    * Dynamische Klickstrecke: Der Beantragungsweg (Eingangs-Wahl) steuert,
    * welche Schritte existieren. 'selbst' -> nur Übersicht, Wahl und die
    * Unterlagen-Seite (kein Portal-Formular). Vertrag: aktiveSchritteFuer()
-   * in schritte.ts – alle Indices/Bounds laufen ueber aktiveSchritte.
+   * in schritte.ts, alle Indices/Bounds laufen ueber aktiveSchritte.
    */
   const weg0 = (initialDaten['beantragungsweg']?.beantragungsweg as string | undefined)
   const initialIndex = Math.max(0, aktiveSchritteFuer(weg0).findIndex((s) => s.id === startSchritt))
@@ -87,7 +87,7 @@ export function Wizard({
     (angebot.invest_software ?? 0) + (angebot.invest_messtechnik ?? 0) + (angebot.invest_steuerung ?? 0) || null
 
   // Smart Defaults (feld.standard in schritte.ts): beim Betreten des Schritts
-  // nur Luecken fuellen – vorhandene Eingaben (auch alte Entwuerfe) gewinnen
+  // nur Luecken fuellen, vorhandene Eingaben (auch alte Entwuerfe) gewinnen
   // immer. Kein Datenverlust: der Nutzer sieht und kann alles aendern.
   // Verzoegert hinter die Hydration (kein setState direkt im Effekt).
   useEffect(() => {
@@ -102,7 +102,7 @@ export function Wizard({
       })
     })
     return () => cancelAnimationFrame(frame)
-    // Nur beim Schrittwechsel ausloesen – setDaten arbeitet funktional auf dem
+    // Nur beim Schrittwechsel ausloesen, setDaten arbeitet funktional auf dem
     // frischen State, daher sind weitere Abhaengigkeiten nicht noetig.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [schritt.id])
@@ -110,7 +110,7 @@ export function Wizard({
   /**
    * Sticky-Zuschuss-Chip (Loss Aversion): solange der KMU-Schritt keine
    * Zahlen hat, zeigen wir das Maximum („bis zu 45 %"); danach die Quote
-   * aus den Live-Eingaben – dieselbe Engine wie die Ampel (src/lib/kmu.ts).
+   * aus den Live-Eingaben, dieselbe Engine wie die Ampel (src/lib/kmu.ts).
    * Verbund-Kennzahlen jahrgemischt (juengstes Jahr, verbund-jahre.ts).
    */
   const zuschussChip = useMemo(() => {
@@ -128,7 +128,7 @@ export function Wizard({
     }
     const wirksam = kmu?.hat_beteiligungen === false ? [] : (kmu?.beteiligungen ?? [])
     // Juengstes Geschaeftsjahr des KMU-Schritts (Drafts sind absteigend
-    // sortiert, aber nicht garantiert – defensiv das Maximum nehmen).
+    // sortiert, aber nicht garantiert, defensiv das Maximum nehmen).
     const gjNeu = Math.max(0, ...(kmu?.jahre ?? []).map((j) => Number(j.geschaeftsjahr ?? 0)))
     const holdings: Holding[] = holdingsFuerJahr(wirksam, gjNeu)
     const erg = evaluateKmu({
@@ -154,7 +154,7 @@ export function Wizard({
 
   const validiereAktuellenSchritt = (): boolean => {
     // Querabhaengigkeit: der Beantragungsweg wird im Eingangsschritt gewaehlt,
-    // gehoert aber zum Vollmacht-Schema – bei der Pruefung einmischen.
+    // gehoert aber zum Vollmacht-Schema, bei der Pruefung einmischen.
     const payload =
       schritt.komponente === 'vollmacht'
         ? { ...schrittDaten, beantragungsweg: schrittDaten.beantragungsweg ?? weg ?? 'eskalator' }
@@ -218,7 +218,7 @@ export function Wizard({
 
   const onAbsenden = () => {
     if (!validiereAktuellenSchritt()) return
-    // Selbst-Weg: nichts einreichen – nur die Entscheidung dokumentieren.
+    // Selbst-Weg: nichts einreichen, nur die Entscheidung dokumentieren.
     const selbstWeg = schritt.id === 'selbst'
     startTransition(async () => {
       setHinweis(null)
@@ -295,7 +295,7 @@ export function Wizard({
           )}
         </header>
 
-        {/* Schritt-Inhalt (Registry ueber komponente) – animierter Uebergang */}
+        {/* Schritt-Inhalt (Registry ueber komponente), animierter Uebergang */}
         <div key={schritt.id} className="flex flex-col gap-6 motion-safe:animate-step-in sm:gap-8">
         {schritt.komponente === 'uebersicht' && <SchrittUebersicht angebot={angebot} token={token} />}
         {schritt.komponente === 'beantragungsweg' && (

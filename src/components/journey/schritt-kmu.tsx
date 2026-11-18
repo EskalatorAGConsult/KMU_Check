@@ -27,7 +27,7 @@ function num(v: unknown): number {
 /**
  * BAFA-Vorgabe EEW Modul 3: Das Portal fragt fest die Geschaeftsjahre
  * 2025 und 2024 ab (juengstes Jahr zaehlt fuer die Foerderquote).
- * Bewusst NICHT dynamisch kalenderbasiert – die abgefragten Jahre richten
+ * Bewusst NICHT dynamisch kalenderbasiert , die abgefragten Jahre richten
  * sich nach dem BAFA-Formular, nicht nach dem aktuellen Datum.
  */
 export const BAFA_GESCHAEFTSJAHRE = [2025, 2024] as const
@@ -63,7 +63,7 @@ export function SchrittKmu({
   const wurzelName = firmenname?.trim() || 'Ihr Unternehmen'
   const beteiligungen = (daten.beteiligungen as Beteiligung[] | undefined) ?? KEINE_BETEILIGUNGEN
   /**
-   * Leitfrage „Beteiligungsverhältnisse vorhanden?" – explizite Antwort hat
+   * Leitfrage „Beteiligungsverhältnisse vorhanden?" , explizite Antwort hat
    * Vorrang; sind (vor befüllte) Zeilen da, gilt implizit „ja". undefined =
    * noch nicht beantwortet -> Liste wird gezeigt (Prefill-Fall).
    */
@@ -88,7 +88,7 @@ export function SchrittKmu({
     // Datenkonsistenz: „keine Beteiligungen" -> Ampel rechnet mit leerem Verbund
     const wirksam = hatBeteiligungen === false ? KEINE_BETEILIGUNGEN : beteiligungen
     // Live-Ampel bewertet das juengste Geschaeftsjahr (jahre[0], absteigend
-    // sortiert) – Verbund-Kennzahlen jahrgemischt (BAFA fragt 2025 UND 2024
+    // sortiert) , Verbund-Kennzahlen jahrgemischt (BAFA fragt 2025 UND 2024
     // ab, auch fuer Partner-/verbundene Unternehmen).
     const juengstes = jahre[0] ?? standardJahre()[0]
     const holdings: Holding[] = holdingsFuerJahr(wirksam, juengstes.geschaeftsjahr)
@@ -113,7 +113,7 @@ export function SchrittKmu({
     onChange('beteiligungen', naechste)
   }
 
-  // Loesch-Bestaetigung („Sicher?"): Kartenzahl-Jahre sind teuer erfassbar –
+  // Loesch-Bestaetigung („Sicher?"): Kartenzahl-Jahre sind teuer erfassbar ,
   // ein Fehltipp auf dem Papierkorb soll nichts zerstoeren. Laeuft nach 3 s ab.
   const [loeschBestaetigt, setLoeschBestaetigt] = useState<number | null>(null)
   useEffect(() => {
@@ -124,7 +124,7 @@ export function SchrittKmu({
 
   /**
    * Kennzahlwert EINER Beteiligung für EIN Geschäftsjahr setzen. Speichert den
-   * rohen Eingabewert (String) – dasselbe Muster wie die eigenen Jahresfelder
+   * rohen Eingabewert (String) , dasselbe Muster wie die eigenen Jahresfelder
    * (setJahr): Zod coerced serverseitig, die Anzeige laeuft ueber jahrKennzahl
    * (Komma-tolerant). Leere Eingabe = undefined (Zelle leererbar). Legacy-
    * Zeilen ohne jahre erben beim ersten Schreiben die Skalarwerte (jahreAufbauen).
@@ -294,7 +294,7 @@ export function SchrittKmu({
           </h3>
           <p className="mt-1 text-sm/6 text-olive-600">
             <strong className="text-mabe-900">Warum fragen wir das?</strong> Die EU betrachtet nie nur Ihre Firma
-            allein: Ab <strong className="text-mabe-900">25&nbsp;% Beteiligung</strong>, in beide Richtungen –
+            allein: Ab <strong className="text-mabe-900">25&nbsp;% Beteiligung</strong>, in beide Richtungen ,
             fließen die Zahlen des <strong>anderen</strong> Unternehmens in Ihre Größe ein (25–50&nbsp;% anteilig,
             über 50&nbsp;% voll, auch über mehrere Stufen). Die Kennzahlen unten gehören deshalb{' '}
             <strong className="text-mabe-900">je Beteiligungsunternehmen</strong>, nicht zu Ihnen. Am Ende dieses
@@ -304,7 +304,7 @@ export function SchrittKmu({
         </div>
         {fehler.beteiligungen && <p className="text-xs/5 font-medium text-red-700">{fehler.beteiligungen}</p>}
 
-        {/* Leitfrage – gleiches Muster wie im Landingpage-KMU-Tool */}
+        {/* Leitfrage , gleiches Muster wie im Landingpage-KMU-Tool */}
         <div className="rounded-2xl border border-olive-200 bg-white p-5">
           <p className="text-sm font-semibold text-mabe-900">
             Steht Ihr Unternehmen in Beteiligungsverhältnissen von mindestens 25 %?
@@ -319,10 +319,10 @@ export function SchrittKmu({
                 type="button"
                 onClick={() => setzeHatBeteiligungen(v)}
                 aria-pressed={hatBeteiligungen === v}
-                className={`min-h-12 rounded-xl border px-4 py-3 text-sm font-semibold transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-teal-600/40 ${
+                className={`min-h-12 rounded-xl border px-4 py-3 text-sm font-semibold transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-teal-600/40 active:brightness-95 disabled:opacity-40 ${
                   hatBeteiligungen === v
                     ? 'border-teal-600 bg-teal-600 text-white shadow-sm'
-                    : 'border-olive-300 bg-white text-mabe-900 hover:border-teal-600 hover:bg-teal-50/60'
+                    : 'border-olive-300 bg-white text-mabe-900 hover:border-teal-600 hover:bg-teal-50/60 focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-teal-700 active:brightness-95'
                 }`}
               >
                 {v ? 'Ja' : 'Nein'}
@@ -537,7 +537,7 @@ export function SchrittKmu({
                   </div>
                 </div>
 
-                {/* Kennzahlen je BAFA-Geschäftsjahr (2025 UND 2024 – das Portal
+                {/* Kennzahlen je BAFA-Geschäftsjahr (2025 UND 2024 , das Portal
                     fragt beide ab, auch für Partner-/verbundene Unternehmen).
                     Mobil (unter sm): Jahres-Stack statt Wisch-Tabelle, drei
                     Eingabefelder passen auf 375px nicht nebeneinander lesbar
@@ -638,7 +638,7 @@ export function SchrittKmu({
                   </p>
                   {(() => {
                     // Audit 02.09.2026: Bleibt das quote-relevante Jahr (juengstes)
-                    // dieser Beteiligung leer, rechnet die Verbundgroesse mit 0 –
+                    // dieser Beteiligung leer, rechnet die Verbundgroesse mit 0 ,
                     // die Quote faehle zu hoch. Transparenter Hinweis statt
                     // stiller Schaetzung (keine Werte-Erfindung, s. verbund-jahre.ts).
                     const gjQuote = jahre[0]?.geschaeftsjahr ?? BAFA_GESCHAEFTSJAHRE[0]

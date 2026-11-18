@@ -73,7 +73,7 @@ export function DragDropZone({
           pruefeUndReiche(e.dataTransfer.files?.[0])
         }}
         className={clsx(
-          'flex cursor-pointer flex-col items-center justify-center gap-2 rounded-2xl border-2 border-dashed text-center transition-colors focus:outline-none focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-teal-700',
+          'flex cursor-pointer flex-col items-center justify-center gap-2 rounded-2xl border-2 border-dashed text-center transition-colors focus:outline-none focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-teal-700 active:brightness-95',
           kompakt ? 'min-h-24 px-4 py-4' : 'min-h-44 px-6 py-8',
           dragAktiv
             ? 'border-teal-600 bg-teal-50'

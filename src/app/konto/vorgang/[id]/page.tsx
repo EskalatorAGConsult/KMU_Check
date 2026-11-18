@@ -87,12 +87,12 @@ export default async function VorgangPage({ params }: { params: Promise<{ id: st
           aria-valuemax={100}
           aria-label="Bearbeitungsstand"
         >
-          <div className="h-full rounded-full bg-teal-600 transition-all" style={{ width: `${fortschrittProzent}%` }} />
+          <div className="h-full rounded-full bg-teal-600 transition-colors" style={{ width: `${fortschrittProzent}%` }} />
         </div>
         {!eingereicht && (
           <p className="mt-3 text-sm/6 text-olive-600">
             Ihr Vorgang ist noch nicht vollständig eingereicht. Öffnen Sie Ihren persönlichen Link aus der
-            MABE-Einladung, um fortzufahren – Ihre bisherigen Angaben sind gespeichert.
+            MABE-Einladung, um fortzufahren, Ihre bisherigen Angaben sind gespeichert.
           </p>
         )}
       </section>
@@ -105,7 +105,7 @@ export default async function VorgangPage({ params }: { params: Promise<{ id: st
             className="flex flex-col gap-2 rounded-2xl border border-olive-200 bg-white p-5 transition-colors hover:border-teal-500"
           >
             <div className="flex items-center justify-between gap-2">
-              <h2 className="text-sm font-semibold text-mabe-900">Zuwendungsbescheid</h2>
+              <h2 className="text-sm font-semibold text-mabe-900" style={{ overflowWrap: 'break-word', minWidth: 0 }}>Zuwendungsbescheid</h2>
               <span
                 className={`rounded-full px-2.5 py-1 text-[11px] font-semibold ${
                   nachweis.bescheidBestaetigt ? 'bg-teal-100 text-teal-800' : nachweis.bescheidVorhanden ? 'bg-amber-100 text-amber-800' : 'bg-olive-100 text-olive-600'
@@ -115,7 +115,7 @@ export default async function VorgangPage({ params }: { params: Promise<{ id: st
               </span>
             </div>
             <p className="text-sm/6 text-olive-600">
-              Bescheid vom BAFA erhalten? Hier hochladen – wir merken uns Fristen und Auflagen.
+              Bescheid vom BAFA erhalten? Hier hochladen, wir merken uns Fristen und Auflagen.
             </p>
           </Link>
           <Link
@@ -128,7 +128,7 @@ export default async function VorgangPage({ params }: { params: Promise<{ id: st
             }`}
           >
             <div className="flex items-center justify-between gap-2">
-              <h2 className="text-sm font-semibold text-mabe-900">Verwendungsnachweis</h2>
+              <h2 className="text-sm font-semibold text-mabe-900" style={{ overflowWrap: 'break-word', minWidth: 0 }}>Verwendungsnachweis</h2>
               <span
                 className={`rounded-full px-2.5 py-1 text-[11px] font-semibold ${
                   vnwRow?.status === 'eingereicht'
