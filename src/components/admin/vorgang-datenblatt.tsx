@@ -43,6 +43,7 @@ const STATUS_CLS: Record<AngebotStatus, string> = {
   abgeschlossen: 'bg-teal-600 text-white',
   bewilligt: 'bg-teal-600 text-white',
   vnw_eingereicht: 'bg-teal-700 text-white',
+  archiviert: 'bg-olive-200 text-olive-600',
   widerrufen: 'bg-red-100 text-red-700',
 }
 

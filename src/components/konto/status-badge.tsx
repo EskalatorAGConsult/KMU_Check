@@ -10,6 +10,7 @@ const STATUS: Record<AngebotStatus, { label: string; cls: string }> = {
   abgeschlossen: { label: 'Antrag gestellt ✓', cls: 'bg-emerald-100 text-emerald-800' },
   bewilligt: { label: 'Bewilligt ✓ – Bescheid da', cls: 'bg-emerald-100 text-emerald-800' },
   vnw_eingereicht: { label: 'Verwendungsnachweis da ✓', cls: 'bg-emerald-600 text-white' },
+  archiviert: { label: 'Archiviert', cls: 'bg-olive-100 text-olive-600' },
   widerrufen: { label: 'Widerrufen', cls: 'bg-red-100 text-red-700' },
 }
 

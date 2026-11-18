@@ -25,6 +25,7 @@ const STATUS_KURZ: Record<AngebotStatus, string> = {
   abgeschlossen: 'Antrag gestellt',
   bewilligt: 'Bewilligt',
   vnw_eingereicht: 'VNW da',
+  archiviert: 'Archiviert',
   widerrufen: 'Widerrufen',
 }
 
