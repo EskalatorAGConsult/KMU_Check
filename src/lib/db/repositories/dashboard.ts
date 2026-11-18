@@ -43,7 +43,7 @@ export async function ladeDashboardKennzahlen(): Promise<DashboardKennzahlen> {
 
   const alle = (angebote ?? []) as AngebotKpi[]
   // 'vnw_eingereicht' gilt als faktisch fertig (Auszahlung folgt beim BAFA) und zaehlt nicht mehr als offen.
-  const offene = alle.filter((a) => !['abgeschlossen', 'vnw_eingereicht', 'widerrufen'].includes(a.status))
+  const offene = alle.filter((a) => !['abgeschlossen', 'vnw_eingereicht', 'archiviert', 'widerrufen'].includes(a.status))
   const offeneIds = offene.map((a) => a.id)
 
   const proStatus: Record<AngebotStatus, number> = {
@@ -54,6 +54,7 @@ export async function ladeDashboardKennzahlen(): Promise<DashboardKennzahlen> {
     abgeschlossen: 0,
     bewilligt: 0,
     vnw_eingereicht: 0,
+    archiviert: 0,
     widerrufen: 0,
   }
   for (const a of alle) proStatus[a.status] += 1
