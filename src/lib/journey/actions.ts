@@ -443,6 +443,7 @@ export async function schliesseJourneyAb(
       const res = await fetch(webhookUrl, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
+        signal: AbortSignal.timeout(10_000), // SSRF-Haertung
         body: JSON.stringify(payload),
       })
       httpStatus = res.status

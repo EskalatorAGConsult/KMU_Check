@@ -1,5 +1,6 @@
 'use client'
 
+import { randomUUID } from 'node:crypto'
 import { clsx } from 'clsx/lite'
 import { useEffect, useMemo, useRef, useState } from 'react'
 
@@ -56,7 +57,7 @@ interface UIHolding extends Holding {
 
 function newHolding(): UIHolding {
   return {
-    id: Math.random().toString(36).slice(2),
+    id: typeof crypto !== 'undefined' && crypto.randomUUID ? crypto.randomUUID() : Math.random().toString(36).slice(2),
     name: '',
     direction: 'we_hold',
     sharePct: 50,

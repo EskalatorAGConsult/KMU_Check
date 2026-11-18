@@ -62,6 +62,7 @@ export async function testeWebhook(): Promise<WebhookTestErgebnis> {
     const res = await fetch(url, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
+      signal: AbortSignal.timeout(10_000), // SSRF-Haertung: harter Timeout
       body: JSON.stringify({
         type: 'webhook_test',
         quelle,

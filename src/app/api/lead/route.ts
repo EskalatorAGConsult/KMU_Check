@@ -66,6 +66,7 @@ export async function POST(req: NextRequest) {
     const res = await fetch(webhookUrl, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
+      signal: AbortSignal.timeout(10_000), // SSRF-Haertung
       body: JSON.stringify(enriched),
     })
     if (!res.ok) {
